@@ -7,8 +7,8 @@ module.exports = function()
     camera: '/camera',
     pages:
     {
-      '/': 'config/robot/ui/index.html',
-      '/remote': 'config/robot/ui/remote.html',
+      '/': 'config/robot/ui/controller.html',
+      '/head': 'config/robot/ui/head.html',
       '/js/ros.js': './services/ros.js',
       '/js/ros-webconnector.js': 'config/robot/ui/ros-webconnector.js',
     }
