@@ -1,0 +1,7 @@
+private
+node_modules/*
+hw/board/*/native/build/*
+saved/*
+
+npm-debug.log
+.DS_Store

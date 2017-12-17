@@ -1,0 +1,15 @@
+#! /usr/local/bin/node
+
+const totalSteps = 1024;
+
+function sCurve(step)
+{
+  return 1 / Math.PI * (Math.PI * step / totalSteps - Math.cos(Math.PI * step / totalSteps) * Math.sin(Math.PI * step / totalSteps))
+}
+
+var steps = [];
+for (var i = 0; i < totalSteps; i++)
+{
+  steps.push(parseFloat(sCurve(i).toFixed(4)));
+}
+console.log(JSON.stringify(steps));

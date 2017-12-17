@@ -1,0 +1,28 @@
+{
+    "targets":
+    [
+        {
+            "target_name": "beagleboneblue",
+            "sources":
+            [
+                "bbb-servos2.cc",
+                "bbb-motors2.cc",
+                "bbb-power.cc",
+                "bbb-gpio.cc",
+                "export.cc"
+            ],
+            "conditions":
+            [
+                [
+                    "OS=='linux'",
+                    {
+                        "libraries":
+                        [
+                            "-lroboticscape"
+                        ]
+                    }
+                ]
+            ]
+        }
+    ]
+}

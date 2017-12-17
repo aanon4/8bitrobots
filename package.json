@@ -1,0 +1,17 @@
+{
+  "name": "8BitRobots",
+  "description": "8 Bit Robots",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "deasync": "^0.1.9",
+    "i2c-bus": "x",
+    "node-gyp": "x",
+    "opencv": "^6.0.0",
+    "serialport": "^4.0.7",
+    "synaptic": "^1.0.10",
+    "usage": "x",
+    "uuid": "^3.0.1",
+    "websocket": "^1.0.24"
+  }
+}
