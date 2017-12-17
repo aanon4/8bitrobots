@@ -1,0 +1,88 @@
+'use strict';
+
+module.exports = function()
+{
+  const Robot = require('services/robot');
+  const StateManager = require('services/state-manager');
+  const ServoPwm = require('hw/board/beagleboneblue/servos-beagleboneblue');
+  const Motors = require('hw/board/beagleboneblue/motors-beagleboneblue');
+  const Gpio = require('hw/board/beagleboneblue/gpio-beagleboneblue');
+
+  const Motor = require('hw/motor/gearmotor-1:48');
+  const Servos =
+  {
+    hs422:   require('hw/servo/servo-hs422'),
+    hs645mg: require('hw/servo/servo-hs645mg'),
+    hs35hd:  require('hw/servo/servo-hs35hd')
+  };
+
+  const MOTORS = new Motors();
+  const SERVOS = new ServoPwm();
+  const GPIO = new Gpio();
+  const stateManager = new StateManager({ name: 'robot-servo' });
+
+  function makeMotor(id, dev, rev)
+  {
+    return {
+      [id]: new Motor(
+      {
+        name: `/robot/${id}/motor`,
+        hbridge: MOTORS.getChannel(dev),
+        reverse: rev == 'rev' ? true : false
+      })
+    };
+  }
+  function makeServo(id, dev, type, rev, safeMin, safeMax, safeDefault, trim, scale)
+  {
+    return {
+      [id]: new Servos[type](
+      {
+        name: `/robot/${id}/servo`,
+        pwm: SERVOS.getChannel(dev),
+        reverse: rev == 'rev' ? true : false,
+        minAngle: safeMin,
+        maxAngle: safeMax,
+        defaultAngle: safeDefault,
+        trim: trim,
+        scale: scale,
+        stateManager: stateManager
+      })
+    };
+  }
+  function makeButton(id, dev, type)
+  {
+    const Button = require(`hw/buttons/${type}`);
+    return {
+      [id]: new Button(
+      {
+        name: `/robot/${id}/button`,
+        gpio: GPIO.getChannel(dev)
+      })
+    }
+  }
+
+  return new Robot(
+  {
+    name: '/robot/manager',
+    brain: require('config/robot/brain/robot'),
+    motors: Object.assign({},
+      makeMotor('left', 3, 'nor'),
+      makeMotor('right', 2, 'rev')
+    ),
+    servos: Object.assign({},
+      makeServo('back-right',  7, 'hs645mg',  'rev', Math.PI / 2 - 1.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.30, 1.0),
+      makeServo('back-left',   0, 'hs645mg',  'nor', Math.PI / 2 - 1.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.45, 1.0),
+      makeServo('front-left',  5, 'hs422',    'nor', Math.PI / 2 - 2.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.25, 1.0),
+      makeServo('front-right', 4, 'hs422',    'rev', Math.PI / 2 - 2.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.33, 1.0),
+      makeServo('head-hoz',    3, 'hs422',    'nor', Math.PI / 2 - 0.5,  Math.PI / 2 + 0.5 , Math.PI / 2, -0.25, 1.0),
+      makeServo('head-ver',    2, 'hs645mg',  'nor', Math.PI / 2 - 0.6,  Math.PI / 2,        Math.PI / 2,  0.25, 1.0),
+      makeServo('ears',        1, 'hs35hd',   'nor', Math.PI / 2 - 0.5,  Math.PI / 2 + 0.5,  Math.PI / 2, -1.05, 1.0)
+    ),
+    buttons: Object.assign({},
+      makeButton('head-right', 0, 'button-gpio'),
+      makeButton('head-left',  1, 'button-gpio'),
+      makeButton('back',       2, 'button-gpio'),
+     {}
+    )
+  });
+}

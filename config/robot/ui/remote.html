@@ -1,0 +1,268 @@
+<html>
+<head>
+<style>
+  html,body
+  {
+    margin: 0px;
+    padding: 0px;
+    background-color: black;
+    overflow: hidden;
+  }
+  .eye
+  {
+    position: absolute;
+    top: 6px;
+    width: 124px;
+    height: 190px;
+    background-color: white;
+    clip: rect(0px, 124px, 190px, 0px);
+  }
+  .asleep .eye, .asleep .lid
+  {
+    background-color: black;
+  }
+  #left
+  {
+    right: 16px;
+  }
+  #right
+  {
+    left: 12px;
+  }
+  .pupil
+  {
+    position: absolute;
+    width: 50px;
+    height: 80px;
+    top: 90px;
+    left: 37px;
+    background-color: black;
+    transition: left 0.5s, top 0.5s;
+  }
+  .lid
+  {
+    position: relative;
+    width: 124px;
+    height: 190px;
+    background-color: white;
+    top: -190px;
+    z-index: 1;
+    border-bottom: 4px solid black;
+  }
+  .sleepy .lid
+  {
+    top: -110px;
+  }
+  .verysleepy .lid
+  {
+    top: -90px;
+  }
+  .toright
+  {
+    left: 14px;
+  }
+  .toleft
+  {
+    left: 60px;
+  }
+  .toup2
+  {
+    top: 30px;
+  }
+  .toup1
+  {
+    top: 60px;
+  }
+  .blink
+  {
+    animation: ease-in-out blink 0.5s;
+  }
+  .sleepy .blink
+  {
+    animation: ease-in-out blink_sleepy 0.5s;
+  }
+  .verysleepy .blink
+  {
+    animation: ease-in-out blink_verysleepy 0.5s;
+  }
+  @keyframes blink
+  {
+    0% { top: -190px }
+    50% { top: 0px; }
+    100% { top: -190px }
+  }
+  @keyframes blink_sleepy
+  {
+    0% { top: -110px }
+    50% { top: 0px; }
+    100% { top: -110px }
+  }
+  @keyframes blink_verysleepy
+  {
+    0% { top: -90px }
+    50% { top: 0px; }
+    100% { top: -90px }
+  }
+</style>
+<script src="js/ros-webconnector.js"></script>
+<script src="js/ros.js"></script>
+<script>
+  window.addEventListener('ROSReconnecting', function()
+  {
+    function ping()
+    {
+      try
+      {
+        var http = new XMLHttpRequest();
+        http.timeout = 5000;
+        http.open('GET', location, true);
+        http.onload = function()
+        { 
+          location.reload();
+        }
+        http.onerror = function()
+        { 
+          setTimeout(ping, 5000);
+        }
+        http.ontimeout = ping;
+        http.send(null);
+      }
+      catch (_)
+      {
+        setTimeout(ping, 5000);
+      }
+    }
+    ping();
+  });
+  var ros = rosNode.init('/headui');
+  ros.subscribe({ topic: '/robot/head-hoz/current_angle' }, function(angle)
+  {
+    var l = document.querySelector('#left .pupil');
+    var r = document.querySelector('#right .pupil');
+    if (angle.target_angle > Math.PI / 2 + 0.01)
+    {
+      l.classList.add('toright');
+      r.classList.add('toright');
+      l.classList.remove('toleft');
+      r.classList.remove('toleft');
+    }
+    else if (angle.target_angle < Math.PI / 2 - 0.01)
+    {
+      l.classList.add('toleft');
+      r.classList.add('toleft');
+      l.classList.remove('toright');
+      r.classList.remove('toright');
+    }
+    else
+    {
+      l.classList.remove('toleft', 'toright');
+      r.classList.remove('toleft', 'toright');
+    }
+  });
+  ros.subscribe({ topic: '/robot/head-ver/current_angle' }, function(angle)
+  {
+    var l = document.querySelector('#left .pupil');
+    var r = document.querySelector('#right .pupil');
+    if (angle.target_angle < Math.PI / 2 - 0.13)
+    {
+      l.classList.add('toup2');
+      r.classList.add('toup2');
+      l.classList.remove('toup1');
+      r.classList.remove('toup1');
+    }
+    else if (angle.target_angle < Math.PI / 2 - 0.07)
+    {
+      l.classList.add('toup1');
+      r.classList.add('toup1');
+      l.classList.remove('toup2');
+      r.classList.remove('toup2');
+    }
+    else
+    {
+      l.classList.remove('toup1', 'toup2');
+      r.classList.remove('toup1', 'toup2');
+    }
+  });
+  var blinkscale = 1000;
+  var blinktimer = null;
+  function blink()
+  {
+    var l = document.querySelector('#left .lid');
+    var r = document.querySelector('#right .lid');
+    l.classList.remove('blink');
+    r.classList.remove('blink');
+    setTimeout(function()
+    {
+      if (!document.body.classList.contains('asleep'))
+      {
+        l.classList.add('blink');
+        r.classList.add('blink');
+      }
+      clearTimeout(blinktimer);
+      blinktimer = setTimeout(blink, blinkscale * (2 + 10 * Math.random()));
+    }, 0);
+  }
+  blibnktimer = setTimeout(blink, 1000);
+
+  var sleepy = null;
+  ros.subscribe({ topic: '/health/battery' }, function(e)
+  {
+    var nsleepy = sleepy;
+    if (e['%'] < 25)
+    {
+      nsleepy = 'verysleepy';
+    }
+    else if (e['%'] < 50)
+    {
+      nsleepy = 'sleepy';
+    }
+    else
+    {
+      nsleepy = null;
+    }
+    if (sleepy != nsleepy)
+    {
+      if (sleepy)
+      {
+        document.body.classList.remove(sleepy);
+      }
+      if (nsleepy)
+      {
+        document.body.classList.add(nsleepy);
+      }
+      sleepy = nsleepy;
+    }
+  });
+  ros.subscribe({ topic: '/robot/state' }, function(e)
+  {
+    // e.state
+    switch (e.state)
+    {
+      case 'Sleep':
+        document.body.classList.add('asleep');
+        break;
+      case 'Sleep:SitUp':
+        blinkscale = 200;
+        blink();
+        document.body.classList.remove('asleep');
+        break;
+      default:
+        blinkscale = 1000;
+        document.body.classList.remove('asleep');
+        break;
+    }
+  });
+  ros.subscribe({ topic: '/health/shutdown' }, function(e)
+  {
+    if (e.shutdown === 'low-battery')
+    {
+      new Image().src = 'http://localhost:1500/shutdown';
+    }
+  });
+</script>
+</head>
+<body>
+<div id='left' class='eye'><div class='lid'></div><div class='pupil'></div></div>
+<div id='right' class='eye'><div class='lid'></div><div class='pupil'></div></div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+[Unit]
+Description=Eyes Browser Service
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/root/Browser
+ExecStart=/root/Browser/startup.sh
+StandardOutput=null
+
+[Install]
+WantedBy=multi-user.target

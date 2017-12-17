@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <style>
+     html,body
+    {
+     margin: 0px;
+     padding: 0px;
+     background-color: green;
+     overflow: hidden;
+    }
+    </style>
+  </head>
+  <script>
+    var url = 'http://192.168.8.1:8080/remote';
+    function ping()
+    {
+      var http = new XMLHttpRequest();
+      http.timeout = 1000;
+      http.open('GET', url, true);
+      http.onload = function()
+      { 
+        location = url;
+      }
+      http.onerror = function()
+      { 
+        setTimeout(ping, 1000);
+      }
+      http.ontimeout = ping;
+      http.send(null);
+    }
+    ping();
+  </script>
+  <body>
+  </body>
+  </html>
+  

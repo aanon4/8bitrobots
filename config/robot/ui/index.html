@@ -1,0 +1,187 @@
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <script src="js/ros-webconnector.js"></script>
+  <script src="js/ros.js"></script>
+  <style>
+    html,body { width: 100%; height: 100%; margin: 0; color: white; background-color: black; background-size: 100%, 100%; }
+    #pad { position: absolute; top: 40px; right: 20px }
+    #joystick { position: absolute; top: 110px; right: 90px }
+    #buttons { -webkit-user-select: none; }
+    #buttons > span { font-size: 18px; border: 1px solid white; border-radius: 5px; padding: 5px; margin: 5px; line-height: 44px; }
+  </style>
+</head>
+<body>
+  <canvas id='pad' width="240" height="240"></canvas>
+  <canvas id='joystick' width="100" height="100"></canvas>
+  <div id="buttons">
+    <span ontouchstart="gesture('Beg')" ontouchend="gesture('Idle')">Beg</span>
+    <span ontouchstart="gesture('Walk')" ontouchend="gesture('Idle')">Walk</span>
+    <span ontouchstart="gesture('LieDown')" ontouchend="gesture('Idle')">Lie Down</span>
+    <span ontouchstart="gesture('WaveRight')" ontouchend="gesture('Idle')">Wave Right</span>
+    <span ontouchstart="gesture('WaveLeft')" ontouchend="gesture('Idle')">Wave Left</span>
+    <span ontouchstart="gesture('Dig')" ontouchend="gesture('Idle')">Dig</span>
+    <span ontouchstart="gesture('Sleep')" ontouchend="gesture('Idle')">Sleep</span>
+  </div>
+  <script>
+    const SCREEN_WIDTH = screen.height;
+    const SCREEN_HEIGHT = screen.width;
+    const STICK_RADIUS = 45;
+    const PAD_RADIUS = 115;
+
+    var ros = rosNode.init('/controller');
+    var setMovement = ros.proxy({ service: '/robot/set_movement' });
+    var executeGesture = ros.proxy({ service: '/robot/execute_gesture' });
+  
+    document.addEventListener('gesturestart', function (e)
+    {
+      e.preventDefault();
+    });
+    document.addEventListener('touchmove', function(e)
+    {
+      e.preventDefault();
+    });
+
+    var sleepy = null;
+    ros.subscribe({ topic: '/health/battery' }, function(e)
+    {
+      var nsleepy = sleepy;
+      if (e['%'] < 25)
+      {
+        nsleepy = 'verysleepy';
+      }
+      else if (e['%'] < 50)
+      {
+        nsleepy = 'sleepy';
+      }
+      else
+      {
+        nsleepy = null;
+      }
+      if (sleepy != nsleepy)
+      {
+        if (sleepy)
+        {
+          document.body.classList.remove(sleepy);
+        }
+        if (nsleepy)
+        {
+          document.body.classList.add(nsleepy);
+        }
+        sleepy = nsleepy;
+      }
+    });
+
+    ros.subscribe({ topic: '/pilot/state' }, function(e)
+    {
+      // e.state
+    });
+
+    function gesture(g)
+    {
+      executeGesture({ action: g });
+    }
+
+    var pad = document.getElementById('pad');
+    var stick = document.getElementById('joystick');
+
+    var ctx = pad.getContext('2d');
+    ctx.beginPath();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'white';
+    ctx.arc(120, 120, PAD_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx = stick.getContext('2d');
+    ctx.beginPath();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'white';
+    ctx.arc(50, 50, STICK_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    var animate =
+    {
+      timer: null,
+      target: { right: null, top: null },
+      current: { right: null, top: null },
+      step: { right: null, top: null, count: null }
+    };
+    var style = getComputedStyle(stick);
+    animate.target.right = parseInt(style.right);
+    animate.target.top = parseInt(style.top);
+    animate.current.right = animate.target.right;
+    animate.current.top = animate.target.top;
+    function moveStick()
+    {
+      var active = PAD_RADIUS - STICK_RADIUS / 2;
+      var x = animate.target.right - animate.current.right;
+      var y = animate.target.top - animate.current.top;
+      x = Math.max(-active, Math.min(x, active)) / active;
+      y = Math.max(-active, Math.min(y, active)) / active;
+      setMovement({ action: 'forward', value: y });
+      setMovement({ action: 'strafe', value: x });
+    }
+    stick.addEventListener('touchstart', function(e)
+    {
+      if (animate.timer)
+      {
+        clearInterval(animate.timer);
+        animate.timer = null;
+      }
+    });
+    stick.addEventListener('touchend', function(e)
+    {
+      if (!animate.timer && stick.style.top != '')
+      {
+        var style = getComputedStyle(stick);
+        animate.current.top = parseInt(style.top);
+        animate.current.right = parseInt(style.right);
+        animate.step.count = 20;
+        animate.step.top = (animate.current.top - animate.target.top) / animate.step.count;
+        animate.step.right = (animate.current.right - animate.target.right) / animate.step.count;
+        animate.timer = setInterval(function()
+        {
+          if (--animate.step.count)
+          {
+            stick.style.top = (animate.current.top -= animate.step.top);
+            stick.style.right = (animate.current.right -= animate.step.right);
+          }
+          else
+          {
+            animate.current.top = animate.target.top;
+            animate.current.right = animate.target.right
+            stick.style.top = '';
+            stick.style.right = '';
+            clearInterval(animate.timer);
+            animate.timer = null;
+          }
+          moveStick();
+        }, 10);
+      }
+    });
+    stick.addEventListener('touchmove', function(e)
+    {
+      var style = getComputedStyle(stick);
+      var y = e.pageY - parseInt(style.height) / 2;
+      var x = (SCREEN_WIDTH - e.pageX) - parseInt(style.width) / 2;
+      stick.style.top = animate.current.top = y;
+      stick.style.right = animate.current.right = x;
+      moveStick();
+    });
+    document.addEventListener('visibilitychange', function(e)
+    {
+      if (document.hidden)
+      {
+        clearInterval(tick);
+      }
+      else
+      {
+        tick = setInterval(moveStick, 500);
+      }
+    });
+    tick = setInterval(moveStick, 500); // Movement heatbeat
+  </script>
+</body>
+</html>
