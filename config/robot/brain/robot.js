@@ -210,7 +210,7 @@ controller.prototype =
               }
               break;
             case 'M': // Turn motor
-              p.motorActual(next[1], next[2], next[3]);
+              p.wheelActual(next[1], next[2], next[3]);
               break;
             case 'I': // Wait for everything to be idle
               Promise.all(Object.keys(enabled).map((servo) =>

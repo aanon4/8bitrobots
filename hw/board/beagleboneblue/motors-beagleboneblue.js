@@ -15,7 +15,6 @@ function motorChannel(motors, config)
   this._busy = false;
   this._plans = [];
   this._lastValue = null;
-  this._maxRPM = 0;
   this._kV = 0;
 }
 

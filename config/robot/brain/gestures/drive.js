@@ -27,10 +27,10 @@ function tick()
   if (forward || strafe)
   {
     idleTime = null;
-    if (!P.motorIsChanging('left') && !P.motorIsChanging('right'))
+    if (!P.wheelIsChanging('left') && !P.wheelIsChanging('right'))
     {
-      P.motorActual('left', forward + strafe, 0);
-      P.motorActual('right', forward - strafe, 0);
+      P.wheelActual('left', forward + strafe, 0);
+      P.wheelActual('right', forward - strafe, 0);
     }
     if (!P.servoIsChanging('head-hoz'))
     {
@@ -62,8 +62,8 @@ function tick()
 function exit()
 {
   P.servoIdle('head-hoz', true);
-  P.motorActual('left', 0, 500);
-  P.motorActual('right', 0, 500);
+  P.wheelActual('left', 0, 500);
+  P.wheelActual('right', 0, 500);
 }
 
 module.exports =

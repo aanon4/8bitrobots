@@ -11,7 +11,8 @@ function wheel(config, settings)
 {
   this._node = rosNode.init(config.name);
   this._config = config;
-  this._track = Math.PI * settings.diameter / 1000; // m
+  // Diameter is in mm, rpm is in revolutions / minutues, velocity is in meters / second
+  this._track = Math.PI * settings.diameter / 1000 / 60; // m
   this._motor = config.motor;
 }
 
@@ -72,6 +73,11 @@ wheel.prototype =
   idle: function(idle)
   {
     this._motor.idle(idle);
+  },
+
+  isChanging: function()
+  {
+    return this._motor.isChanging();
   },
 
   waitForVelocity: function(compare, velocity)
