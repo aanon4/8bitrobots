@@ -28,7 +28,7 @@ function robot(config)
   this._name = config.name;
   this._node = rosNode.init(config.name);
 
-  this._motors = config.motors || {};
+  this._wheels = config.wheels || {};
   this._servos = config.servos || {};
   this._buttons = config.buttons || {};
   this._buttonCallbacks = {};
@@ -59,9 +59,9 @@ robot.prototype =
       this._shTopic.publish({ shutdown: 'exit' });
     });
 
-    for (var id in this._motors)
+    for (var id in this._wheels)
     {
-      this._motors[id].enable();
+      this._wheels[id].enable();
     }
     for (var id in this._servos)
     {
@@ -107,9 +107,9 @@ robot.prototype =
   {
     this._brain.disable();
   
-    for (var id in this._motors)
+    for (var id in this._wheels)
     {
-      this._motors[id].disable();
+      this._wheels[id].disable();
     }
     for (var id in this._servos)
     {
@@ -153,18 +153,18 @@ robot.prototype =
     }
   },
 
-  motorActual: function(name, velocity, time, func)
+  wheelActual: function(name, velocity, time, func)
   {
-    let motor = this._motors[name];
-    if (motor)
+    let wheel = this._wheels[name];
+    if (wheel)
     {
       if (velocity !== undefined)
       {
-        return motor.setVelocity(velocity, time, func);
+        return wheel.setVelocity(velocity, time, func);
       }
       else
       {
-        return motor.getTargetVelocity();
+        return wheel.getTargetVelocity();
       }
     }
     else
@@ -173,12 +173,12 @@ robot.prototype =
     }
   },
 
-  motorIsChanging: function(name)
+  wheelIsChanging: function(name)
   {
-    let motor = this._motors[name];
-    if (motor)
+    let wheel = this._wheels[name];
+    if (wheel)
     {
-      return motor.isChanging();
+      return wheel.isChanging();
     }
     else
     {

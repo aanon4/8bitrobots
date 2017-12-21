@@ -137,11 +137,11 @@ function gpios()
 
 gpios.prototype =
 {
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    if (channel >= 0 && channel < this._channels.length)
+    if (config.channel >= 0 && config.channel < this._channels.length)
     {
-      return this._channels[channel];
+      return this._channels[config.channel];
     }
     throw new Error('Bad gpio channel');
   }
@@ -155,9 +155,9 @@ function gpiosProxy()
 
 gpiosProxy.prototype =
 {
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    return _gpios.getChannel(channel);
+    return _gpios.getChannel(config);
   }
 };
 

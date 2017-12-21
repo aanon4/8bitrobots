@@ -1,12 +1,11 @@
-console.info("Loading NTM 20-30S/800kV brushless motors.");
+console.info("Loading Generic Plastic 120:1 gearmotors.");
 
-const genericMotor = require('./motor-generic-brushless');
+const genericMotor = require('./gearmotor-generic');
 
 const settings =
 {
-  kV: 800,
-  volts: 10,
-  watts: 100,
+  periodMs: 40.0,
+  kV: 26 // 120rpm @ 4.5v
 };
 
 function motor(config)

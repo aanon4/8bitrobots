@@ -201,11 +201,11 @@ PWM.prototype =
     }
   },
 
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    if (channel >= 0 && channel < this._channels.length)
+    if (config.channel >= 0 && config.channel < this._channels.length)
     {
-      return this._channels[channel];
+      return this._channels[config.channel];
     }
     throw new Error('Bad Servo channel');
   }
@@ -224,9 +224,9 @@ function pwmProxy(config)
 
 pwmProxy.prototype =
 {
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    return this._pwm.getChannel(channel);
+    return this._pwm.getChannel(config);
   }
 };
 

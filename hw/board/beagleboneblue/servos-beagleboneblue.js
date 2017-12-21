@@ -5,10 +5,10 @@ const MotionPlanner = require('services/motion-planner');
 
 console.info('Loading BeagleBoneBlue Servo controllers.');
 
-function servoChannel(servos, subaddress)
+function servoChannel(servos, config)
 {
   this._servos = servos;
-  this._subaddress = subaddress;
+  this._subaddress = config.channel;
   this._enabled = false;
   this._planner = new MotionPlanner();
   this._plans = [];
@@ -158,17 +158,7 @@ servoChannel.prototype =
 
 function Servos()
 {
-  this._channels =
-  [
-    new servoChannel(this, 0),
-    new servoChannel(this, 1),
-    new servoChannel(this, 2),
-    new servoChannel(this, 3),
-    new servoChannel(this, 4),
-    new servoChannel(this, 5),
-    new servoChannel(this, 6),
-    new servoChannel(this, 7)
-  ];
+  this._channels = [ null, null, null, null, null, null, null, null ];
   this._enabled = 0;
   this._handle = native.bbb_servos2_create();
   if (this._handle < 0)
@@ -192,13 +182,18 @@ Servos.prototype =
     }
   },
 
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    if (channel >= 0 && channel < this._channels.length)
+    if (config.channel < 0 || config.channel >= this._channels.length)
     {
-      return this._channels[channel];
+      throw new Error('Bad Servo channel');
     }
-    throw new Error('Bad Servo channel');
+    let servo = this._channels[config.channel];
+    if (!servo)
+    {
+      servo = new servoChannel(this, config);
+    }
+    return servo;
   }
 };
 
@@ -210,9 +205,9 @@ function servosProxy()
 
 servosProxy.prototype =
 {
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    return _servos.getChannel(channel);
+    return _servos.getChannel(config);
   }
 };
 

@@ -5,19 +5,58 @@ const MotionPlanner = require('services/motion-planner');
 
 console.info('Loading BeagleBoneBlue Motors controllers.');
 
-function motorChannel(motors, subaddress)
+function motorChannel(motors, config)
 {
   this._motors = motors;
-  this._subaddress = subaddress;
+  this._motor = config.motor;
+  this._subaddress = config.channel;
   this._enabled = false;
   this._planner = new MotionPlanner();
   this._busy = false;
   this._plans = [];
   this._lastValue = null;
+  this._maxRPM = 0;
+  this._kV = 0;
 }
 
 motorChannel.prototype =
 {
+  setRPM: function(rpm, changeMs, func)
+  {
+    const maxRPM = this._maxRPM();
+    let duty;
+    if (rpm === 0 || maxRPM === 0)
+    {
+      duty = 0;
+    }
+    else if (rpm > 0)
+    {
+      duty = Math.min(1.0, rpm / maxRPM);
+    }
+    else
+    {
+      duty = Math.max(-1.0, rpm / maxRPM);
+    }
+    this.setPlan(
+    [
+      {
+        end: duty,
+        func: func,
+        time: changeMs
+      }
+    ]);
+  },
+
+  getCurrentRPM: function()
+  {
+    return this._maxRPM() * (this._busy ? this._plans[0][native.bbb_motors2_getCurrentIndex(this._motors._handle, this._subaddress)] : this._lastValue);
+  },
+
+  _maxRPM: function()
+  {
+    return native.bbb_power_battery() * this._kV;
+  },
+
   setVelocity: function(velocity, periodMs, func)
   {
     this.setPlan(
@@ -68,19 +107,6 @@ motorChannel.prototype =
         run();
       }
     }
-  },
-
-  setDutyCycle: function(fraction)
-  {
-    if (fraction < 0)
-    {
-      fraction = 0;
-    }
-    else if (fraction > 1)
-    {
-      fraction = 1;
-    }
-    this.setPulse(fraction * this.getCyclePeriod());
   },
   
   getCurrentVelocity: function()
@@ -137,6 +163,11 @@ motorChannel.prototype =
     }
   },
 
+  setKV: function(kV)
+  {
+    this._kV = kV;
+  },
+
   setCyclePeriod: function(cycleMs)
   {
     this._motors._setCyclePeriod(cycleMs);
@@ -155,13 +186,7 @@ motorChannel.prototype =
 
 function motors()
 {
-  this._channels =
-  [
-    new motorChannel(this, 0),
-    new motorChannel(this, 1),
-    new motorChannel(this, 2),
-    new motorChannel(this, 3)
-  ];
+  this._channels = [ null, null, null, null ];
   this._enabled = 0;
   this._handle = native.bbb_motors2_create();
   if (this._handle < 0)
@@ -185,13 +210,18 @@ motors.prototype =
     }
   },
 
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    if (channel >= 0 && channel < this._channels.length)
+    if (config.channel < 0 || config.channel >= this._channels.length)
     {
-      return this._channels[channel];
+      throw new Error('Bad motor channel');
     }
-    throw new Error('Bad motor channel');
+    let motor = _motors._channels[config.channel];
+    if (!motor)
+    {
+      motor = new motorChannel(this, config);
+    }
+    return motor;
   }
 };
 
@@ -203,9 +233,9 @@ function motorsProxy()
 
 motorsProxy.prototype =
 {
-  getChannel: function(channel)
+  getChannel: function(config)
   {
-    return _motors.getChannel(channel);
+    return _motors.getChannel(config);
   }
 };
 

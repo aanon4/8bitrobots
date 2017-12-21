@@ -8,7 +8,8 @@ module.exports = function()
   const Motors = require('hw/board/beagleboneblue/motors-beagleboneblue');
   const Gpio = require('hw/board/beagleboneblue/gpio-beagleboneblue');
 
-  const Motor = require('hw/motor/gearmotor-1:48');
+  const Motor = require('hw/motor/gearmotor-120:1');
+  const Wheel = require('hw/wheel/wheel-42mm');
   const Servos =
   {
     hs422:   require('hw/servo/servo-hs422'),
@@ -16,19 +17,22 @@ module.exports = function()
     hs35hd:  require('hw/servo/servo-hs35hd')
   };
 
-  const MOTORS = new Motors();
+  const HBRIDGES = new Motors();
   const SERVOS = new ServoPwm();
   const GPIO = new Gpio();
   const stateManager = new StateManager({ name: 'robot-servo' });
 
-  function makeMotor(id, dev, rev)
+  function makeWheel(id, dev, rev)
   {
     return {
-      [id]: new Motor(
+      [id]: new Wheel(
       {
-        name: `/robot/${id}/motor`,
-        hbridge: MOTORS.getChannel(dev),
-        reverse: rev == 'rev' ? true : false
+        name: `/robot/${id}/wheel`,
+        motor: new Motor(
+        {
+          hbridge: HBRIDGES.getChannel({ channel: dev }),
+          reverse: rev == 'rev' ? true : false
+        })
       })
     };
   }
@@ -38,7 +42,7 @@ module.exports = function()
       [id]: new Servos[type](
       {
         name: `/robot/${id}/servo`,
-        pwm: SERVOS.getChannel(dev),
+        pwm: SERVOS.getChannel({ channel: dev }),
         reverse: rev == 'rev' ? true : false,
         minAngle: safeMin,
         maxAngle: safeMax,
@@ -56,7 +60,7 @@ module.exports = function()
       [id]: new Button(
       {
         name: `/robot/${id}/button`,
-        gpio: GPIO.getChannel(dev)
+        gpio: GPIO.getChannel({ channel: dev })
       })
     }
   }
@@ -65,9 +69,9 @@ module.exports = function()
   {
     name: '/robot/manager',
     brain: require('config/robot/brain/robot'),
-    motors: Object.assign({},
-      makeMotor('left', 3, 'nor'),
-      makeMotor('right', 2, 'rev')
+    wheels: Object.assign({},
+      makeWheel('left', 3, 'nor'),
+      makeWheel('right', 2, 'rev')
     ),
     servos: Object.assign({},
       makeServo('back-right',  7, 'hs645mg',  'rev', Math.PI / 2 - 1.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.30, 1.0),
