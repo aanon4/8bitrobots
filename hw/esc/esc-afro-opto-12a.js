@@ -28,7 +28,6 @@ esc.prototype =
       this._maxRPM = event.v * this._kV;
     });
     this._pwmChannel.enable();
-    this._motor.enable();
     this._enabled = true;
     return this;
   },
@@ -36,7 +35,6 @@ esc.prototype =
   disable: function()
   {
     this._enabled = false;
-    this._motor.disable();
     this._pwmChannel.disable();
     this._node.unsubscribe(this._powerTopic);
     return this;
@@ -75,7 +73,7 @@ esc.prototype =
     }
   },
 
-  isChanging: function()
+  isRPMChanging: function()
   {
     return this._pwmChannel.isChanging();
   },
