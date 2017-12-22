@@ -156,6 +156,84 @@ vesc.prototype =
   {
   },
 
+  getServoChannel: function()
+  {
+    if (!this._servo)
+    {
+      const SERVO_MIN = 1.0;
+      const SERVO_MID = 1.5;
+      const SERVO_MAX = 2.0;
+
+      this._servo =
+      {
+        _cycle: 0,
+        _currentValue: SERVO_MID,
+        _targetValue: SERVO_MID,
+        _plans: [],
+
+        setCyclePeriod: (periodMs) => {
+          this._cycle = periodMs;
+        },
+      
+        setPlan: (steps) => {
+          let plan = this._planner.generate(
+            {
+              start: this._targetValue,
+              cycle: this._cycle,
+              steps: steps
+            });
+            this._targetValue = steps[steps.length -1].end;
+            this._plans.push(plan);
+            if (this._plans.length === 1)
+            {
+              let timer = null;
+              let idx = 0;
+              const run = () => {
+                const plan = this._plans[0];
+                this._currentValue = plan[idx++];
+                const fvalue = 1000 * (this._currentValue - SERVO_MIN) / (SERVO_MAX - SERVO_MIN);
+                const cmd = new Buffer(3);
+                cmd.writeUInt8(PKT.COMM_SET_SERVO_POS, 0);
+                cmd.writeUInt16BE(fvalue, 1);
+                this._sendPkt(cmd);
+                if (idx >= plan.length)
+                {
+                  idx = 0;
+                  this._plans.shift();
+                  if (this._plans.length === 0)
+                  {
+                    clearInterval(timer);
+                  }
+                }
+              }
+              run();
+              if (this._plans.length !== 0)
+              {
+                timer = setInterval(run, this._cycle);
+              }
+            }
+        },
+      
+        getCurrentPulse: () => {
+          return this._currentValue;
+        },
+      
+        getTargetPulse: () => {
+          return this._targetValue;
+        },
+      
+        isPulseChanging: () => {
+          return this._plans.length !== 0;
+        },
+      
+        idle: () => {
+          // Ignore
+        }
+      };
+    }
+    return this._servo;
+  },
+
   _startPoll: function()
   {
     const cmd = new Buffer(1);
