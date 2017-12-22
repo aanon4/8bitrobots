@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "crc16": "^1.0.0",
     "deasync": "^0.1.9",
     "i2c-bus": "x",
     "node-gyp": "x",
