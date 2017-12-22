@@ -44,7 +44,7 @@ motor.prototype =
 
   isRPMChanging: function()
   {
-    return this._hbridge.isChanging();
+    return this._hbridge.isRPMChanging();
   },
 
   enable: function()

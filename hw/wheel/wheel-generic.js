@@ -36,7 +36,7 @@ wheel.prototype =
 
   getCurrentVelocity: function()
   {
-    return this._motor.getRPM() * this._track;
+    return this._motor.getCurrentRPM() * this._track;
   },
 
   brake: function()

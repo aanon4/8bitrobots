@@ -140,7 +140,7 @@ servo.prototype =
 
   isAngleChanging: function()
   {
-    return this._pwmChannel.isChanging();
+    return this._pwmChannel.isPulseChanging();
   },
 
   enable: function()
