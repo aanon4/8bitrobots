@@ -42,7 +42,7 @@ motor.prototype =
     this._hbridge.idle(idle);
   },
 
-  isChanging: function()
+  isRPMChanging: function()
   {
     return this._hbridge.isChanging();
   },

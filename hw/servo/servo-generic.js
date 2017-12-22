@@ -112,7 +112,7 @@ servo.prototype =
       let check = () =>
       {
         let current = this.getCurrentAngle();
-        let changing = this.isChanging();
+        let changing = this.isAngleChanging();
         if (compare === '>=' && current >= angle)
         {
           return resolve(true);
@@ -138,7 +138,7 @@ servo.prototype =
     });
   },
 
-  isChanging: function()
+  isAngleChanging: function()
   {
     return this._pwmChannel.isChanging();
   },

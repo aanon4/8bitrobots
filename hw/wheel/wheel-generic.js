@@ -49,9 +49,9 @@ wheel.prototype =
     this._motor.idle(idle);
   },
 
-  isChanging: function()
+  isVelocityChanging: function()
   {
-    return this._motor.isChanging();
+    return this._motor.isRPMChanging();
   },
 
   waitForVelocity: function(compare, velocity)
@@ -65,7 +65,7 @@ wheel.prototype =
       let check = () =>
       {
         let current = this.getCurrentVelocity();
-        let changing = this.isChanging();
+        let changing = this.isVelocityChanging();
         if (compare === '>=' && current >= velocity)
         {
           return resolve(true);

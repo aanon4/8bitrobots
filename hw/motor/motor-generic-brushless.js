@@ -28,9 +28,9 @@ motor.prototype =
     return this._esc.getCurrentRPM();
   },
 
-  isChanging: function()
+  isRPMChanging: function()
   {
-    return this._esc.isChanging();
+    return this._esc.isRPMChanging();
   }
 };
 
