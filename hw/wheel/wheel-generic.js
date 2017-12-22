@@ -1,10 +1,6 @@
 'use strict';
 
-const SERVICE_IDLE = { service: 'set_idle' };
-const SERVICE_SETV = { service: 'set_velocity' };
-const SERVICE_BRAKE = { service: 'set_brake' };
-const SERVICE_WAITFOR = { service: 'wait_for_velocity' };
-const TOPIC_CURV = { topic: 'current_velocity', latching: true };
+const ROSAPIVelocity = require('services/ros-api-velocity');
 
 
 function wheel(config, settings)
@@ -14,44 +10,22 @@ function wheel(config, settings)
   // Diameter is in mm, rpm is in revolutions / minutues, velocity is in meters / second
   this._track = Math.PI * settings.diameter / 1000 / 60; // m
   this._motor = config.motor;
+  this._rosApiVelocity = new ROSAPIVelocity(this);
 }
 
 wheel.prototype =
 {
   enable: function()
   {
-    this._adCur = this._node.advertise(TOPIC_CURV);
-    this._node.service(SERVICE_SETV, (request) =>
-    {
-      this.setVelocity(request.velocity, request.time);
-      return true;
-    });
-    this._node.service(SERVICE_BRAKE, (event) =>
-    {
-      this.brake();
-      return true;
-    });
-    this._node.service(SERVICE_IDLE, (event) =>
-    {
-      this.idle(event.idle);
-      return true;
-    });
-    this._node.service(SERVICE_WAITFOR, (event) =>
-    {
-      return this.waitForVelocity(event.compare, event.velocity);
-    });
     this._motor.enable();
+    this._rosApiVelocity.enable();
     return this;
   },
 
   disable: function()
   {
+    this._rosApiVelocity.disable();
     this._motor.disable();
-    this._node.unadvertise(TOPIC_CURV);
-    this._node.unservice(SERVICE_IDLE);
-    this._node.unservice(SERVICE_BRAKE);
-    this._node.unservice(SERVICE_SETV);
-    this._node.unservice(SERVICE_WAITFOR);
     return this;
   },
 

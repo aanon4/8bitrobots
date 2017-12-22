@@ -1,9 +1,6 @@
 'use strict';
 
-const SERVICE_IDLE = { service: 'set_idle' };
-const SERVICE_SETPOS = { service: 'set_angle' };
-const SERVICE_WAITFOR = { service: 'wait_for_angle' };
-const TOPIC_CURPOS = { topic: 'current_angle', latching: true };
+const ROSAPIAngle = require('services/ros-api-angle');
 
 function servo(config, settings)
 {
@@ -25,6 +22,7 @@ function servo(config, settings)
   this._angle2pulse = (this._settings.maxPulseMs - this._settings.minPulseMs) / (this._settings.maxAngle - this._settings.minAngle);
   this._pwmChannel.setCyclePeriod(this._settings.periodMs);
   this._enabled = false;
+  this._rosApiAngle = new ROSAPIAngle(this);
 }
 
 servo.prototype =
@@ -68,7 +66,6 @@ servo.prototype =
       [
         { end: pulse, time: time, func: func }
       ]);
-      this._changing();
     }
     else
     {
@@ -159,21 +156,7 @@ servo.prototype =
       this._lastAngle = this._stateManager.get(`${this._name}-angle`);
     }
     this.setAngle(this._lastAngle);
-    this._adPos = this._node.advertise(TOPIC_CURPOS);
-    this._node.service(SERVICE_SETPOS, (event) =>
-    {
-      this.setAngle(event.angle, event.time);
-      return true;
-    });
-    this._node.service(SERVICE_IDLE, (event) =>
-    {
-      this.idle(event.idle);
-      return true;
-    });
-    this._node.service(SERVICE_WAITFOR, (event) =>
-    {
-      return this.waitForAngle(event.compare, event.angle);
-    });
+    this._rosApiAngle.enable();
   },
 
   disable: function()
@@ -183,10 +166,7 @@ servo.prototype =
       return;
     }
     this._enabled = false;
-    this._node.unadvertise(TOPIC_CURPOS);
-    this._node.unservice(SERVICE_IDLE);
-    this._node.unservice(SERVICE_SETPOS);
-    this._node.unservice(SERVICE_WAITFOR);
+    this._rosApiAngle.disable();
     this._lastAngle = this.getCurrentAngle();
     if (this._stateManager)
     {
@@ -213,20 +193,6 @@ servo.prototype =
       defaultAngle: this._defaultAngle,
       reverse: this._reverse
     };
-  },
-
-  _changing: function()
-  {
-    clearInterval(this._adtimer);
-    this._adtimer = setInterval(() =>
-    {
-      let changing = this.isChanging();
-      this._adPos.publish({ angle: this.getCurrentAngle(), target_angle: this._targetAngle, changing: changing });
-      if (!changing)
-      {
-        clearInterval(this._adtimer);
-      }
-    }, 20);
   }
 };
 
