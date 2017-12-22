@@ -1,6 +1,6 @@
 'use strict';
 
-const Planner = require('./motion-planner');
+const MotionPlanner = require('./motion-planner');
 
 const SERVICE_IDLE = { service: 'set_idle' };
 const SERVICE_SETPOS = { service: 'set_angle' };
@@ -25,7 +25,7 @@ angle.prototype =
     this._adPos = this._target._node.advertise(TOPIC_CURRENT);
     this._target._node.service(SERVICE_SETPOS, (request) =>
     {
-      this._target.setAngle(request.angle, request.time, Planner[request.func]);
+      this._target.setAngle(request.angle, request.time, MotionPlanner[request.func]);
       return true;
     });
     this._target._node.service(SERVICE_IDLE, (event) =>
@@ -54,7 +54,7 @@ angle.prototype =
     clearInterval(this._adtimer);
     this._adtimer = setInterval(() =>
     {
-      let changing = this._target.isChanging();
+      let changing = this._target.isAngleChanging();
       this._adPos.publish({ angle: this._target.getCurrentAngle(), targetAngle: targetAngle, changing: changing });
       if (!changing)
       {

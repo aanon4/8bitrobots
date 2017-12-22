@@ -1,6 +1,6 @@
 'use strict';
 
-const Planner = require('./motion-planner');
+const MotionPlanner = require('./motion-planner');
 
 const SERVICE_IDLE = { service: 'set_idle' };
 const SERVICE_SETV = { service: 'set_velocity' };
@@ -32,7 +32,7 @@ velocity.prototype =
     this._adPos = this._target._node.advertise(TOPIC_CURRENT);
     this._target._node.service(SERVICE_SETV, (request) =>
     {
-      this._target.setVelocity(request.velocity, request.time, Planner[request.func]);
+      this._target.setVelocity(request.velocity, request.time, MotionPlanner[request.func]);
       return true;
     });
     this._target._node.service(SERVICE_BRAKE, (event) =>
@@ -67,7 +67,7 @@ velocity.prototype =
     clearInterval(this._adtimer);
     this._adtimer = setInterval(() =>
     {
-      let changing = this._target.isChanging();
+      let changing = this._target.isVelocityChanging();
       this._adPos.publish({ velocity: this._target.getCurrentVelocity(), target_velocity: targetVelocity, changing: changing });
       if (!changing)
       {
