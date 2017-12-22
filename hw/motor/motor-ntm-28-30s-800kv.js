@@ -5,8 +5,23 @@ const genericMotor = require('./motor-generic-brushless');
 const settings =
 {
   kV: 800,
-  volts: 10,
-  watts: 100,
+  volts: 18,
+  watts: 300,
+  amps: 20,
+  poles: 0,
+  resistance: 0,
+  maxRpm: 14400,
+  size:
+  {
+    diameter: 28,
+    length: 30,
+    weight: 65
+  },
+  shaft:
+  {
+    diameter: 3,
+    length: 5
+  }
 };
 
 function motor(config)
