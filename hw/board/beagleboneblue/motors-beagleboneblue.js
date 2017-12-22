@@ -56,18 +56,6 @@ motorChannel.prototype =
     return native.bbb_power_battery() * this._kV;
   },
 
-  setVelocity: function(velocity, periodMs, func)
-  {
-    this.setPlan(
-    [
-      {
-        end: velocity,
-        func: func,
-        time: periodMs
-      }
-    ]);
-  },
-
   setPlan: function(steps)
   {
     if (this._enabled)
