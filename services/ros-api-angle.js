@@ -55,7 +55,7 @@ angle.prototype =
     this._adtimer = setInterval(() =>
     {
       let changing = this._target.isAngleChanging();
-      this._adPos.publish({ angle: this._target.getCurrentAngle(), targetAngle: targetAngle, changing: changing });
+      this._adPos.publish({ angle: this._target.getCurrentAngle(), target_angle: targetAngle, changing: changing });
       if (!changing)
       {
         clearInterval(this._adtimer);
