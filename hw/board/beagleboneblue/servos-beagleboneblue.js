@@ -150,7 +150,7 @@ servoChannel.prototype =
     return this._servos._cycleMs;
   },
 
-  isChanging: function()
+  isPulseChanging: function()
   {
     return this._plans.length > 0;
   }

@@ -95,13 +95,8 @@ motorChannel.prototype =
       }
     }
   },
-  
-  getCurrentVelocity: function()
-  {
-    return this._busy ? this._plans[0][native.bbb_motors2_getCurrentIndex(this._motors._handle, this._subaddress)] : this._lastValue;
-  },
 
-  getTargetVelocity: function()
+  getTargetRPM: function()
   {
     return this._lastValue;
   },
@@ -165,7 +160,7 @@ motorChannel.prototype =
     return this._motors._cycleMs;
   },
 
-  isChanging: function()
+  isRPMChanging: function()
   {
     return this._busy;
   }

@@ -75,7 +75,7 @@ esc.prototype =
 
   isRPMChanging: function()
   {
-    return this._pwmChannel.isChanging();
+    return this._pwmChannel.isPulseChanging();
   },
 
   setKV: function(kV)

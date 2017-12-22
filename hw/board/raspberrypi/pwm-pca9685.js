@@ -150,7 +150,7 @@ pwmChannel.prototype =
     return this._pwm._cycleMs;
   },
 
-  isChanging: function()
+  isPulseChanging: function()
   {
     return this._plans.length > 0;
   }

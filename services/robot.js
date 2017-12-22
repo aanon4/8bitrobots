@@ -178,7 +178,7 @@ robot.prototype =
     let wheel = this._wheels[name];
     if (wheel)
     {
-      return wheel.isChanging();
+      return wheel.isVelocityChanging();
     }
     else
     {
@@ -205,7 +205,7 @@ robot.prototype =
     let servo = this._servos[name];
     if (servo)
     {
-      return servo.isChanging();
+      return servo.isAngleChanging();
     }
     else
     {
