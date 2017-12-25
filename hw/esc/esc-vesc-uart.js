@@ -119,7 +119,7 @@ vesc.prototype =
       const run = () => {
         const plan = this._plans[0];
         const fvalue = plan[idx++];
-        const cmd = new Buffer(5);
+        const cmd = Buffer.alloc(5);
         cmd.writeUInt8(PKT.COMM_SET_RPM, 0);
         cmd.writeUInt32BE(fvalue, 1);
         this._sendPkt(cmd);
@@ -192,7 +192,7 @@ vesc.prototype =
                 const plan = this._plans[0];
                 this._currentValue = plan[idx++];
                 const fvalue = 1000 * (this._currentValue - SERVO_MIN) / (SERVO_MAX - SERVO_MIN);
-                const cmd = new Buffer(3);
+                const cmd = Buffer.alloc(3);
                 cmd.writeUInt8(PKT.COMM_SET_SERVO_POS, 0);
                 cmd.writeUInt16BE(fvalue, 1);
                 this._sendPkt(cmd);
@@ -236,7 +236,7 @@ vesc.prototype =
 
   _startPoll: function()
   {
-    const cmd = new Buffer(1);
+    const cmd = Buffer.alloc(1);
     cmd.writeUInt8(PKT.COMM_GET_VALUES, 0);
 
     this._stopPoll();

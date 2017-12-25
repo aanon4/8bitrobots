@@ -1,3 +1,5 @@
+console.info('Loading RaspberryPi I2C controllers.');
+
 const fs = require('fs');
 const native = require('.');
 
@@ -50,7 +52,7 @@ i2c.prototype =
     {
       return execute(this, function()
       {
-        var buffer = new Buffer(0);
+        var buffer = Buffer.alloc(0);
         this._select();
         this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
         return true;
@@ -66,7 +68,7 @@ i2c.prototype =
   {
     return execute(this, function()
     {
-      var buffer = new Buffer(byteArray);
+      var buffer = Buffer.alloc(byteArray);
       this._select();
       this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
     });
@@ -76,7 +78,7 @@ i2c.prototype =
   {
     return execute(this, function()
     {
-      var buffer = new Buffer(nrBytes);
+      var buffer = Buffer.alloc(nrBytes);
       this._select();
       var nr = this._i2cBus.i2cReadSync(this._address, buffer.length, buffer);
       var data = Array(nr);
@@ -92,10 +94,10 @@ i2c.prototype =
   {
     return execute(this, function()
     {
-      var buffer = new Buffer(bytesToWrite);
+      var buffer = Buffer.alloc(bytesToWrite);
       this._select();
       this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
-      buffer = new Buffer(nrBytesToRead);
+      buffer = Buffer.alloc(nrBytesToRead);
       this._select();
       var nr = this._i2cBus.i2cReadSync(this._address, buffer.length, buffer);
       var data = Array(nr);
