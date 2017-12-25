@@ -7,6 +7,8 @@
     "crc16": "^1.0.0",
     "deasync": "^0.1.9",
     "i2c-bus": "x",
+    "spi": "x",
+    "gpio": "x",
     "node-gyp": "x",
     "opencv": "^6.0.0",
     "serialport": "^4.0.7",
