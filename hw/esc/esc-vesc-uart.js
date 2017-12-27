@@ -60,13 +60,33 @@ const PKT =
 const PKT_MAX_LENGTH = 1024;
 const CYCLE_MS = 10;
 
+const TOPIC_RPM = { topic: 'rpm', latching: true };
+const TOPIC_THROTTLE = { topic: 'throttle', latching: true };
+
+
 function vesc(config)
 {
   this._node = rosNode.init(config.name);
-  this._port = new SerialPort(config.uart.port,
+  if (config.uart)
   {
-    baudRate: config.uart.baud
-  });
+    this._sendRpmMsg = this._sendRpmMsgUART;
+    this._sendServoMsg = this._sendServoMsgUART;
+    this._uart = new SerialPort(config.uart.port,
+    {
+      baudRate: config.uart.baud
+    });
+  }
+  else if (config.can)
+  {
+    this._sendRpmMsg = this._sendRpmMsgCAN;
+    this._sendServoMsg = this._sendServoMsgCAN;
+    this._can = config.can.can;
+    this._canId = config.can.id;
+  }
+  else
+  {
+    throw new Error('UART or CAN must be defined');
+  }
   this._planner = new MotionPlanner();
   this._recvState = STATE.RECV_READY;
   this._recvPos = 0;
@@ -84,13 +104,19 @@ vesc.prototype =
 {
   enable: function()
   {
-    this._port.on('data', _incoming);
+    this._adRpm = this._node.advertise(TOPIC_RPM);
+    this._adThrottle = this._node.advertise(TOPIC_THROTTLE);
+    this._uart && this._startUart();
+    this._can && this._startCan();
     return this;
   },
 
   disable: function()
   {
-    this._port.removeListener('data', _incoming);
+    this._uart && this._stopUart();
+    this._can && this._stopCan();
+    this._node.unadvertise(TOPIC_RPM);
+    this._node.unadvertise(TOPIC_THROTTLE);
     return this;
   },
 
@@ -113,23 +139,18 @@ vesc.prototype =
     this._plans.push(plan);
     if (this._plans.length === 1)
     {
-      this._startPoll();
       let timer = null;
       let idx = 0;
       const run = () => {
         const plan = this._plans[0];
         const fvalue = plan[idx++];
-        const cmd = Buffer.alloc(5);
-        cmd.writeUInt8(PKT.COMM_SET_RPM, 0);
-        cmd.writeUInt32BE(fvalue, 1);
-        this._sendPkt(cmd);
+        this._sendRpmMsg(fvalue);
         if (idx >= plan.length)
         {
           idx = 0;
           this._plans.shift();
           if (this._plans.length === 0)
           {
-            this._stopPoll();
             clearInterval(timer);
           }
         }
@@ -192,10 +213,7 @@ vesc.prototype =
                 const plan = this._plans[0];
                 this._currentValue = plan[idx++];
                 const fvalue = 1000 * (this._currentValue - SERVO_MIN) / (SERVO_MAX - SERVO_MIN);
-                const cmd = Buffer.alloc(3);
-                cmd.writeUInt8(PKT.COMM_SET_SERVO_POS, 0);
-                cmd.writeUInt16BE(fvalue, 1);
-                this._sendPkt(cmd);
+                this._sendServoMsg(fvalue);
                 if (idx >= plan.length)
                 {
                   idx = 0;
@@ -234,40 +252,113 @@ vesc.prototype =
     return this._servo;
   },
 
-  _startPoll: function()
+  _sendRpmMsgUART: function(rpm)
   {
+    const cmd = Buffer.alloc(5);
+    cmd.writeUInt8(PKT.COMM_SET_RPM, 0);
+    cmd.writeUInt32BE(rpm, 1);
+    this._sendPktUart(cmd);
+  },
+
+  _sendServoMsgUART: function(pos)
+  {
+    const cmd = Buffer.alloc(3);
+    cmd.writeUInt8(PKT.COMM_SET_SERVO_POS, 0);
+    cmd.writeUInt16BE(pos, 1);
+    this._sendPktUart(cmd);
+  },
+
+  _sendRpmMsgCAN: function(rpm)
+  {
+    const id =
+    {
+      id: this._canId || (3 << 8),
+      ext: true
+    };
+    const msg = Buffer.alloc(4);
+    msg.writeUInt32BE(rpm, 0);
+    this._can.sendMsg(id, msg, false);
+  },
+
+  _sendServoMsgCAN: function(pos)
+  {
+    const id =
+    {
+      id: this._canId || (4 << 8),
+      ext: true
+    };
+    const msg = Buffer.alloc(2);
+    msg.writeUInt16BE(pos, 0);
+    this._can.sendMsg(id, msg, false);
+  },
+
+  _startCan: function()
+  {
+    const id =
+    {
+      id: this._canId || (9 << 8),
+      ext: true
+    };
+    this._can.addListener(id, _incomingCanStatus);
+  },
+
+  _stopCan: function()
+  {
+    const id =
+    {
+      id: this._canId || (9 << 8),
+      ext: true
+    };
+    this._can.removeListener(id, _incomingCanStatus);
+  },
+
+  _incomingCanStatus: (pkt) => {
+    const msg = pkt.msg;
+    this._values.rpm = msg.readUInt32BE(0);
+    this._values.tot_current = msg.readUInt16BE(4) / 10.0
+    this._values.duty_cycle = msg.readUInt16BE(6) / 1000.0;
+    
+    this._adRpm.publish({ rpm: this._values.rpm });
+    this._adThrottle.publish({ throttle: this._values.duty_cycle });
+  },
+
+  _startUart: function()
+  {
+    this._uart.on('data', _incomingUart);
+
     const cmd = Buffer.alloc(1);
     cmd.writeUInt8(PKT.COMM_GET_VALUES, 0);
 
     this._stopPoll();
     this._pollTimer = setInterval(() => {
-      this._sendPkt(cmd);
+      this._sendPktUart(cmd);
     }, CYCLE_MS);
   },
 
-  _stopPoll: function()
+  _stopUart: function()
   {
     clearInterval(this._pollTimer);
     this._pollTimer = null;
+    this._uart.removeListener('data', _incomingUart);
   },
 
-  _sendPkt: function(pkt)
+  _sendPktUart: function(pkt)
   {
     const len = pkt.length;
     if (len < 256)
     {
-      this._port.write([ 2, len ], 'binary');
+      this._uart.write([ 2, len ], 'binary');
     }
     else
     {
-      this._port.write([ 3, len >> 8, len & 0xFF ], 'binary');
+      this._uart.write([ 3, len >> 8, len & 0xFF ], 'binary');
     }
-    this._port.write(pkt);
+    this._uart.write(pkt);
     let crc = crc16(pkt);
-    this._port.write([ crc >> 8, crc & 0xFF ], 'binary');
+    this._uart.write([ crc >> 8, crc & 0xFF ], 'binary');
   },
 
-  _incoming: (buffer) => {
+  _incomingUart: (buffer) => {
     for (let i = 0; i < buffer.length; i++)
     {
       const byte = buffer[i];
@@ -359,6 +450,9 @@ vesc.prototype =
         this._values.tachometer = pkt.readUInt32BE(45);
         this._values.tachometer_abs = pkt.readUInt32BE(49);
         this._values.fault = pkt.readUInt8(53);
+
+        this._adRpm.publish({ rpm: this._values.rpm });
+        this._adThrottle.publish({ rpm: this._values.duty_cycle });
         break;
 
       default:
