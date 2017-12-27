@@ -18,6 +18,11 @@ function gpioChannel(gpios, subaddress)
 
 gpioChannel.prototype =
 {
+  id: function()
+  {
+    return this._subaddress;
+  },
+
   set: function(value)
   {
     if (this._enabled && value !== this._lastValue)
