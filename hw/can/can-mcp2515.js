@@ -77,6 +77,7 @@ const MCP =
 function can(config)
 {
   this._spi = config.spi;
+  this._listeners = {};
 
   let done = false;
 
@@ -85,7 +86,7 @@ function can(config)
   }).then(() => {
     return this._initBuffers();
   }).then(() => {
-    return this._initInterrupts();
+    return this._initInterrupts(config.interrupt);
   }).then(() => {
     return this._initGPIO();
   }).then(() => {
@@ -104,18 +105,18 @@ function can(config)
 
 can.prototype =
 {
-  sendMsg: function(id, msg, rtr, ext)
+  sendMsg: function(id, msg, rtr)
   {
     if (msg.length > 8)
     {
       throw new Error('Msg too long');
     }
     return this._getNextTxBuffer().then((txbuf) => {
-      return this._writeRegisters(txbuf + 6, msg);
+      return rtr ? true : this._writeRegisters(txbuf + 6, msg);
     }).then(() => {
       return this._writeRegister(txbuf + 5, msg.length + (rtr ? MCP.RTR_MASK : 0));
     }).then(() => {
-      return this._writeId(txbuf + 1, id, ext);
+      return this._writeId(txbuf + 1, id);
     }).then(() => {
       return this._modifyRegister(txbuf + 0, MCP.TXB_TXREQ_M, MCP.TXB_TXREQ_M);
     });
@@ -147,11 +148,32 @@ can.prototype =
     });
   },
 
+  addListener: function(id, callback)
+  {
+    const key = `${id.id}/${id.ext}`;
+    const listeners = this._listeners[key] || (this._listeners[key] = []);
+    listeners.push(callback);
+  },
+
+  removeListener: function(id, callback)
+  {
+    const key = `${id.id}/${id.ext}`;
+    const listeners = this._listeners[key];
+    if (listeners)
+    {
+      const idx = listeners.indexOf(callback);
+      if (idx !== -1)
+      {
+        listeners.splice(idx, 1);
+      }
+    }
+  },
+
   setMaskAndFilters: function(nr, mask, filters)
   {
     filters = filters || [];
     return this._setMode(MCP.CTRL_MODE_CONFIG).then(() => {
-      return this._writeMasksAndFilters(nr === 0 ? MCP.RXM0SIDH : MCP.RXM1SIDH, mask.mask, mask.ext);
+      return this._writeMasksAndFilters(nr === 0 ? MCP.RXM0SIDH : MCP.RXM1SIDH, mask);
     }).then(() => {
       if (nr === 0)
       {
@@ -159,12 +181,12 @@ can.prototype =
         {
           return true;
         }
-        return this._writeMasksAndFilters(MCP.RXF0SIDH, filters[0].filter, filters[0].ext).then(() => {
+        return this._writeMasksAndFilters(MCP.RXF0SIDH, filters[0]).then(() => {
           if (filters.length < 2)
           {
             return true;
           }
-          return this._writeMasksAndFilters(MCP.RXF1SIDH, filters[1].filter, filters[1].ext);
+          return this._writeMasksAndFilters(MCP.RXF1SIDH, filters[1]);
         });
       }
       else
@@ -173,24 +195,24 @@ can.prototype =
         {
           return true;
         }
-        return this._writeMasksAndFilters(MCP.RXF2SIDH, filters[0].filter, filters[0].ext).then(() => {
+        return this._writeMasksAndFilters(MCP.RXF2SIDH, filters[0]).then(() => {
           if (filters.length < 2)
           {
             return true;
           }
-          return this._writeMasksAndFilters(MCP.RXF3SIDH, filters[1].filter, filters[1].ext);
+          return this._writeMasksAndFilters(MCP.RXF3SIDH, filters[1]);
         }).then(() => {
           if (filters.length < 3)
           {
             return true;
           }
-          return this._writeMasksAndFilters(MCP.RXF4SIDH, filters[2].filter, filters[2].ext);
+          return this._writeMasksAndFilters(MCP.RXF4SIDH, filters[2]);
         }).then(() => {
           if (filters.length < 4)
           {
             return true;
           }
-          return this._writeMasksAndFilters(MCP.RXF5SIDH, filters[3].filter, filters[3].ext);
+          return this._writeMasksAndFilters(MCP.RXF5SIDH, filters[3]);
         });
       }
     }).then(() => {
@@ -202,20 +224,23 @@ can.prototype =
   {
     let id = null;
     let ctrl = null;
+    let len = null;
+    let rtr = null;
     return this._readId(address + 1).then((_id) => {
       id = _id;
       return this._readRegister(address);
     }).then((_ctrl) => {
-      ctrl = _ctrl;
+      rtr = (_ctrl & 0x08) ? true : false;
       return this._readRegister(address + 5);
-    }).then((len) => {
-      return this._readRegisters(address + 6, len & 0x0F);
+    }).then((_len) => {
+      let len = _len & 0x0F;
+      return rtr ? null : this._readRegisters(address + 6, len);
     }).then((buffer) => {
       return {
-        id: id.id,
+        id: id,
         msg: buffer,
-        ext: id.ext,
-        rtr: (ctrl & 0x08) ? true : false
+        len: len,
+        rtr: rtr
       }
     });
   },
@@ -291,14 +316,14 @@ can.prototype =
     return this._spi.write(tx);
   },
 
-  _writeId: function(address, id, ext)
+  _writeId: function(address, id)
   {
     const tx = Buffer.alloc(4);
 
-    const lcanid = id & 0xFFFF;
-    const hcanid = id >> 16;
+    const lcanid = id.id & 0xFFFF;
+    const hcanid = id.id >> 16;
 
-    if (ext)
+    if (id.ext)
     {
       tx.writeUInt8(hcanid >> 5, MCP.SIDH);
       tx.writeUInt8(MCP.TXB_EXIDE_M + (hcanid & 3) + ((hcanid & 0x1C) << 3), MCP.SIDL);
@@ -315,14 +340,14 @@ can.prototype =
     return this._writeRegisters(address, tx);
   },
 
-  _writeMasksAndFilters: function(address, id, ext)
+  _writeMasksAndFilters: function(address, id)
   {
     const tx = Buffer.alloc(4);
     
-    const lcanid = id & 0xFFFF;
-    const hcanid = id >> 16;
+    const lcanid = id.id & 0xFFFF;
+    const hcanid = id.id >> 16;
 
-    if (ext)
+    if (id.ext)
     {
       tx.writeUInt8(hcanid >> 5, MCP.SIDH);
       tx.writeUInt8(MCP.TXB_EXIDE_M + (hcanid & 3) + ((hcanid & 0x1C) << 3), MCP.SIDL);
@@ -385,25 +410,24 @@ can.prototype =
 
   _initBuffers: function()
   {
-    const ext = 1;
-    const mask = 0;
-    const filter = 0;
+    const mask = { id: 0, ext: true };
+    const filter = { id: 0, ext: true };
     const buffer = Buffer.alloc(14);
   
-    return this._writeMasksAndFilters(MCP.RXM0SIDH, ext, mask).then(() => {
-      return this._writeMasksAndFilters(MCP.RXM1SIDH, ext, mask);
+    return this._writeMasksAndFilters(MCP.RXM0SIDH, mask).then(() => {
+      return this._writeMasksAndFilters(MCP.RXM1SIDH, mask);
     }).then(() => {
-      return this._writeMasksAndFilters(MCP.RXF0SIDH, ext, filter);
+      return this._writeMasksAndFilters(MCP.RXF0SIDH, filter);
     }).then(() => {
-      return this._writeMasksAndFilters(MCP.RXF1SIDH, ext, filter);
+      return this._writeMasksAndFilters(MCP.RXF1SIDH, filter);
     }).then(() => {
-      return this._writeMasksAndFilters(MCP.RXF2SIDH, ext, filter);
+      return this._writeMasksAndFilters(MCP.RXF2SIDH, filter);
     }).then(() => {
-      return this._writeMasksAndFilters(MCP.RXF3SIDH, ext, filter);
+      return this._writeMasksAndFilters(MCP.RXF3SIDH, filter);
     }).then(() => {
-      return this._writeMasksAndFilters(MCP.RXF4SIDH, ext, filter);
+      return this._writeMasksAndFilters(MCP.RXF4SIDH, filter);
     }).then(() => {
-      return this._writeMasksAndFilters(MCP.RXF5SIDH, ext, filter);
+      return this._writeMasksAndFilters(MCP.RXF5SIDH, filter);
     }).then(() => {
       return this._writeRegisters(MCP.TXB0CTRL, buffer);
     }).then(() => {
@@ -417,10 +441,19 @@ can.prototype =
     });
   },
 
-  _initInterrupts: function()
+  _initInterrupts: function(interrupt)
   {
     // Enable RX interrupts only.
-    return this._writeRegister(MCP.CANINTE, MCP.RX0IE | MCP.RX1IE);
+    return this._writeRegister(MCP.CANINTE, MCP.RX0IE | MCP.RX1IE).then(() => {
+      if (interrupt)
+      {
+        interrupt.enable();
+        interrupt.onEdge('falling', () => {
+          this._rxInterrupt();
+        });
+      }
+      return true;
+    });
   },
 
   _initGPIO: function()
@@ -470,6 +503,22 @@ can.prototype =
       });
     }
     return attempt();
+  },
+
+  _rxInterrupt: function()
+  {
+    for (;;)
+    {
+      const msg = this.recvMsg();
+      if (!msg)
+      {
+        break;
+      }
+      const key = `${id.id}/${id.ext}`;
+      (this._listeners[key] || []).forEach((callback) => {
+        callback(msg);
+      });
+    }
   }
 };
 
