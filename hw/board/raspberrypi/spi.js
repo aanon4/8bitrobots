@@ -1,40 +1,29 @@
 console.info('Loading RaspberryPi SPI controllers.');
 
-function spi(bus, pin)
+function spi(bus, select)
 {
   this._spi = bus;
-  this._pin = pin;
-  if (pin.pin === 'none' || SIMULATOR)
+  if (select.pin)
   {
-    this._gpio =
-    {
-      set: function()
-      {
-      }
-    };
+    this._gpio = select.pin;
+    this._gpio.enable();
+    this._gpio.dir('output');
+    this._gpioLevel = select.level ? 1 : 0;
+    this._unselect();
   }
-  else
-  {
-    const GPIO = require('gpio');
-    this._gpio = GPIO.export(pin.pin,
-    {
-      direction: 'out'
-    });
-  }
-  this._gpioLevel = pin.level ? 1 : 0;
 }
 
 spi.prototype =
 {
   id: function()
   {
-    if (this._pin.pin === 'none')
+    if (this._gpio)
     {
-      return this._spi._name;
+      return `${this._spi._name}/${this._gpio.id()}`;
     }
     else
     {
-      return `${this._spi._name}/${this._pin.pin}`;
+      return this._spi._name;
     }
   },
 
@@ -78,12 +67,12 @@ spi.prototype =
 
   _select: function()
   {
-    this._gpio.set(this._gpioLevel);
+    this._gpio && this._gpio.set(this._gpioLevel);
   },
 
   _unselect: function()
   {
-    this._gpio.set(1 - this._gpioLevel);
+    this._gpio && this._gpio.set(1 - this._gpioLevel);
   }
 };
 
@@ -104,9 +93,9 @@ module.exports =
         config.size && bus.size(config.size);
         config.bitOrder && bus.bitOrder(SPI.ORDER[config.bitOrder]);
         config.maxSpeed && bus.maxSpeed(config.maxSpeed);
-        if (typeof config.chipSelect === 'string')
+        if (typeof config.select === 'string')
         {
-          bus.chipSelect(SPI.CS[config.chipSelect]);
+          bus.chipSelect(SPI.CS[config.select]);
         }
         bus.open();
         bus._name = config.bus;
@@ -136,16 +125,17 @@ module.exports =
       }
       this._buses[config.bus] = bus;
     }
-    let pin = config.chipSelect
-    if (typeof pin !== 'object')
+    let select = config.select;
+    if (typeof select !== 'object')
     {
-      pin = { pin: 'none' };
+      select = { pin: null };
     }
-    let dev = bus._devices[pin.pin];
+    const key = select.pin ? select.pin.id() : 'none';
+    let dev = bus._devices[key];
     if (!dev)
     {
-      dev = new spi(bus, pin);
-      bus._devices[pin.pin] = dev;
+      dev = new spi(bus, select);
+      bus._devices[key] = dev;
     }
     return dev;
   }
