@@ -5,7 +5,7 @@ global.CAN = new CAN(
 {
   spi: new SPI.open(),
   speed: 500, // 500kbs
-  interrupt: GPIO.getChannel(
+  interrupt: GPIO.open(
   {
     channel: 0
   })

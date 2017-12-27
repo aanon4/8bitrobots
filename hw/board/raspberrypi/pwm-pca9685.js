@@ -201,7 +201,7 @@ PWM.prototype =
     }
   },
 
-  getChannel: function(config)
+  open: function(config)
   {
     if (config.channel >= 0 && config.channel < this._channels.length)
     {
@@ -224,9 +224,9 @@ function pwmProxy(config)
 
 pwmProxy.prototype =
 {
-  getChannel: function(config)
+  open: function(config)
   {
-    return this._pwm.getChannel(config);
+    return this._pwm.open(config);
   }
 };
 

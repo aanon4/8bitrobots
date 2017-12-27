@@ -82,15 +82,14 @@ function spi(config)
   if (!SIMULATOR)
   {
     const SPI = require('spi');
-    bus = new SPI.Spi(config.bus);
-    config.mode && bus.mode(SPI.MODE[config.mode]);
-    config.bitsPerWord && bus.bitsPerWord(config.size);
-    config.bitOrder && bus.bitOrder(SPI.ORDER[config.bitOrder]);
-    config.maxSpeed && bus.maxSpeed(config.maxSpeed);
-    config.select && bus.chipSelect(SPI.CS[config.select]);
-    bus.open();
-    bus._name = config.bus;
-    this._bus = bus;
+    this._bus = new SPI.Spi(config.bus);
+    config.mode && this._bus.mode(SPI.MODE[config.mode]);
+    config.bitsPerWord && this._bus.bitsPerWord(config.bitsPerWord);
+    config.bitOrder && this._bus.bitOrder(SPI.ORDER[config.bitOrder]);
+    config.maxSpeed && this._bus.maxSpeed(config.maxSpeed);
+    config.select && this._bus.chipSelect(SPI.CS[config.select]);
+    this._bus.open();
+    this._bus._name = config.bus;
   }
   else
   {
@@ -118,9 +117,14 @@ spi.prototype =
 {
   open: function(config)
   {
-    config = config || {};
-    return new spiDev(this._bus, config.select);
+    return new spiDev(this._bus, config && config.select);
   }
 };
 
-module.exports = spi;
+module.exports =
+{
+  open: function(config)
+  {
+    return new spi(config);
+  }
+};

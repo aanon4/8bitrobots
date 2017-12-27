@@ -6,7 +6,6 @@ module.exports = function()
   const StateManager = require('services/state-manager');
   const ServoPwm = require('hw/board/beagleboneblue/servos-beagleboneblue');
   const Motors = require('hw/board/beagleboneblue/motors-beagleboneblue');
-  const GPIO = require('hw/board/beagleboneblue/gpio-beagleboneblue');
 
   const Motor = require('hw/motor/gearmotor-120:1');
   const Wheel = require('hw/wheel/wheel-42mm');
@@ -17,8 +16,8 @@ module.exports = function()
     hs35hd:  require('hw/servo/servo-hs35hd')
   };
 
-  const HBRIDGES = new Motors();
-  const SERVOS = new ServoPwm();
+  const HBRIDGES = Motors.open();
+  const SERVOS = ServoPwm.open();
   const stateManager = new StateManager({ name: 'robot-servo' });
 
   function makeWheel(id, dev, rev)
@@ -29,7 +28,7 @@ module.exports = function()
         name: `/robot/${id}/wheel`,
         motor: new Motor(
         {
-          hbridge: HBRIDGES.getChannel({ channel: dev }),
+          hbridge: HBRIDGES.open({ channel: dev }),
           reverse: rev == 'rev' ? true : false
         })
       })
@@ -41,7 +40,7 @@ module.exports = function()
       [id]: new Servos[type](
       {
         name: `/robot/${id}/servo`,
-        pwm: SERVOS.getChannel({ channel: dev }),
+        pwm: SERVOS.open({ channel: dev }),
         reverse: rev == 'rev' ? true : false,
         minAngle: safeMin,
         maxAngle: safeMax,
@@ -59,7 +58,7 @@ module.exports = function()
       [id]: new Button(
       {
         name: `/robot/${id}/button`,
-        gpio: GPIO.getChannel({ channel: dev })
+        gpio: GPIO.open({ channel: dev })
       })
     }
   }

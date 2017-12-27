@@ -182,7 +182,7 @@ Servos.prototype =
     }
   },
 
-  getChannel: function(config)
+  open: function(config)
   {
     if (config.channel < 0 || config.channel >= this._channels.length)
     {
@@ -199,16 +199,10 @@ Servos.prototype =
 
 const _servos = new Servos();
 
-function servosProxy()
+module.exports =
 {
-}
-
-servosProxy.prototype =
-{
-  getChannel: function(config)
+  open: function()
   {
-    return _servos.getChannel(config);
+    return _servos;
   }
 };
-
-module.exports = servosProxy;

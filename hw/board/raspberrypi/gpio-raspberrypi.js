@@ -143,7 +143,7 @@ function gpios()
 
 gpios.prototype =
 {
-  getChannel: function(config)
+  open: function(config)
   {
     if (config.channel >= 0 && config.channel < this._channels.length)
     {
@@ -153,4 +153,12 @@ gpios.prototype =
   }
 };
 
-module.exports = new gpios();
+const _gpios = new gpios();
+
+module.exports =
+{
+  open: function()
+  {
+    return _gpios;
+  }
+};

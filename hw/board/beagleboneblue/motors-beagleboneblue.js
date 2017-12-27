@@ -192,7 +192,7 @@ motors.prototype =
     }
   },
 
-  getChannel: function(config)
+  open: function(config)
   {
     if (config.channel < 0 || config.channel >= this._channels.length)
     {
@@ -209,16 +209,10 @@ motors.prototype =
 
 const _motors = new motors();
 
-function motorsProxy()
+module.exports =
 {
-}
-
-motorsProxy.prototype =
-{
-  getChannel: function(config)
+  open: function()
   {
-    return _motors.getChannel(config);
+    return _motors;
   }
 };
-
-module.exports = motorsProxy;

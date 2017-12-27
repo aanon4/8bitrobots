@@ -53,7 +53,7 @@ i2c.prototype =
   {
     return execute(this, function()
     {
-      var buffer = Buffer.alloc(byteArray);
+      var buffer = Buffer.from(byteArray);
       this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
     });
   },
@@ -77,7 +77,7 @@ i2c.prototype =
   {
     return execute(this, function()
     {
-      var buffer = Buffer.alloc(bytesToWrite);
+      var buffer = Buffer.from(bytesToWrite);
       this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
       buffer = Buffer.alloc(nrBytesToRead);
       var nr = this._i2cBus.i2cReadSync(this._address, buffer.length, buffer);
