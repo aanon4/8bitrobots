@@ -90,7 +90,7 @@ function can(config)
   }).then(() => {
     return this._initGPIO();
   }).then(() => {
-    return this._initRecvMode(config.recvAll);
+    return this._initRecvMode(true);
   }).then(() => {
     return this._setMode(MCP.CTRL_MODE_NORMAL);
   }).then(() => {

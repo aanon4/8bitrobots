@@ -152,18 +152,4 @@ gpios.prototype =
   }
 };
 
-const _gpios = new gpios();
-
-function gpiosProxy()
-{
-}
-
-gpiosProxy.prototype =
-{
-  getChannel: function(config)
-  {
-    return _gpios.getChannel(config);
-  }
-};
-
-module.exports = gpiosProxy;
+module.exports = new gpios();

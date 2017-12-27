@@ -1,9 +1,9 @@
 console.info('Loading RaspberryPi SPI controllers.');
 
-function spi(bus, select)
+function spiDev(bus, select)
 {
   this._spi = bus;
-  if (select.pin)
+  if (select)
   {
     this._gpio = select.pin;
     this._gpio.enable();
@@ -13,7 +13,7 @@ function spi(bus, select)
   }
 }
 
-spi.prototype =
+spiDev.prototype =
 {
   id: function()
   {
@@ -76,67 +76,51 @@ spi.prototype =
   }
 };
 
-module.exports =
+function spi(config)
 {
-  _buses: {},
+  let bus;
+  if (!SIMULATOR)
+  {
+    const SPI = require('spi');
+    bus = new SPI.Spi(config.bus);
+    config.mode && bus.mode(SPI.MODE[config.mode]);
+    config.bitsPerWord && bus.bitsPerWord(config.size);
+    config.bitOrder && bus.bitOrder(SPI.ORDER[config.bitOrder]);
+    config.maxSpeed && bus.maxSpeed(config.maxSpeed);
+    config.select && bus.chipSelect(SPI.CS[config.select]);
+    bus.open();
+    bus._name = config.bus;
+    this._bus = bus;
+  }
+  else
+  {
+    this._bus = 
+    {
+      read: function (buffer, callback)
+      {
+        callback();
+      },
 
+      write: function (buffer, callback)
+      {
+        callback();
+      },
+
+      transfer: function(txbuf, rxbuf, callback)
+      {
+        callback();
+      }
+    };
+  }
+}
+
+spi.prototype =
+{
   open: function(config)
   {
-    let bus = _buses[config.bus];
-    if (!bus)
-    {
-      if (!SIMULATOR)
-      {
-        const SPI = require('spi');
-        bus = new SPI.Spi(config.bus);
-        config.mode && bus.mode(SPI.MODE[config.mode]);
-        config.size && bus.size(config.size);
-        config.bitOrder && bus.bitOrder(SPI.ORDER[config.bitOrder]);
-        config.maxSpeed && bus.maxSpeed(config.maxSpeed);
-        if (typeof config.select === 'string')
-        {
-          bus.chipSelect(SPI.CS[config.select]);
-        }
-        bus.open();
-        bus._name = config.bus;
-        bus._devices = {};
-      }
-      else
-      {
-        bus = 
-        {
-          _devices: {},
-
-          read: function (buffer, callback)
-          {
-            callback();
-          },
-
-          write: function (buffer, callback)
-          {
-            callback();
-          },
-
-          transfer: function(txbuf, rxbuf, callback)
-          {
-            callback();
-          }
-        };
-      }
-      this._buses[config.bus] = bus;
-    }
-    let select = config.select;
-    if (typeof select !== 'object')
-    {
-      select = { pin: null };
-    }
-    const key = select.pin ? select.pin.id() : 'none';
-    let dev = bus._devices[key];
-    if (!dev)
-    {
-      dev = new spi(bus, select);
-      bus._devices[key] = dev;
-    }
-    return dev;
+    config = config || {};
+    return new spiDev(this._bus, config.select);
   }
 };
+
+module.exports = spi;

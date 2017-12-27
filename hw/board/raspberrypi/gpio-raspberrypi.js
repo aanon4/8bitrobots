@@ -9,6 +9,7 @@ else
 {
   WPI =
   {
+    setup: function() {},
     digitalRead: function() {},
     digitalWrite: function() {},
     pinMode: function() {},
@@ -92,7 +93,7 @@ gpioChannel.prototype =
     if (!this._callbacks)
     {
       this._callbacks = [];
-      WPI.wiringPiISR(this._subaddress, edge == 'rising' ? wpi.INT_EDGE_RISING : edge == 'falling' ? WPI.INT_EDGE_FALLING : WPI.INT_EDGE_BOTH, () => {
+      WPI.wiringPiISR(this._subaddress, edge == 'rising' ? WPI.INT_EDGE_RISING : edge == 'falling' ? WPI.INT_EDGE_FALLING : WPI.INT_EDGE_BOTH, () => {
         let value = this.get();
         this._callbacks.forEach((fn) =>
         {
@@ -116,7 +117,7 @@ gpioChannel.prototype =
 
 function gpios()
 {
-  wpi.setup('wpi');
+  WPI.setup('wpi');
 
   this._channels =
   [
@@ -152,18 +153,4 @@ gpios.prototype =
   }
 };
 
-const _gpios = new gpios();
-
-function gpiosProxy()
-{
-}
-
-gpiosProxy.prototype =
-{
-  getChannel: function(config)
-  {
-    return _gpios.getChannel(config);
-  }
-};
-
-module.exports = gpiosProxy;
+module.exports = new gpios();

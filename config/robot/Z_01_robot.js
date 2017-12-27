@@ -6,7 +6,7 @@ module.exports = function()
   const StateManager = require('services/state-manager');
   const ServoPwm = require('hw/board/beagleboneblue/servos-beagleboneblue');
   const Motors = require('hw/board/beagleboneblue/motors-beagleboneblue');
-  const Gpio = require('hw/board/beagleboneblue/gpio-beagleboneblue');
+  const GPIO = require('hw/board/beagleboneblue/gpio-beagleboneblue');
 
   const Motor = require('hw/motor/gearmotor-120:1');
   const Wheel = require('hw/wheel/wheel-42mm');
@@ -19,7 +19,6 @@ module.exports = function()
 
   const HBRIDGES = new Motors();
   const SERVOS = new ServoPwm();
-  const GPIO = new Gpio();
   const stateManager = new StateManager({ name: 'robot-servo' });
 
   function makeWheel(id, dev, rev)
