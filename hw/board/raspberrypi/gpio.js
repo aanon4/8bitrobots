@@ -1,5 +1,7 @@
 'use strict';
 
+console.info('Loading RaspberryPi GPIO controllers.');
+
 let WPI;
 if (!SIMULATOR)
 {
@@ -16,8 +18,6 @@ else
     wiringPiISR: function() {}
   };
 }
-
-console.info('Loading Raspberry Pi GPIO controllers.');
 
 function gpioChannel(gpios, subaddress)
 {

@@ -73,6 +73,9 @@ rosNodeInternal.prototype =
   advertise: function(options)
   {
     let topic = this.resolveName(options.topic);
+
+    console.info(` [${topic}]`);
+
     if (topic in this._advertisers)
     {
       throw new Error();
@@ -111,6 +114,9 @@ rosNodeInternal.prototype =
   service: function(options, fn)
   {
     let service = this.resolveName(options.service);
+
+    console.info(` [${service}]`);
+
     if (service in this._services)
     {
       throw new Error();

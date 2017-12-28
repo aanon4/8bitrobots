@@ -4,6 +4,6 @@ module.exports = function()
   return new Environment(
   {
     name: '/environment/monitor',
-    internal: [ '/environ' ]
+    external: [ '/environ' ]
   });
 }

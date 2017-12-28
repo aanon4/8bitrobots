@@ -1,5 +1,7 @@
 'use strict';
 
+console.info('Loading Debugger.');
+
 const util = require('util');
 
 //
@@ -52,5 +54,3 @@ console.error = function()
     console.Console.prototype.error.apply(this, arguments);
   }
 }
-
-console.info('Loading Debugger.');

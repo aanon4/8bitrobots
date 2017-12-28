@@ -1,4 +1,4 @@
-console.info('Loading Raspberry Pi board.');
+console.info('Loading RaspberryPi board.');
 
 const native = require('./native/build/Release/i2cNative.node');
 

@@ -1,3 +1,5 @@
+console.info('Loading BeagleBoneBlue I2C controllers.');
+
 const fs = require('fs');
 
 function execute(ctx, fn)

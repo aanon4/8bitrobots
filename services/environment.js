@@ -71,6 +71,10 @@ environment.prototype =
     {
       if (event.water in WATER)
       {
+        if (!this._adWater)
+        {
+          this._adWater = this._node.advertise(TOPIC_WATER);
+        }
         this._adWater.publish(
         {
           water: event.water,
@@ -78,14 +82,19 @@ environment.prototype =
         });
       }
     });
-    this._adWater = this._node.advertise(TOPIC_WATER);
 
-    this._internal.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_INTERNAL);
-    this._internal.pressure._ad = this._node.advertise(TOPIC_PRESSURE_INTERNAL);
-    this._internal.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_INTERNAL);
-    this._external.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_EXTERNAL);
-    this._external.pressure._ad = this._node.advertise(TOPIC_PRESSURE_EXTERNAL);
-    this._external.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_EXTERNAL);
+    if (this._internals.length)
+    {
+      this._internal.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_INTERNAL);
+      this._internal.pressure._ad = this._node.advertise(TOPIC_PRESSURE_INTERNAL);
+      this._internal.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_INTERNAL);
+    }
+    if (this._externals.length)
+    {
+      this._external.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_EXTERNAL);
+     this._external.pressure._ad = this._node.advertise(TOPIC_PRESSURE_EXTERNAL);
+      this._external.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_EXTERNAL);
+    }
 
     return this;
   },
