@@ -3,7 +3,7 @@ console.info('Loading CAN');
 const CAN = require('hw/can/can-mcp2515');
 global.CAN = new CAN(
 {
-  spi: new SPI.open(),
+  spi: SPI.open(),
   speed: 500, // 500kbs
   interrupt: GPIO.open(
   {

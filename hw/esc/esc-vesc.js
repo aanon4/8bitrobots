@@ -66,6 +66,7 @@ const TOPIC_THROTTLE = { topic: 'throttle', latching: true };
 
 function vesc(config)
 {
+  this._name = config.name;
   this._node = rosNode.init(config.name);
   if (config.uart)
   {
@@ -299,7 +300,7 @@ vesc.prototype =
       id: this._canId || (9 << 8),
       ext: true
     };
-    this._can.addListener(id, _incomingCanStatus);
+    this._can.addListener(id, this._incomingCanStatus);
   },
 
   _stopCan: function()
@@ -309,7 +310,7 @@ vesc.prototype =
       id: this._canId || (9 << 8),
       ext: true
     };
-    this._can.removeListener(id, _incomingCanStatus);
+    this._can.removeListener(id, this._incomingCanStatus);
   },
 
   _incomingCanStatus: (pkt) => {

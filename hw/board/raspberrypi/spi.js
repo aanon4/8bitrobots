@@ -78,7 +78,6 @@ spiDev.prototype =
 
 function spi(config)
 {
-  let bus;
   if (!SIMULATOR)
   {
     const SPI = require('spi');

@@ -249,7 +249,7 @@ can.prototype =
   {
     const tx = Buffer.from([ MCP.READ, address ]);
     const rx = Buffer.alloc(3);
-    return this._spi.transact(tx, rx).then((rx) => {
+    return this._spi.transfer(tx, rx).then((rx) => {
       return rx[2];
     });
   },
@@ -258,7 +258,7 @@ can.prototype =
   {
     const tx = Buffer.from([ MCP.READ, address ]);
     const rx = Buffer.alloc(length + 2);
-    return this._spi.transact(tx, rx).then(() => {
+    return this._spi.transfer(tx, rx).then(() => {
       return rx.slice(2);
     });
   },
@@ -267,7 +267,7 @@ can.prototype =
   {
     const tx = Buffer.from([ MCP.STATUS ]);
     const rx = Buffer.alloc(2);
-    return this._spi.transact(tx, rx).then((rx) => {
+    return this._spi.transfer(tx, rx).then((rx) => {
       return rx[1];
     });
   },
@@ -379,6 +379,10 @@ can.prototype =
     return this._modifyRegister(MCP.CANCTRL, MCP.CTRL_MODE_MASK, mode).then(() => {
       return this._readRegister(MCP.CANCTRL);
     }).then((value) => {
+      if (SIMULATOR)
+      {
+        value = mode;
+      }
       if ((value & MCP.CTRL_MODE_MASK) != mode)
       {
         throw new Error('Failed to set mode');
