@@ -178,7 +178,7 @@ vesc.prototype =
   {
   },
 
-  getServoChannel: function()
+  openServo: function()
   {
     if (!this._servo)
     {
@@ -192,6 +192,12 @@ vesc.prototype =
         _currentValue: SERVO_MID,
         _targetValue: SERVO_MID,
         _plans: [],
+
+        enable: () => {
+        },
+
+        disable: () => {
+        },
 
         setCyclePeriod: (periodMs) => {
           this._cycle = periodMs;
