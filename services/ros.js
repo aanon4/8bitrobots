@@ -78,7 +78,7 @@ rosNodeInternal.prototype =
 
     if (topic in this._advertisers)
     {
-      throw new Error();
+      throw new Error(`Duplicate advert ${topic}`);
     }
     var latched = null;
     let advertiser = (event) =>
@@ -119,7 +119,7 @@ rosNodeInternal.prototype =
 
     if (service in this._services)
     {
-      throw new Error();
+      throw new Error(`Duplicate service ${service}`);
     }
     let serviceHandler = (request) =>
     {
