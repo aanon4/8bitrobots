@@ -2,7 +2,7 @@
 
 const MotionPlanner = require('./motion-planner');
 
-const SERVICE_IDLE = { service: 'set_idle' };
+const SERVICE_IDLE = { service: 'set_angle_idle' };
 const SERVICE_SETPOS = { service: 'set_angle' };
 const SERVICE_WAITFOR = { service: 'wait_for_angle' };
 const TOPIC_CURRENT = { topic: 'current_angle', latching: true };
