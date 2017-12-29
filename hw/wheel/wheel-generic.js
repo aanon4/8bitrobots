@@ -10,7 +10,7 @@ function wheel(config, settings)
   // Diameter is in mm, rpm is in revolutions / minutues, velocity is in meters / second
   this._track = Math.PI * settings.diameter / 1000 / 60; // m
   this._motor = config.motor;
-  this._rosApiVelocity = new ROSAPIVelocity(this);
+  this._rosApiVelocity = new ROSAPIVelocity(this, config.ros);
 }
 
 wheel.prototype =

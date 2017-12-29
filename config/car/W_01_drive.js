@@ -25,7 +25,8 @@ module.exports = function()
       motor: new MOTOR(
       {
         esc: vesc
-      })
+      }),
+      ros: 'topicOnly'
     }),
     steering: new SERVO(
     {
@@ -35,6 +36,7 @@ module.exports = function()
       maxAngle: Math.PI + 1,
       defaultAngle: Math.PI,
       trim: 0,
+      ros: 'topicOnly'
     })
   });
 }

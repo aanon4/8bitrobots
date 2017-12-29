@@ -22,7 +22,7 @@ function servo(config, settings)
   this._angle2pulse = (this._settings.maxPulseMs - this._settings.minPulseMs) / (this._settings.maxAngle - this._settings.minAngle);
   this._pwmChannel.setCyclePeriod(this._settings.periodMs);
   this._enabled = false;
-  this._rosApiAngle = new ROSAPIAngle(this);
+  this._rosApiAngle = new ROSAPIAngle(this, config.ros);
 }
 
 servo.prototype =

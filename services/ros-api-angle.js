@@ -7,9 +7,10 @@ const SERVICE_SETPOS = { service: 'set_angle' };
 const SERVICE_WAITFOR = { service: 'wait_for_angle' };
 const TOPIC_CURRENT = { topic: 'current_angle', latching: true };
 
-function angle(target)
+function angle(target, type)
 {
   this._target = target;
+  this._type = type;
 
   const targetSetAngle = this._target.setAngle;
   this._target.setAngle = (angle, changeMs, func) => {
@@ -23,28 +24,34 @@ angle.prototype =
   enable: function()
   {
     this._adPos = this._target._node.advertise(TOPIC_CURRENT);
-    this._target._node.service(SERVICE_SETPOS, (request) =>
+    if (this._type !== 'topicOnly')
     {
-      this._target.setAngle(request.angle, request.time, MotionPlanner[request.func]);
-      return true;
-    });
-    this._target._node.service(SERVICE_IDLE, (event) =>
-    {
-      this._target.idle(event.idle);
-      return true;
-    });
-    this._target._node.service(SERVICE_WAITFOR, (event) =>
-    {
-      return this._target.waitForAngle(event.compare, event.angle);
-    });
+      this._target._node.service(SERVICE_SETPOS, (request) =>
+      {
+        this._target.setAngle(request.angle, request.time, MotionPlanner[request.func]);
+        return true;
+      });
+      this._target._node.service(SERVICE_IDLE, (event) =>
+      {
+        this._target.idle(event.idle);
+        return true;
+      });
+      this._target._node.service(SERVICE_WAITFOR, (event) =>
+      {
+        return this._target.waitForAngle(event.compare, event.angle);
+      });
+    }
     return this;
   },
 
   disable: function()
   {
-    this._target._node.unservice(SERVICE_IDLE);
-    this._target._node.unservice(SERVICE_SETPOS);
-    this._target._node.unservice(SERVICE_WAITFOR);
+    if (this._type !== 'topicOnly')
+    {
+      this._target._node.unservice(SERVICE_IDLE);
+      this._target._node.unservice(SERVICE_SETPOS);
+      this._target._node.unservice(SERVICE_WAITFOR);
+    }
     this._target._node.unadvertise(TOPIC_CURRENT);
     return this;
   },

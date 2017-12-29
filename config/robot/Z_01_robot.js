@@ -30,7 +30,8 @@ module.exports = function()
         {
           hbridge: HBRIDGES.open({ channel: dev }),
           reverse: rev == 'rev' ? true : false
-        })
+        }),
+        ros: 'topicOnly'
       })
     };
   }
@@ -47,7 +48,8 @@ module.exports = function()
         defaultAngle: safeDefault,
         trim: trim,
         scale: scale,
-        stateManager: stateManager
+        stateManager: stateManager,
+        ros: 'topicOnly'
       })
     };
   }

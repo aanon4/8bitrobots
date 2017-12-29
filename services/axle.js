@@ -14,8 +14,8 @@ function axle(config)
   this._drive = config.drive;
   this._steering = config.steering;
   this._lastVelocity = 0;
-  this._rosApiAngle = new ROSAPIAngle(this);
-  this._rosApiVelocity = new ROSAPIVelocity(this);
+  this._rosApiAngle = new ROSAPIAngle(this, config.ros);
+  this._rosApiVelocity = new ROSAPIVelocity(this, config.ros);
 }
 
 axle.prototype = 
