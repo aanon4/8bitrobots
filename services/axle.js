@@ -126,7 +126,7 @@ axle.prototype =
   {
     if (this._steering)
     {
-      return this._steering.getCurrentVelocity();
+      return this._steering.getCurrentAngle();
     }
     else
     {
