@@ -74,7 +74,7 @@ rosNodeInternal.prototype =
   {
     let topic = this.resolveName(options.topic);
 
-    console.info(` [${topic}]`);
+    console.info(` +${topic}`);
 
     if (topic in this._advertisers)
     {
@@ -107,7 +107,11 @@ rosNodeInternal.prototype =
 
   unadvertise: function(options)
   {
-    let fn = this._advertisers[this.resolveName(options.topic)];
+    let topic = this.resolveName(options.topic);
+
+    console.info(` -${topic}`);
+
+    let fn = this._advertisers[topic];
     fn && fn();
   },
 
@@ -115,7 +119,7 @@ rosNodeInternal.prototype =
   {
     let service = this.resolveName(options.service);
 
-    console.info(` [${service}]`);
+    console.info(` +${service}`);
 
     if (service in this._services)
     {
@@ -163,7 +167,11 @@ rosNodeInternal.prototype =
 
   unservice: function(options)
   {
-    let fn = this._services[this.resolveName(options.service)];
+    let service = this.resolveName(options.service);
+
+    console.info(` -${service}`);
+
+    let fn = this._services[service];
     fn && fn();
   },
 
