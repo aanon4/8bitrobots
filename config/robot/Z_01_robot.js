@@ -2,7 +2,7 @@
 
 module.exports = function()
 {
-  const Robot = require('services/robot');
+  const Robot = require('vehicle/robot');
   const StateManager = require('services/state-manager');
   const ServoPwm = require('hw/board/beagleboneblue/servos');
   const Motors = require('hw/board/beagleboneblue/motors');
