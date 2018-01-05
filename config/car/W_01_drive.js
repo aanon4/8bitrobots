@@ -2,9 +2,10 @@ module.exports = function()
 {
   const AXLE = require('services/axle');
   const SERVO = require('hw/servo/servo-hs422');
-  const WHEEL = require('hw/wheel/wheel-42mm');
-  const MOTOR = require('hw/motor/motor-surpass-3674-2y-2250kv');
+  const WHEEL = require('hw/wheel/wheel-63mm');
+  const MOTOR = require('hw/motor/motor-tenshock-rc906-11y-1750kv');
   const VESC = require('hw/esc/esc-vesc');
+  const GEARING = require('hw/gear/gear-driveshaft-tt01');
 
   const vesc = new VESC(
   {
@@ -12,7 +13,8 @@ module.exports = function()
     can:
     {
       can: CAN,
-      id: { id: 0, ext: true }
+      remoteId: 1,
+      localId: 16
     }
   });
 
@@ -22,9 +24,13 @@ module.exports = function()
     drive: new WHEEL(
     {
       name: '/car/drive/wheel/monitor',
-      motor: new MOTOR(
+      motor: new GEARING(
       {
-        esc: vesc
+        next: new MOTOR(
+        {
+          esc: vesc,
+          reverse: true
+        })
       }),
       ros: 'topicOnly'
     }),
@@ -32,9 +38,9 @@ module.exports = function()
     {
       name: `/car/drive/servo/monitor`,
       pwm: vesc.openServo(),
-      minAngle: Math.PI - 1,
-      maxAngle: Math.PI + 1,
-      defaultAngle: Math.PI,
+      minAngle: Math.PI / 2 - 0.50,
+      maxAngle: Math.PI / 2 + 0.50,
+      defaultAngle: Math.PI / 2,
       trim: 0,
       ros: 'topicOnly'
     })
