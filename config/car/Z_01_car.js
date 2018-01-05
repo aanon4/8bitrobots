@@ -7,6 +7,6 @@ module.exports = function()
   {
     name: '/car/manager',
     axle: '/car/drive',
-    velocityScale: 1.0
+    velocityScale: 5.0
   });
 };
