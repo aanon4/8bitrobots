@@ -6,7 +6,7 @@ function motor(config, settings)
   this._scale = config.reverse ? -1 : 1;
   this._last = null;
   this._enabled = false;
-  this._hbridge.setKV(settings.kV);
+  this._hbridge.setKVandPoles(settings.kV, 1);
   this._hbridge.setCyclePeriod(settings.periodMs);
 }
 

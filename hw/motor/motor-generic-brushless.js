@@ -1,7 +1,8 @@
 function motor(config, settings)
 {
   this._esc = config.esc;
-  this._esc.setKV(settings.kV);
+  this._esc.setKVandPoles(settings.kV, settings.poles);
+  this._scale = config.reverse ? -1 : 1;
 }
 
 motor.prototype =
@@ -20,12 +21,12 @@ motor.prototype =
 
   setRPM: function(rpm, changeMs, func)
   {
-    return this._esc.setRPM(rpm, changeMs, func);
+    return this._esc.setRPM(rpm * this._scale, changeMs, func);
   },
 
   getCurrentRPM: function()
   {
-    return this._esc.getCurrentRPM();
+    return this._esc.getCurrentRPM() * this._scale;
   },
 
   isRPMChanging: function()

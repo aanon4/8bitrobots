@@ -78,7 +78,7 @@ esc.prototype =
     return this._pwmChannel.isPulseChanging();
   },
 
-  setKV: function(kV)
+  setKVandPoles: function(kV, poles)
   {
     this._kV = kV;
   }

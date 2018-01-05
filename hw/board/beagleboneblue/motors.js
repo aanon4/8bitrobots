@@ -145,7 +145,7 @@ motorChannel.prototype =
     }
   },
 
-  setKV: function(kV)
+  setKVandPoles: function(kV, poles)
   {
     this._kV = kV;
   },
