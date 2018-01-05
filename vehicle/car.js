@@ -150,18 +150,9 @@ car.prototype =
         break;
     }
 
-    // Calculate steering angle.
-    // Put wheels in the center position when not moving forwards.
-    if (this._forwardVelocityTarget === 0)
-    {
-      this._steeringAngleTarget = Math.PI / 2;
-    }
-    else
-    {
-      this._steeringAngleTarget = Math.abs(Math.atan2(this._forwardVelocityTarget, this._strafeVelocityTarget));
-    }
-    this._axle.set_velocity(this._forwardVelocityTarget * this._velocityScale);
-    this._axle.set_angle(this._steeringAngleTarget);
+    this._steeringAngleTarget = Math.PI / 2 + (Math.PI / 4 * this._strafeVelocityTarget);
+    this._axle.set_velocity({ velocity: this._forwardVelocityTarget * this._velocityScale });
+    this._axle.set_angle({ angle: this._steeringAngleTarget });
   }
 }
 
