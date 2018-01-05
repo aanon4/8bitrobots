@@ -51,7 +51,7 @@ const MCP =
 
   CTRL_MODE_MASK:   0xE0,
   CTRL_MODE_NORMAL: 0x00,
-  CTRL_MODE_CONFIG: 0x40,
+  CTRL_MODE_CONFIG: 0x80,
 
   STAT_RX0IF: 0x01,
   STAT_RX1IF: 0x02,
@@ -81,7 +81,9 @@ function can(config)
 
   let done = false;
 
-  this._setMode(MCP.CTRL_MODE_CONFIG).then(() => {
+  this._reset().then(() => {
+    return this._setMode(MCP.CTRL_MODE_CONFIG);
+  }).then(() => {
     return this._setSpeed(config.speed);
   }).then(() => {
     return this._initBuffers();
@@ -111,7 +113,9 @@ can.prototype =
     {
       throw new Error('Msg too long');
     }
-    return this._getNextTxBuffer().then((txbuf) => {
+    let txbuf = null;
+    return this._getNextTxBuffer().then((_txbuf) => {
+      txbuf = _txbuf;
       return rtr ? true : this._writeRegisters(txbuf + 6, msg);
     }).then(() => {
       return this._writeRegister(txbuf + 5, msg.length + (rtr ? MCP.RTR_MASK : 0));
@@ -233,7 +237,7 @@ can.prototype =
       rtr = (_ctrl & 0x08) ? true : false;
       return this._readRegister(address + 5);
     }).then((_len) => {
-      let len = _len & 0x0F;
+      len = _len & 0x0F;
       return rtr ? null : this._readRegisters(address + 6, len);
     }).then((buffer) => {
       return {
@@ -243,6 +247,12 @@ can.prototype =
         rtr: rtr
       }
     });
+  },
+
+  _reset: function()
+  {
+    const tx = Buffer.from([ MCP.RESET ]);
+    return this._spi.write(tx);
   },
 
   _readRegister: function(address)
@@ -278,7 +288,7 @@ can.prototype =
     let ext = null;
     return this._readRegisters(address, 4).then((buffer) => {
       let sidl = buffer.readUInt8(MCP.SIDL);
-      let sidh = buffer.readUIntU8(MCP.SIDH);
+      let sidh = buffer.readUInt8(MCP.SIDH);
       let eid0 = buffer.readUInt8(MCP.EID0);
       let eid8 = buffer.readUInt8(MCP.EID8);
       if ((sidl & MCP.TXB_EXIDE_M) !== 0)
@@ -396,6 +406,12 @@ can.prototype =
     let cfg = null;
     switch (speed)
     {
+      case 125:
+        cfg = [ 0x83, 0xE5, 0x81 ];
+        break;
+      case 250:
+        cfg = [ 0x83, 0xE5, 0x80 ];
+        break;
       case 500: // 500 kpbs
         cfg = [ 0x81, 0xD1, 0x00 ]; // 3, 2, 1
         break;
@@ -448,13 +464,19 @@ can.prototype =
   _initInterrupts: function(interrupt)
   {
     // Enable RX interrupts only.
-    return this._writeRegister(MCP.CANINTE, MCP.RX0IE | MCP.RX1IE).then(() => {
+    return this._writeRegister(MCP.CANINTE, MCP.INT_RX0IE | MCP.INT_RX1IE).then(() => {
       if (interrupt)
       {
         interrupt.enable();
-        interrupt.onEdge('falling', () => {
-          this._rxInterrupt();
-        });
+        const intr = () => {
+          this._rxInterrupt().then(() => {
+            if (interrupt.get() == 0)
+            {
+              intr();
+            }
+          });
+        }
+        interrupt.onEdge('falling', intr);
       }
       return true;
     });
@@ -511,18 +533,17 @@ can.prototype =
 
   _rxInterrupt: function()
   {
-    for (;;)
-    {
-      const msg = this.recvMsg();
-      if (!msg)
+    return this.recvMsg().then((msg) => {
+      if (msg)
       {
-        break;
+        const key = `${msg.id.id}/${msg.id.ext}`;
+        (this._listeners[key] || []).forEach((callback) => {
+          callback(msg);
+        });
+        return true;
       }
-      const key = `${id.id}/${id.ext}`;
-      (this._listeners[key] || []).forEach((callback) => {
-        callback(msg);
-      });
-    }
+      return false;
+    });
   }
 };
 
