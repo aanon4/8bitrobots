@@ -21,7 +21,8 @@ const settings =
   {
     diameter: 3,
     length: 5
-  }
+  },
+  url: 'https://hobbyking.com/en_us/ntm-prop-drive-28-30s-800kv-300w-brushless-motor-short-shaft-version.html'
 };
 
 function motor(config)
