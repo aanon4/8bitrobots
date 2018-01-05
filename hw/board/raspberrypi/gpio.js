@@ -5,7 +5,7 @@ console.info('Loading RaspberryPi GPIO controllers.');
 let WPI;
 if (!SIMULATOR)
 {
-  WPI = require('wiringpi');
+  WPI = require('wiringpi-node');
 }
 else
 {
@@ -106,11 +106,13 @@ gpioChannel.prototype =
 
   enable: function()
   {
+    this._enabled = true;
     return this;
   },
 
   disable: function()
   {
+    this._enabled = false;
     return this;
   }
 };
