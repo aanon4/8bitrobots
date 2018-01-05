@@ -7,13 +7,14 @@
   <style>
     html,body { width: 100%; height: 100%; margin: 0; color: white; background-color: black; background-size: 100%, 100%; }
     #pad { position: absolute; top: 40px; right: 20px }
-    #joystick { position: absolute; top: 110px; right: 90px }
-    #buttons { -webkit-user-select: none; }
+    #joystick { position: absolute; top: 130px; right: 110px }
+    #buttons { -webkit-user-select: none; margin-left: 10px }
     #buttons > span { font-size: 18px; border: 1px solid white; border-radius: 5px; padding: 5px; margin: 5px; line-height: 44px; }
+    #buttons > span:active { color: black; background-color: white }
   </style>
 </head>
 <body>
-  <canvas id='pad' width="240" height="240"></canvas>
+  <canvas id='pad' width="280" height="280"></canvas>
   <canvas id='joystick' width="100" height="100"></canvas>
   <div id="buttons">
     <span ontouchstart="gesture('autopilot')">Autopilot</span>
@@ -23,7 +24,7 @@
     const SCREEN_WIDTH = screen.height;
     const SCREEN_HEIGHT = screen.width;
     const STICK_RADIUS = 45;
-    const PAD_RADIUS = 115;
+    const PAD_RADIUS = 135;
 
     var ros = rosNode.init('/controller');
     var setMovement = ros.proxy({ service: '/car/set_movement' });
@@ -49,14 +50,14 @@
     ctx.beginPath();
     ctx.lineWidth = 5;
     ctx.strokeStyle = 'white';
-    ctx.arc(120, 120, PAD_RADIUS, 0, Math.PI * 2);
+    ctx.arc(PAD_RADIUS + 5, PAD_RADIUS + 5, PAD_RADIUS, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx = stick.getContext('2d');
     ctx.beginPath();
     ctx.lineWidth = 5;
     ctx.strokeStyle = 'white';
-    ctx.arc(50, 50, STICK_RADIUS, 0, Math.PI * 2);
+    ctx.arc(STICK_RADIUS + 5, STICK_RADIUS + 5, STICK_RADIUS, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
