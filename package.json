@@ -7,14 +7,12 @@
     "crc16": "^1.0.0",
     "deasync": "^0.1.9",
     "i2c-bus": "x",
-    "spi": "x",
-    "wiring-pi": "x",
     "node-gyp": "x",
-    "opencv": "^6.0.0",
     "serialport": "^4.0.7",
     "synaptic": "^1.0.10",
     "usage": "x",
     "uuid": "^3.0.1",
-    "websocket": "^1.0.24"
+    "websocket": "^1.0.24",
+    "wiringpi-node": "^2.4.4"
   }
 }
