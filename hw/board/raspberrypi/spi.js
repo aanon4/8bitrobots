@@ -32,22 +32,12 @@ spiDev.prototype =
     return true;
   },
 
-  read: function(buffer)
-  {
-    return new Promise((resolve) => {
-      this._select();
-      this._spi.read(buffer, () => {
-        this._unselect();
-        resolve(buffer);
-      });
-    });
-  },
-
   write: function(buffer)
   {
+    const buf = Buffer.from(buffer);
     return new Promise((resolve) => {
       this._select();
-      this._spi.write(buffer, () => {
+      this._spi.transfer(buf, () => {
         this._unselect();
         resolve(buffer);
       });
@@ -56,11 +46,14 @@ spiDev.prototype =
 
   transfer: function(txbuf, rxbuf)
   {
+    const buf = Buffer.alloc(Math.max(rxbuf.length, txbuf.length));
+    txbuf.copy(buf);
     return new Promise((resolve) => {
       this._select();
-      this._spi.transfer(txbuf, rxbuf, () => {
+      this._spi.transfer(buf, () => {
         this._unselect();
-        resolve(txbuf);
+        buf.copy(rxbuf);
+        resolve(rxbuf);
       });
     });
   },
@@ -80,31 +73,31 @@ function spi(config)
 {
   if (!SIMULATOR)
   {
-    const SPI = require('spi');
-    this._bus = new SPI.Spi(config.bus);
-    config.mode && this._bus.mode(SPI.MODE[config.mode]);
-    config.bitsPerWord && this._bus.bitsPerWord(config.bitsPerWord);
-    config.bitOrder && this._bus.bitOrder(SPI.ORDER[config.bitOrder]);
-    config.maxSpeed && this._bus.maxSpeed(config.maxSpeed);
-    config.select && this._bus.chipSelect(SPI.CS[config.select]);
-    this._bus.open();
-    this._bus._name = config.bus;
+    const WPI = require('wiringpi-node');
+    const channel = config.channel;
+
+    if (!'mode' in config || !'speed' in config)
+    {
+      throw new Error('Must defined SPI mode and speed');
+    }
+    WPI.wiringPiSPISetupMode(channel, config.speed, config.mode);
+   
+    this._bus = 
+    {
+      _name: `spi${channel}`,
+
+      transfer: function(buffer, callback)
+      {
+        WPI.wiringPiSPIDataRW(channel, buffer);
+        callback(buffer);
+      }
+    };
   }
   else
   {
     this._bus = 
     {
-      read: function (buffer, callback)
-      {
-        callback();
-      },
-
-      write: function (buffer, callback)
-      {
-        callback();
-      },
-
-      transfer: function(txbuf, rxbuf, callback)
+      transfer: function(buffer, callback)
       {
         callback();
       }
