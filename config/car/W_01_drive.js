@@ -42,6 +42,7 @@ module.exports = function()
       maxAngle: Math.PI / 2 + 0.50,
       defaultAngle: Math.PI / 2,
       trim: 0,
+      reverse: true,
       ros: 'topicOnly'
     })
   });
