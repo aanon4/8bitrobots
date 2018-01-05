@@ -20,7 +20,7 @@ Planner.prototype =
       const end = step.end;
       const distance = end - start;
       const func = step.func || Planner.EASE_INOUT;
-      const ticks = step.time / period;
+      const ticks = (step.time || 0) / period;
       if (ticks === 0)
       {
         motion.push(start + distance);
