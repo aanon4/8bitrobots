@@ -20,6 +20,7 @@
     <span ontouchstart="gesture('autopilot')">Autopilot</span>
     <span ontouchstart="gesture('manual')">Manual</span>
   </div>
+  <img id="video">
   <script>
     const SCREEN_WIDTH = screen.height;
     const SCREEN_HEIGHT = screen.width;
@@ -142,6 +143,7 @@
       }
     });
     tick = setInterval(moveStick, 500); // Movement heatbeat
+    document.getElementById('video').src = window.location.protocol + '//' + window.location.hostname + ':8081/video';
   </script>
 </body>
 </html>
