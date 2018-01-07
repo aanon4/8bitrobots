@@ -30,6 +30,7 @@ void VideoServer::run()
             }
             else {
               // Done
+              server->active--;
             }
           });
         }
@@ -37,6 +38,7 @@ void VideoServer::run()
       SimpleWeb::CaseInsensitiveMultimap headers;
       headers.emplace("Content-Type", "multipart/x-mixed-replace;boundary=opencv_video");
       response->write(SimpleWeb::StatusCode::success_ok, headers);
+      this->active++;
       MJPEG::send_image(this, response);
     });
     work_thread.detach();
@@ -56,8 +58,10 @@ void VideoServer::run()
 
 void VideoServer::set_image(cv::Mat& frame)
 {
-  image_lock.lock();
-  cv::imencode(".jpg", frame, image, vector<int>());
-  image_notify.notify_all();
-  image_lock.unlock();
+  if (active > 0 && image_lock.try_lock())
+  {
+    cv::imencode(".jpg", frame, image, vector<int>());
+    image_notify.notify_all();
+    image_lock.unlock();
+  }
 }

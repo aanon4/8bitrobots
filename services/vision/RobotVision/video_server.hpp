@@ -9,6 +9,7 @@ private:
   std::mutex image_lock;
   std::condition_variable image_notify;
   std::vector<uchar> image;
+  unsigned int active = 0;
 
 public:
 
