@@ -1,15 +1,13 @@
+#include <condition_variable>
 #include <opencv2/opencv.hpp>
 #include "server_http.hpp"
-
-using namespace std;
-
-using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
 class VideoServer {
 private:
 
-  HttpServer server;
-  mutex image_lock;
+  SimpleWeb::Server<SimpleWeb::HTTP> server;
+  std::mutex image_lock;
+  std::condition_variable image_notify;
   std::vector<uchar> image;
 
 public:
