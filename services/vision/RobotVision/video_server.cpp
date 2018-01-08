@@ -2,6 +2,7 @@
 #include "video_server.hpp"
 
 using namespace std;
+using namespace cv;
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
 void VideoServer::run()
@@ -16,6 +17,9 @@ void VideoServer::run()
         static void send_image(VideoServer* server, const shared_ptr<HttpServer::Response> &response) {
           unique_lock<mutex> lk(server->image_lock);
           server->image_notify.wait(lk);
+          if (server->image.empty()) {
+            imencode(".jpg", server->frame, server->image, vector<int>());
+          }
           int size = (int)server->image.size();
           response->write_more("--opencv_video\r\n");
           response->write_more("Content-Type: image/jpeg\r\n");
@@ -56,11 +60,12 @@ void VideoServer::run()
   server.start();
 }
 
-void VideoServer::set_image(cv::Mat& frame)
+void VideoServer::set_image(Mat& frame)
 {
   if (active > 0 && image_lock.try_lock())
   {
-    cv::imencode(".jpg", frame, image, vector<int>());
+    frame.copyTo(this->frame);
+    image.clear();
     image_notify.notify_all();
     image_lock.unlock();
   }
