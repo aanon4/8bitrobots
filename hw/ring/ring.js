@@ -103,6 +103,7 @@ const crcTable =
   0xfa, 0xfd, 0xf4, 0xf3
 ];
 
+const NET_TIMEOUT = 1000;
 const KEEPALIVE_TIMER = 1000;
 const MAX_DATA = 16;
 
@@ -130,6 +131,7 @@ function ring(config)
   this._writeQ = [];
   this._pendingQ = [];
   this._keepaliveTimer = null;
+  this._lastTime = Date.now();
 
   this._incomingUart = this._incomingUart.bind(this);
   this._keepalive = this._keepalive.bind(this);
@@ -146,6 +148,10 @@ ring.prototype =
       this.reset(() => {
         this._keepaliveTimer = setInterval(this._keepalive, KEEPALIVE_TIMER);
       });
+    }
+    else
+    {
+      this._keepaliveTimer = setInterval(this._keepalive, KEEPALIVE_TIMER);
     }
     return this;
   },
@@ -389,6 +395,7 @@ ring.prototype =
           break;
       }
     }
+    this._lastTime = Date.now();
   },
 
   _recv: function(remoteAddress, remoteProtocol, buffer)
@@ -597,6 +604,10 @@ ring.prototype =
 
   _keepalive: function()
   {
+    if (this._state > STATE.DST && Date.now() - this._lastTime > NET_TIMEOUT)
+    {
+      this._state = STATE_SYNC;
+    }
     if (this._state === STATE.SYNC)
     {
       this._writeByte(PKT.SYNC);
