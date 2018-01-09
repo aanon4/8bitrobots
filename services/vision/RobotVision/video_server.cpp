@@ -29,7 +29,6 @@ void VideoServer::run()
           response->write_more("\r\n");
           response->send([server, response](const SimpleWeb::error_code &ec) {
             if (!ec) {
-              //this_thread::sleep_for(chrono::milliseconds((int)(1000 / 20)));
               send_image(server, response);
             }
             else {
