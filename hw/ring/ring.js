@@ -39,8 +39,13 @@ const COMMAND =
 {
   RESET:          0x01,
   RESET_CONFIRM:  0x02,
+  RESOLVE:        0x03,
+  RESOLVED:       0x04,
+  LIST:           0x05,
+  SET_ADDRESS:    0x06,
   ACK:            0x10,
   NACK:           0x11,
+  NETWORK_CHANGE: 0x12,
   DEBUG:          0x20,
   DEBUG_ENABLE:   0x21,
 };
@@ -74,7 +79,8 @@ const ERROR =
 
 const FLAG =
 {
-  DEBUG_ENABLED: 0x01
+  DEBUG_ENABLED: 0x01,
+  IN_RESET: 0x02,
 };
 
 const crcTable =
@@ -119,14 +125,16 @@ function ring(config)
   });
 
   this._nrNodes = 0;
+  this._loopTime = 0;
   this._resetStartTime = 0;
   this._flags = 0;
   this._buffer = Buffer.alloc(MAX_DATA);
   this._bufferPos = 0;
   this._localAddress = ADDRESS.NULL;
-  this._removeAddress = ADDRESS.NULL;
+  this._eraseAddress = ADDRESS.NULL;
   this._remoteAddress = ADDRESS.NULL;
   this._forwardAddress = ADDRESS.NULL;
+  this._localLongAddress = [ 0, 0, 0, 0, 0, 0, 0, 0 ];
   this._remoteProtocol = PROTOCOL.SYSTEM;
   this._writeQ = [];
   this._pendingQ = [];
@@ -182,9 +190,51 @@ ring.prototype =
       this._ready();
     }
     this.addListener('resetComplete', resetComplete);
+    this._flags |= FLAGS.IN_RESET;
     this._localAddress = ADDRESS.MASTER;
     this._resetStartTime = Date.now();
     this._sendInternal(this._localAddress, ADDRESS.NEXT, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.RESET, ADDRESS.FIRST ]), false);
+  },
+
+  setAddress: function(address)
+  {
+    this._localLongAddress =
+    [
+      address[0], address[1], address[2], address[3], address[4], address[5], address[6], address[7]
+    ];
+    if ((address[0] | address[1] | address[2] | address[3] | address[4] | address[5] | address[6]) === 0 && address[7] === 1)
+    {
+      this._localAddress = ADDRESS.MASTER;
+    }
+  },
+
+  resolve: function(longAddress)
+  {
+    if (this._localAddress == ADDRESS.MASTER)
+    {
+      this.emit('resolved', this._localAddress, this._localLongAddress);
+    }
+    else
+    {
+      this._sendInternal(this._localAddress, ADDRESS.NEXT, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.RESOLVE, longAddress[0], longAddress[1], longAddress[2], longAddress[3], longAddress[4], longAddress[5], longAddress[6], longAddress[7] ]), false);
+    }
+  },
+
+  list: function()
+  {
+    this._sendInternal(this._localAddress, ADDRESS.NEXT, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.LIST ]), false);
+  },
+
+  networkChange: function()
+  {
+    if (this._localAddress == ADDRESS.MASTER)
+    {
+      this.emit('networkChange', this._localAddress);
+    }
+    else
+    {
+      this._sendInternal(this._localAddress, ADDRESS.MASTER, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.NETWORK_CHANGE ]), false);
+    }
   },
 
   enableDebug: function(remoteAddress, enable)
@@ -235,12 +285,12 @@ ring.prototype =
             this._state = STATE.SRC;
             this._forwardAddress = ADDRESS.NEXT;
           }
-          else if (data == this._removeAddress || (this._localAddress == ADDRESS.MASTER && (data < ADDRESS.MASTER || data > ADDRESS.FIRST + nrNodes)))
+          else if (data == this._eraseAddress || (this._localAddress == ADDRESS.MASTER && (data < ADDRESS.MASTER || data > ADDRESS.FIRST + nrNodes)))
           {
             // Packet destination is invalid so should be removed - don't forward it
             this._state = STATE.SYNC;
             this._error(ERROR.REMOVED);
-            this._removeAddress = ADDRESS.NULL;
+            this._eraseAddress = ADDRESS.NULL;
             this._ready();
             this._writeByte(PKT.SYNC);
           }
@@ -368,7 +418,7 @@ ring.prototype =
             // Packet was sent by us but not consumed by anyone
             // This junk will just keep flowing round the network. To remove it we watch
             // for it to come round next time and take it off the network.
-            this._removeAddress = this._forwardAddress;
+            this._eraseAddress = this._forwardAddress;
             this._pending.length = 0;
             this._state = STATE.SYNC;
             this._error(ERROR.REMOVE);
@@ -412,25 +462,67 @@ ring.prototype =
               // Reset complete - now confirm
               this._loopTime = 2 * (Date.now() - this._resetStartTime);
               this._nrNodes = buffer.readUInt8(1) - ADDRESS.FIRST;
-              this._sendInternal(ADDRESS.MASTER, ADDRESS.NEXT, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.RESET_CONFIRM, this._nrNodes ]), false);
+              this._sendInternal(this._localAddress, ADDRESS.NEXT, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.RESET_CONFIRM, this._nrNodes, (this._loopTime >> 8) & 0xFF, this._loopTime & 0xFF ]), false);
             }
             else
             {
               this._localAddress = buffer.readUInt8(1);
               buffer.writeUInt8(this._localAddress + 1, 1);
-              this._sendInternal(this._remoteAddress, ADDRESS.NEXT, this._remoteProtocol, buffer, false);
+              this._sendInternal(remoteAddress, ADDRESS.NEXT, this._remoteProtocol, buffer, false);
             }
             break;
 
           case COMMAND.RESET_CONFIRM:
             if (remoteAddress == localAddress)
             {
+              this.flags = this.flags & ~FLAG.IN_RESET;
               this.event('resetComplete');
             }
             else
             {
               this._nrNodes = buffer[1];
-              this._sendInternal(this._remoteAddress, ADDRESS.NEXT, this._remoteProtocol, buffer, false);
+              this._loopTime = buffer.readUInt16BE(2);
+              this._sendInternal(remoteAddress, ADDRESS.NEXT, this._remoteProtocol, buffer, false);
+            }
+            break;
+
+            case COMMAND.RESOLVE:
+            if (remoteAddress == this._localAddress)
+            {
+              // Unresolved
+              this.emit('resolved', ADDRESS.NULL, buffer.slice(1));
+            }
+            else if (len == 9)
+            {
+              if (this._localLongAddress.toString() === buffer.slice(1).toJSON().data.toString())
+              {
+                // My address - resolved
+                buffer[0] = COMMAND_RESOLVED;
+                this._sendInternal(this._localAddress, remoteAddress, remoteProtocol, buffer, false);
+              }
+              else
+              {
+                this._sendInternal(remoteAddress, ADDRESS_NEXT, remoteProtocol, buffer, false);
+              }
+            }
+            break;
+  
+          case COMMAND.RESOLVED:
+            this.emit('resolved', remoteAddress, buffer.slice(1));
+            break;
+  
+          case COMMAND.LIST:
+            if (remoteAddress != this._localAddress)
+            {
+              this._sendInternal(remoteAddress, ADDRESS.NEXT, remoteProtocol, buffer, len, false);
+              this._sendInternal(this._localAddress, remoteAddress, PROTOCOL.SYSTEM, Buffer.from(COMMAND.RESOLVED, localLongAddress[0], localLongAddress[1], localLongAddress[2], localLongAddress[3], localLongAddress[4], localLongAddress[5], localLongAddress[6], localLongAddress[7]), false);
+            }
+            break;
+  
+          case COMMAND.SET_ADDRESS:
+            if (len == 9)
+            {
+              this.emit('setAddress', buffer.slice(1));
             }
             break;
 
@@ -439,6 +531,10 @@ ring.prototype =
             {
               this._flags = (this._flags & ~FLAG.DEBUG_ENABLED) | (buffer[1] ? FLAG.DEBUG_ENABLED : 0);
             }
+            break;
+
+          case COMMAND.NETWORK_CHANGE:
+            this.emit('networkChange', remoteAddress);
             break;
 
           case COMMAND.DEBUG:
@@ -475,7 +571,7 @@ ring.prototype =
 
           default:
             // Forward command, even if we don't understand it
-            this._sendInternal(this._remoteAddress, ADDRESS.NEXT, this._remoteProtocol, buffer, false);
+            this._sendInternal(remoteAddress, ADDRESS.NEXT, this._remoteProtocol, buffer, false);
             break;
         }
         break;
@@ -484,7 +580,7 @@ ring.prototype =
         // Send acks as necessary
         if ((remoteProtocol & PROTOCOL.ACK_BIT) != 0)
         {
-          this._sendInternal(this._localAddress, this._remoteAddress, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.ACK ]), false);
+          this._sendInternal(this._localAddress, remoteAddress, PROTOCOL.SYSTEM, Buffer.from([ COMMAND.ACK ]), false);
         }
         this.emit('data', buffer, remoteAddress);
         break;
@@ -604,13 +700,12 @@ ring.prototype =
 
   _keepalive: function()
   {
-    if (this._state > STATE.DST && Date.now() - this._lastTime > NET_TIMEOUT)
+    const now = Date.now();
+    if (now - this._lastTime > NET_TIMEOUT)
     {
       this._state = STATE_SYNC;
-    }
-    if (this._state === STATE.SYNC)
-    {
       this._writeByte(PKT.SYNC);
+      this._lastTime = now;
     }
   },
 
