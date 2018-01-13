@@ -22,8 +22,10 @@ const STATE =
 
 const PKT =
 {
-  SYNC: 0xF5,
-  ESC: 0xF6
+  SYNC:         0xF5,
+  ESC:          0xF6,
+  DST_MASK:     0x7F,
+  DST_MASTERED: 0x80
 };
 
 const ADDRESS =
@@ -31,8 +33,8 @@ const ADDRESS =
   NULL:   0x00,
   MASTER: 0x01,
   FIRST:  0x02,
-  LAST:   0xF4,
-  NEXT:   0xFF
+  LAST:   0x7E,
+  NEXT:   0x7F
 };
 
 const COMMAND =
@@ -47,7 +49,7 @@ const COMMAND =
   NACK:           0x11,
   NETWORK_CHANGE: 0x12,
   DEBUG:          0x20,
-  DEBUG_ENABLE:   0x21,
+  DEBUG_ENABLE:   0x21
 };
 
 const PROTOCOL =
@@ -131,7 +133,6 @@ function ring(config)
   this._buffer = Buffer.alloc(MAX_DATA);
   this._bufferPos = 0;
   this._localAddress = ADDRESS.NULL;
-  this._eraseAddress = ADDRESS.NULL;
   this._remoteAddress = ADDRESS.NULL;
   this._forwardAddress = ADDRESS.NULL;
   this._localLongAddress = [ 0, 0, 0, 0, 0, 0, 0, 0 ];
@@ -269,37 +270,38 @@ ring.prototype =
           }
           break;
         case STATE.DST:
+          let dstAddress = data & PKT.DST_MASK;
           if (data == PKT.SYNC)
           {
             // We just forwarded a sync, so we don't forward this one and wait for the src again
           }
-          else if (data == this._localAddress)
+          else if ((data & PKT.DST_MASTERED) != 0 && this._localAddress == ADDRESS.MASTER)
+          {
+            // If this is the master node, and this packet has been here before, we ditch it so
+            // it doesn't circulate forever.
+            this._state = STATE.SYNC;
+            this._error(ERROR.REMOVED);
+            this._ready();
+            this._writeByte(PKT.SYNC);
+          }
+          else if (dstAddress == this._localAddress)
           {
             // Packet for us
             this._state = STATE.SRC;
-            this._forwardAddress = this._localAddress;
+            this._forwardAddress = dstAddress;
           }
-          else if (data == ADDRESS.NEXT)
+          else if (dstAddress == ADDRESS.NEXT)
           {
             // Next address - always for us
             this._state = STATE.SRC;
-            this._forwardAddress = ADDRESS.NEXT;
-          }
-          else if (data == this._eraseAddress || (this._localAddress == ADDRESS.MASTER && (data < ADDRESS.MASTER || data > ADDRESS.FIRST + nrNodes)))
-          {
-            // Packet destination is invalid so should be removed - don't forward it
-            this._state = STATE.SYNC;
-            this._error(ERROR.REMOVED);
-            this._eraseAddress = ADDRESS.NULL;
-            this._ready();
-            this._writeByte(PKT.SYNC);
+            this._forwardAddress = dstAddress;
           }
           else
           {
             // Not for us - forward
-            this._forwardAddress = data;
+            this._forwardAddress = dstAddress;
             this._state = STATE.SRCFORWARD;
-            this._writeByte(data);
+            this._writeByte(data | (this._localAddress == ADDRESS.MASTER ? PKT.DST_MASTERED : 0));
           }
           break;
         case STATE.SRC:
@@ -411,17 +413,6 @@ ring.prototype =
             this._state = STATE.SYNC;
             this._ready();
             this._state = STATE.DST;
-            this._writeByte(PKT.SYNC);
-          }
-          else if (data == this._localAddress)
-          {
-            // Packet was sent by us but not consumed by anyone
-            // This junk will just keep flowing round the network. To remove it we watch
-            // for it to come round next time and take it off the network.
-            this._eraseAddress = this._forwardAddress;
-            this._pending.length = 0;
-            this._state = STATE.SYNC;
-            this._error(ERROR.REMOVE);
             this._writeByte(PKT.SYNC);
           }
           else
@@ -652,7 +643,7 @@ ring.prototype =
 
   _queueToSend: function(msg, ack, system)
   {
-    if ((!system && this._nrNodes == 0) || this._state > STATE.DST)
+    if (this._state > STATE.DST)
     {
       this._writeQ.push(
         {
