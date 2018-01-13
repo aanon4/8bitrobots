@@ -39,7 +39,7 @@ spiDev.prototype =
       this._select();
       this._spi.transfer(buf, () => {
         this._unselect();
-        resolve();
+        resolve(buffer);
       });
     })
   },
@@ -50,9 +50,9 @@ spiDev.prototype =
     txbuf.copy(buf);
     return new Promise((resolve) => {
       this._select();
-      this._spi.transfer(buf, (nbuf) => {
+      this._spi.transfer(buf, () => {
         this._unselect();
-        nbuf.copy(rxbuf);
+        buf.copy(rxbuf);
         resolve(rxbuf);
       });
     });
@@ -73,31 +73,23 @@ function spi(config)
 {
   if (!SIMULATOR)
   {
-    const SPI = require('spi');
+    const WPI = require('wiringpi-node');
     const channel = config.channel;
 
     if (!'mode' in config || !'speed' in config)
     {
       throw new Error('Must defined SPI mode and speed');
     }
-    this._spi = new SPI.Spi(`/dev/spidev${channel}.${channel}`,
-    {
-      mode: config.mode,
-      maxSpeed: config.speed
-    }, (spi) => {
-      spi.open();
-    });
+    WPI.wiringPiSPISetupMode(channel, config.speed, config.mode);
    
     this._bus = 
     {
       _name: `spi${channel}`,
-      _spi: this._spi,
 
       transfer: function(buffer, callback)
       {
-        this._spi.transfer(buffer, buffer, () => {
-          callback(buffer);
-        });
+        WPI.wiringPiSPIDataRW(channel, buffer);
+        callback(buffer);
       }
     };
   }
@@ -107,7 +99,7 @@ function spi(config)
     {
       transfer: function(buffer, callback)
       {
-        callback(buffer);
+        callback();
       }
     };
   }
