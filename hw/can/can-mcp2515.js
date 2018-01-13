@@ -268,7 +268,7 @@ can.prototype =
   {
     const tx = Buffer.from([ MCP.READ, address ]);
     const rx = Buffer.alloc(length + 2);
-    return this._spi.transfer(tx, rx).then(() => {
+    return this._spi.transfer(tx, rx).then((rx) => {
       return rx.slice(2);
     });
   },
@@ -518,7 +518,7 @@ can.prototype =
             }
             else if (--retry <= 0)
             {
-              reject(new Error('Timeout'));
+              throw new Error('Timeout');
             }
             else
             {
