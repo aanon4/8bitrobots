@@ -20,7 +20,6 @@ function servo(config, settings)
   this._defaultRate = (config.defaultRateMs || 0) / (this._maxAngle - this._minAngle);
   this._reverse = config.reverse || false;
   this._angle2pulse = (this._settings.maxPulseMs - this._settings.minPulseMs) / (this._settings.maxAngle - this._settings.minAngle);
-  this._pwmChannel.setCyclePeriod(this._settings.periodMs);
   this._enabled = false;
   this._rosApiAngle = new ROSAPIAngle(this, config.ros);
 }
@@ -151,6 +150,7 @@ servo.prototype =
     }
     this._enabled = true;
     this._pwmChannel.enable();
+    this._pwmChannel.setCyclePeriod(this._settings.periodMs);
     if (this._stateManager)
     {
       this._lastAngle = this._stateManager.get(`${this._name}-angle`);
