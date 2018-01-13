@@ -5,7 +5,7 @@ global.CAN = new CAN(
 {
   spi: SPI.open(),
   speed: 500, // kbs
-  interrupt: GPIO.open({ channel: 5 })
+  interrupt: GPIO.open({ channel: 'WPI5' })
 });
 
 module.exports = function() {}
