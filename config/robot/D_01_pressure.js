@@ -1,6 +1,9 @@
 module.exports = function()
 {
-  const i2c = new I2C[0](0x76, 0);
+  const i2c = I2C[0].open(
+  {
+    address: 0x76
+  });
   if (i2c.valid())
   {
     const HPT = require('hw/environ/environ-bmp280');

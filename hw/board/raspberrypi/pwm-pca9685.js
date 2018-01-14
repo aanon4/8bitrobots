@@ -1,9 +1,10 @@
 'use strict';
 
+console.info('Loading PCA9685 controllers.');
+
 const native = require('.');
 const MotionPlanner = require('services/motion-planner');
 
-console.info('Loading RaspberryPi PCA9685 controllers.');
 
 function pwmChannel(pwm, subaddress)
 {

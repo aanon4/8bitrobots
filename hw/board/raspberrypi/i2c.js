@@ -20,13 +20,11 @@ function execute(ctx, fn)
   }
 }
 
-var _swtch = null;
 
-
-function i2c(address, channel)
+function i2c(bus, address)
 {
+  this._bus = bus;
   this._address = address;
-  this._channel = channel === undefined ? null : channel;
 }
 
 i2c.prototype =
@@ -36,14 +34,9 @@ i2c.prototype =
     return this._address;
   },
   
-  channel: function()
-  {
-    return this._channel;
-  },
-  
   id: function()
   {
-    return this._busId + '/' + this._channel + '/' + this._address;
+    return `${this._bus.id()}/${this._address}`;
   },
 
   valid: function()
@@ -52,9 +45,8 @@ i2c.prototype =
     {
       return execute(this, function()
       {
-        var buffer = Buffer.alloc(0);
-        this._select();
-        this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
+        let buffer = Buffer.alloc(0);
+        this._bus.i2cWriteSync(this._address, buffer.length, buffer);
         return true;
       });
     }
@@ -64,13 +56,11 @@ i2c.prototype =
     }
   },
 
-  writeBytes: function(byteArray)
+  writeBytes: function(buffer)
   {
     return execute(this, function()
     {
-      var buffer = Buffer.alloc(byteArray);
-      this._select();
-      this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
+      this._bus.i2cWriteSync(this._address, buffer.length, buffer);
     });
   },
 
@@ -78,83 +68,103 @@ i2c.prototype =
   {
     return execute(this, function()
     {
-      var buffer = Buffer.alloc(nrBytes);
-      this._select();
-      var nr = this._i2cBus.i2cReadSync(this._address, buffer.length, buffer);
-      var data = Array(nr);
-      for (var i = 0; i < nr; i++)
-      {
-        data[i] = buffer[i];
-      }
-      return data;
+      let buffer = Buffer.alloc(nrBytes);
+      let nr = this._bus.i2cReadSync(this._address, buffer.length, buffer);
+      return buffer.length === nr ? buffer : buffer.slice(0, nr);
     });
   },
   
   writeAndReadBytes: function(bytesToWrite, nrBytesToRead)
   {
-    return execute(this, function()
+    return execute(this, () =>
     {
-      var buffer = Buffer.alloc(bytesToWrite);
-      this._select();
-      this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
-      buffer = Buffer.alloc(nrBytesToRead);
-      this._select();
-      var nr = this._i2cBus.i2cReadSync(this._address, buffer.length, buffer);
-      var data = Array(nr);
-      for (var i = 0; i < nr; i++)
-      {
-        data[i] = buffer[i];
-      }
-      return data;
+      this._bus.i2cWriteSync(this._address, bytesToWrite.length, bytesToWrite);
+      let buffer = Buffer.alloc(nrBytesToRead);
+      let nr = this._bus.i2cReadSync(this._address, buffer.length, buffer);
+      return buffer.length === nr ? buffer : buffer.slice(0, nr);
     });
   },
   
-  _select: function()
+  
+};
+
+function I2CBus(config)
+{
+  if (!SIMULATOR)
   {
-    if (_swtch && this._channel !== null)
+    this._native = require('i2c-bus').openSync(config.bus);
+  }
+  else
+  {
+    // Testing mock
+    this._native =
     {
-      _swtch.setChannel(this._channel);
+      i2cWriteSync: function(addr, len, buf)
+      {
+        return len;
+      },
+
+      i2cReadSync: function(addr, len, buf)
+      {
+        return len;
+      }
+    }
+  }
+  this._swtch = null;
+  this._channel = config.channel || null;
+  this._bus = config.bus;
+};
+
+I2CBus.prototype =
+{
+  open: function(config)
+  {
+    return new i2c(this, config.address);
+  },
+
+  id: function()
+  {
+    if (this._swtch)
+    {
+      return `${this._bus}/${this._channel}`;
+    }
+    else
+    {
+      return `${this._bus}`;
     }
   },
 
-  addSwitch: function (swtch) {
-    _swtch = swtch;
+  i2cWriteSync: function(addr, len, buf)
+  {
+    this._select();
+    return this._native.i2cWriteSync(addr, len, buf);
+  },
+
+  i2cReadSync: function(addr, len, buf)
+  {
+    this._select();
+    return this._native.i2cReadSync(addr, len, buf);
+  },
+
+  _select: function()
+  {
+    if (this._swtch && this._channel !== null)
+    {
+      this._swtch.setChannel(this._channel);
+    }
+  },
+
+  addSwitch: function (swtch)
+  {
+    this._swtch = swtch;
     return swtch;
   }
-};
+}
 
 module.exports =
 {
   open: function(config)
   {
-    var i2cBus;
-    if (!SIMULATOR)
-    {
-      i2cBus = require('i2c-bus').openSync(config.bus);
-    }
-    else
-    {
-      // Testing mock
-      i2cBus =
-      {
-        i2cWriteSync: function(addr, len, buf)
-        {
-          return len;
-        },
-
-        i2cReadSync: function(addr, len, buf)
-        {
-          return len;
-        }
-      }
-    }
-    function bus()
-    {
-      this._busId = config.bus;
-      this._i2cBus = i2cBus;
-      i2c.apply(this, arguments);
-    }
-    bus.prototype = i2c.prototype;
-    return bus;
+    return new I2CBus(config);
   }
-};
+}

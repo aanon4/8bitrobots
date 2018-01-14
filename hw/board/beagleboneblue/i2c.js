@@ -1,24 +1,8 @@
 console.info('Loading BeagleBoneBlue I2C controllers.');
 
-const fs = require('fs');
-
-function execute(ctx, fn)
+function i2c(bus, address)
 {
-  try
-  {
-    var r = fn.call(ctx);
-    return r;
-  }
-  catch (e)
-  {
-    console.error(e);
-    throw e;
-  }
-}
-
-
-function i2c(address)
-{
+  this._bus = bus;
   this._address = address;
 }
 
@@ -31,19 +15,16 @@ i2c.prototype =
   
   id: function()
   {
-    return this._busId + '/' + this._address;
+    return `${this._bus.id()}/${this._address}`;
   },
 
   valid: function()
   {
     try
     {
-      return execute(this, function()
-      {
-        var buffer = Buffer.alloc(1);
-        this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
-        return true;
-      });
+      let buffer = Buffer.alloc(0);
+      this._bus.i2cWriteSync(this._address, buffer.length, buffer);
+      return true;
     }
     catch (_)
     {
@@ -51,80 +32,80 @@ i2c.prototype =
     }
   },
 
-  writeBytes: function(byteArray)
+  writeBytes: function(buffer)
   {
-    return execute(this, function()
-    {
-      var buffer = Buffer.from(byteArray);
-      this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
-    });
+    this._bus.i2cWriteSync(this._address, buffer.length, buffer);
+
   },
 
   readBytes: function(nrBytes)
   {
-    return execute(this, function()
-    {
-      var buffer = Buffer.alloc(nrBytes);
-      var nr = this._i2cBus.i2cReadSync(this._address, buffer.length, buffer);
-      var data = Array(nr);
-      for (var i = 0; i < nr; i++)
-      {
-        data[i] = buffer[i];
-      }
-      return data;
-    });
+    let buffer = Buffer.alloc(nrBytes);
+    let nr = this._bus.i2cReadSync(this._address, buffer.length, buffer);
+    return buffer.length === nr ? buffer : buffer.slice(0, nr);
   },
   
   writeAndReadBytes: function(bytesToWrite, nrBytesToRead)
   {
-    return execute(this, function()
-    {
-      var buffer = Buffer.from(bytesToWrite);
-      this._i2cBus.i2cWriteSync(this._address, buffer.length, buffer);
-      buffer = Buffer.alloc(nrBytesToRead);
-      var nr = this._i2cBus.i2cReadSync(this._address, buffer.length, buffer);
-      var data = Array(nr);
-      for (var i = 0; i < nr; i++)
-      {
-        data[i] = buffer[i];
-      }
-      return data;
-    });
+    this._bus.i2cWriteSync(this._address, bytesToWrite.length, bytesToWrite);
+    buffer = Buffer.alloc(nrBytesToRead);
+    let nr = this._bus.i2cReadSync(this._address, buffer.length, buffer);
+    return buffer.length === nr ? buffer : buffer.slice(0, nr);
   }
 };
+
+function I2CBus(config)
+{
+  if (!SIMULATOR)
+  {
+    this._native = require('i2c-bus').openSync(config.bus);
+  }
+  else
+  {
+    // Testing mock
+    this._native =
+    {
+      i2cWriteSync: function(addr, len, buf)
+      {
+        return len;
+      },
+
+      i2cReadSync: function(addr, len, buf)
+      {
+        return len;
+      }
+    }
+  }
+  this._bus = config.bus;
+};
+
+I2CBus.prototype =
+{
+  open: function(config)
+  {
+    return new i2c(this, config.address);
+  },
+
+  id: function()
+  {
+    return `${this._bus}`;
+  },
+
+  i2cWriteSync: function(addr, len, buf)
+  {
+    return this._native.i2cWriteSync(addr, len, buf);
+  },
+
+  i2cReadSync: function(addr, len, buf)
+  {
+    return this._native.i2cReadSync(addr, len, buf);
+  }
+}
 
 module.exports =
 {
   open: function(config)
   {
-    var i2cBus;
-    if (!SIMULATOR)
-    {
-      i2cBus = require('i2c-bus').openSync(config.bus);
-    }
-    else
-    {
-      // Testing mock
-      i2cBus =
-      {
-        i2cWriteSync: function(addr, len, buf)
-        {
-          return len;
-        },
-
-        i2cReadSync: function(addr, len, buf)
-        {
-          return len;
-        }
-      }
-    }
-    function bus()
-    {
-      this._busId = config.bus;
-      this._i2cBus = i2cBus;
-      i2c.apply(this, arguments);
-    }
-    bus.prototype = i2c.prototype;
-    return bus;
+    return new I2CBus(config);
   }
-};
+}
