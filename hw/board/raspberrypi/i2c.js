@@ -76,7 +76,7 @@ i2c.prototype =
   
   writeAndReadBytes: function(bytesToWrite, nrBytesToRead)
   {
-    return execute(this, () =>
+    return execute(this, function()
     {
       this._bus.i2cWriteSync(this._address, bytesToWrite.length, bytesToWrite);
       let buffer = Buffer.alloc(nrBytesToRead);

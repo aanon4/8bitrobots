@@ -1,3 +1,5 @@
+'use strict';
+
 console.info('Loading BeagleBoneBlue I2C controllers.');
 
 function i2c(bus, address)
@@ -48,7 +50,7 @@ i2c.prototype =
   writeAndReadBytes: function(bytesToWrite, nrBytesToRead)
   {
     this._bus.i2cWriteSync(this._address, bytesToWrite.length, bytesToWrite);
-    buffer = Buffer.alloc(nrBytesToRead);
+    let buffer = Buffer.alloc(nrBytesToRead);
     let nr = this._bus.i2cReadSync(this._address, buffer.length, buffer);
     return buffer.length === nr ? buffer : buffer.slice(0, nr);
   }
