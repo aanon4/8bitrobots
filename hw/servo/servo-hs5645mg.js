@@ -8,7 +8,7 @@ var settings =
   maxAngle:    Math.PI,
   minPulseMs:      0.5,
   maxPulseMs:      2.5,
-  periodMs:       10.0,
+  periodMs:       20.0,
   minV:            4.8,
   maxV:            6.0
 };
