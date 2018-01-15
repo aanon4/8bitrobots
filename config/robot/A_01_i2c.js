@@ -1,3 +1,5 @@
+'use strict';
+
 console.info('Loading I2C');
 
 const I2C = require('hw/board/beagleboneblue/i2c');
