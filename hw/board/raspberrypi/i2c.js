@@ -41,19 +41,19 @@ i2c.prototype =
 
   valid: function()
   {
-    try
+    return execute(this, function()
     {
-      return execute(this, function()
+      try
       {
         let buffer = Buffer.alloc(0);
         this._bus.i2cWriteSync(this._address, buffer.length, buffer);
         return true;
-      });
-    }
-    catch (_)
-    {
-      return false;
-    }
+      }
+      catch (_)
+      {
+        return false;
+      }
+    });
   },
 
   writeBytes: function(buffer)
@@ -83,9 +83,7 @@ i2c.prototype =
       let nr = this._bus.i2cReadSync(this._address, buffer.length, buffer);
       return buffer.length === nr ? buffer : buffer.slice(0, nr);
     });
-  },
-  
-  
+  }
 };
 
 function I2CBus(config)
