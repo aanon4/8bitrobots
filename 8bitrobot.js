@@ -27,6 +27,7 @@ process.on('uncaughtException', function(e)
 require('./services/globals');
 require('./services/debugger');
 require('./services/logger');
+require('./services/telemetry');
 require('./services/services').loadConfig(configName);
 
 // Shutdown cleanly
