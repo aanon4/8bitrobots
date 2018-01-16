@@ -24,8 +24,8 @@ i2c.prototype =
   {
     try
     {
-      let buffer = Buffer.alloc(0);
-      this._bus.i2cWriteSync(this._address, buffer.length, buffer);
+      let buffer = Buffer.alloc(1);
+      this._bus.i2cReadSync(this._address, buffer.length, buffer);
       return true;
     }
     catch (_)
