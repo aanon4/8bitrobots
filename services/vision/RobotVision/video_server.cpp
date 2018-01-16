@@ -10,7 +10,6 @@ void VideoServer::run()
   server.config.port = 8081;
 
   server.resource["^/video$"]["GET"] = [this](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> /*request*/) {
-    response->set_nodelay();
     thread work_thread([this, response] {
       class MJPEG {
       public:
@@ -18,7 +17,10 @@ void VideoServer::run()
           unique_lock<mutex> lk(server->image_lock);
           server->image_notify.wait(lk);
           if (server->image.empty()) {
-            imencode(".jpg", server->frame, server->image, vector<int>());
+            vector<int> params;
+            params.push_back(IMWRITE_JPEG_QUALITY);
+            params.push_back(75);
+            imencode(".jpg", server->frame, server->image, params);
           }
           int size = (int)server->image.size();
           response->write_more("--opencv_video\r\n");
@@ -49,7 +51,7 @@ void VideoServer::run()
 
   
   server.resource["^/test$"]["GET"] = [](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> /*request*/) {
-    response->write("<html><body><img src='/video'></body></html>");
+    response->write("<html><body><img width='640' height='480' src='/video'></body></html>");
   };
 
   server.on_error = [](shared_ptr<HttpServer::Request> /*request*/, const SimpleWeb::error_code & /*ec*/) {
