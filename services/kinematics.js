@@ -32,8 +32,6 @@ function kinematics(config)
   this._calibrated = null;
   this._calibrationTimeout = config.calibrationTimeout || 0;
   this._waterDensity = Number.MAX_SAFE_INTEGER;
-  this._primary = config.primary || false;
-  this._secondary = config.secondary || false;
 }
 
 kinematics.prototype =

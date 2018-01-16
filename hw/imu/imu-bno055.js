@@ -402,6 +402,7 @@ imu.prototype =
 
     this._adOrientation.publish(
     {
+      name: this._name,
       confidence: this._confidence,
       w: twoc(data[0], data[1]) / 16384.0,
       x: -twoc(data[2], data[3]) / 16384.0,
@@ -423,6 +424,7 @@ imu.prototype =
 
     this._adAcceleration.publish(
     {
+      name: this._name,
       confidence: this._confidence,
       linearaccel:
       {
@@ -474,6 +476,7 @@ imu.prototype =
     {
       this._adCalibration.publish(
       {
+        name: this._name,
         old: old,
         'new': this._calibration,
         confidence: this._confidence
@@ -513,6 +516,7 @@ imu.prototype =
  
     this._adTemperature.publish(
     {
+      name: this._name,
       C: temp[0]
     });
   },

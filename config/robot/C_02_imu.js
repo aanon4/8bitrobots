@@ -8,7 +8,7 @@ module.exports = function()
     const Imu = require('hw/imu/imu-mpu9250');
     return new Imu(
     {
-      name: '/imu/monitor', 
+      name: '/imu/body/monitor', 
       reset: false,
       i2c:
       {

@@ -126,6 +126,8 @@ imu.prototype =
 
     this._adOrientation.publish(
     {
+      name: this._name,
+      confidence: 3,
       w: this._q[0],
       x: this._q[1],
       y: this._q[2],
@@ -484,7 +486,7 @@ imu.prototype =
       magBias: this._magBias,
       magScale: this._magScale,
       accelBias: this._accelBias,
-      gyrolBias: this._gyroBias,
+      gyroBias: this._gyroBias,
       gyroBiasRaw: this._gyroBiasRaw
     };
     fs.writeFileSync('./saved/imu-calibration-data' + this._name.replace(/\//g, '-') + '.json', JSON.stringify(calibrationData));
@@ -498,7 +500,7 @@ imu.prototype =
       this._magBias = calibrationData.magBias;
       this._magScale = calibrationData.magScale;
       this._accelBias = calibrationData.accelBias;
-      this._gyroBias = calibrationData.gyrolBias;
+      this._gyroBias = calibrationData.gyroBias;
       this._gyroBiasRaw = calibrationData.gyroBiasRaw;
       return true;
     }
