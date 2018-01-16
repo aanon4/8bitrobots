@@ -11,7 +11,7 @@ const INA219 =
   CALIBRATION: 0x05
 };
 
-const TOPIC_STATUS = { topic: 'status', latching: true };
+const TOPIC_STATUS = { topic: 'status' };
 
 function twoc(v)
 {

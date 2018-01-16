@@ -163,10 +163,10 @@ const CALIBRATION_TIMEOUT = 5000; // 5 seconds
 const UART_RETRY = 5;
 const UART_TIMEOUT = 1000;
 
-const TOPIC_ORIENTATION = { topic: 'orientation', latching: true };
-const TOPIC_ACCELERATION = { topic: 'acceleration', latching: true };
-const TOPIC_CALIBRATION = { topic: 'calibration', latching: true };
-const TOPIC_TEMPERATURE = { topic: 'temperature', latching: true };
+const TOPIC_ORIENTATION = { topic: 'orientation' };
+const TOPIC_ACCELERATION = { topic: 'acceleration' };
+const TOPIC_CALIBRATION = { topic: 'calibration' };
+const TOPIC_TEMPERATURE = { topic: 'temperature' };
 
 
 function twoc(a, b)

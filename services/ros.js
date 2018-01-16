@@ -85,14 +85,14 @@ rosNodeInternal.prototype =
     {
       emitter.emit(event.subscriber, { timestamp: Date.now(), latched: latched });
     }
-    if (options.latching)
+    if (options.latching || !('latching' in options)) // latching by default
     {
       emitter.addListener(`${topic}/__subscribe`, advertiser);
-    }
-    this._advertisers[topic] = () =>
-    {
-      emitter.removeListener(`${topic}/__subscribe`, advertiser);
-      delete this._advertisers[topic];
+      this._advertisers[topic] = () =>
+      {
+        emitter.removeListener(`${topic}/__subscribe`, advertiser);
+        delete this._advertisers[topic];
+      }
     }
     return {
       publish: function(msg)

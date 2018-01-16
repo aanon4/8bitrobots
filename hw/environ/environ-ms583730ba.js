@@ -1,7 +1,7 @@
 console.info('Loading MS5837-30BA pressure/temperature sensors.');
 
-const TOPIC_TEMPERATURE = { topic: 'temperature', latching: true };
-const TOPIC_PRESSURE = { topic: 'pressure', latching: true };
+const TOPIC_TEMPERATURE = { topic: 'temperature' };
+const TOPIC_PRESSURE = { topic: 'pressure' };
 
 
 function twoc(h, l)

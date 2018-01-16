@@ -5,7 +5,7 @@ console.info('Loading Robot Brain.');
 const MotionPlanner = require('services/motion-planner');
 const StateManager = require('services/state-manager');
 
-const TOPIC_STATE = { topic: 'state', latching: true };
+const TOPIC_STATE = { topic: 'state' };
 
 function controller(robot)
 {

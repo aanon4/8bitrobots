@@ -6,7 +6,7 @@ const SERVICE_IDLE = { service: 'set_velocity_idle' };
 const SERVICE_SETV = { service: 'set_velocity' };
 const SERVICE_BRAKE = { service: 'set_brake' };
 const SERVICE_WAITFOR = { service: 'wait_for_velocity' };
-const TOPIC_CURRENT = { topic: 'current_velocity', latching: true };
+const TOPIC_CURRENT = { topic: 'current_velocity' };
 
 function velocity(target, type)
 {

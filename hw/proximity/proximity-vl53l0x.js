@@ -88,7 +88,7 @@ const VL53L0X_ADDRESS =
 };
 
 const DEFAULT_I2C_ADDRESS = 0x29;
-const TOPIC_PROXIMITY = { topic: 'proximity', latching: true };
+const TOPIC_PROXIMITY = { topic: 'proximity' };
 
 function proximity(config)
 {

@@ -2,7 +2,7 @@
 
 console.info("Loading GPIO button.");
 
-const TOPIC_CURVAL = { topic: 'button_state', latching: true };
+const TOPIC_CURVAL = { topic: 'button_state' };
 
 function button(config)
 {

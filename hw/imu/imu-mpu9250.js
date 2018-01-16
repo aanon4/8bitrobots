@@ -51,8 +51,8 @@ const MMODE = 6; // 100hz continuous magnometer data
 const GYRO_MEASURE_ERROR = Math.PI * (60 / 180);
 const BETA = Math.sqrt(3 / 4) * GYRO_MEASURE_ERROR;
 
-const TOPIC_ORIENTATION = { topic: 'orientation', latching: true };
-const TOPIC_CALIBRATION = { topic: 'calibration', latching: true };
+const TOPIC_ORIENTATION = { topic: 'orientation' };
+const TOPIC_CALIBRATION = { topic: 'calibration' };
 
 
 function imu(config)

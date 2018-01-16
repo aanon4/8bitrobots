@@ -28,10 +28,10 @@ const batteryCurves =
   ]
 };
 
-const TOPIC_HEALTH = { topic: 'status', latching: true };
-const TOPIC_COMPUTE = { topic: 'compute', latching: true };
-const TOPIC_BATTERY = { topic: 'battery', latching: true };
-const TOPIC_SHUTDOWN = { topic: 'shutdown', latching: true };
+const TOPIC_HEALTH = { topic: 'status' };
+const TOPIC_COMPUTE = { topic: 'compute' };
+const TOPIC_BATTERY = { topic: 'battery' };
+const TOPIC_SHUTDOWN = { topic: 'shutdown' };
 
 function health(config)
 {

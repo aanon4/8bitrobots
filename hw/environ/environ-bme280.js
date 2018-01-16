@@ -31,9 +31,9 @@ const BME280 =
   HUMIDITY: 0xFD, // 2-bytes
 };
 
-const TOPIC_HUMIDITY = { topic: 'humidity', latching: true };
-const TOPIC_TEMPERATURE = { topic: 'temperature', latching: true };
-const TOPIC_PRESSURE = { topic: 'pressure', latching: true };
+const TOPIC_HUMIDITY = { topic: 'humidity' };
+const TOPIC_TEMPERATURE = { topic: 'temperature' };
+const TOPIC_PRESSURE = { topic: 'pressure' };
 
 
 function twoc(h, l)

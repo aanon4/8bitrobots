@@ -77,10 +77,10 @@ const PKT_MAX_LENGTH = 1024;
 const CYCLE_MS = 10;
 const RPM_CHANGE_RATE = 200;
 
-const TOPIC_RPM = { topic: 'rpm', latching: true };
-const TOPIC_THROTTLE = { topic: 'throttle', latching: true };
-const TOPIC_TACHOMETER = { topic: 'tachometer', latching: true };
-const TOPIC_VOLTAGE = { topic: 'voltage', latching: true };
+const TOPIC_RPM = { topic: 'rpm' };
+const TOPIC_THROTTLE = { topic: 'throttle' };
+const TOPIC_TACHOMETER = { topic: 'tachometer' };
+const TOPIC_VOLTAGE = { topic: 'voltage' };
 
 
 function vesc(config)

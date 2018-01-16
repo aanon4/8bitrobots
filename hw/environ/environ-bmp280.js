@@ -23,8 +23,8 @@ const BME280 =
   TEMPERATURE: 0xFA, // 3-bytes
 };
 
-const TOPIC_TEMPERATURE = { topic: 'temperature', latching: true };
-const TOPIC_PRESSURE = { topic: 'pressure', latching: true };
+const TOPIC_TEMPERATURE = { topic: 'temperature' };
+const TOPIC_PRESSURE = { topic: 'pressure' };
 
 
 function twoc(h, l)

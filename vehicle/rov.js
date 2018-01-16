@@ -11,8 +11,8 @@ const TEST = 2;
 const SHUTDOWN = 3;
 
 const SERVICE_CONTROL = { service: 'set_control' };
-const TOPIC_ACTIVE = { topic: 'active', latching: true };
-const TOPIC_ORIENTATION_ERROR = { topic: 'orientation/error', latching: true };
+const TOPIC_ACTIVE = { topic: 'active' };
+const TOPIC_ORIENTATION_ERROR = { topic: 'orientation/error' };
 const TOPIC_ANGULAR = { topic: '/kinematics/angular' };
 const TOPIC_SHUTDOWN = { topic: '/health/shutdown' };
 
