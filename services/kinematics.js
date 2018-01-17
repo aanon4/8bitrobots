@@ -23,7 +23,6 @@ function kinematics(config)
 {
   this._name = config.name;
   this._node = rosNode.init(config.name);
-  var sname = this._name.split('.');
   this._monitor = config.monitor;
   this._calibrations = {};
   this._orientations = {};
@@ -106,7 +105,7 @@ kinematics.prototype =
   _imuOrientation: function(event)
   {
     // Update orientation from IMU
-    var orientation = this._orientations[event.name];
+    let orientation = this._orientations[event.name];
     if (!orientation)
     {
       orientation = { count: 0, levels: { pitch: 0, roll: 0, heading: 0 } };

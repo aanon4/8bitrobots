@@ -103,10 +103,14 @@ health.prototype =
         if (v >= lV && v < hV)
         {
           this._batteryLevel.update((v - lV) / (hV - lV) * (section.hP - section.lP) + section.lP);
-          this._adBattery.publish({ '%': this._batteryLevel.value() });
-          if (this._batteryLevel.value() <= 5)
+          let value = this._batteryLevel.value();
+          if (value !== undefined)
           {
-            this._adShutdown.publish({ shutdown: 'low-battery' });
+            this._adBattery.publish({ '%': value });
+            if (value <= 5)
+            {
+              this._adShutdown.publish({ shutdown: 'low-battery' });
+            }
           }
           break;
         }
@@ -123,7 +127,10 @@ health.prototype =
       if (metric.chemistry)
       {
         value = this._batteryLevel.value();
-        details[i] = { topic: this._node.resolveName(TOPIC_BATTERY.topic), value: value };
+        if (value !== undefined)
+        {
+          details[i] = { topic: this._node.resolveName(TOPIC_BATTERY.topic), value: value };
+        }
       }
       else
       {
@@ -134,12 +141,15 @@ health.prototype =
         good = false;
       }
     }
-    this._adHealth.publish(
+    if (details.length > 0)
     {
-      good: good,
-      status: good ? 'Okay' : 'Poor',
-      details: details
-    });
+      this._adHealth.publish(
+      {
+        good: good,
+        status: good ? 'Okay' : 'Poor',
+        details: details
+      });
+    }
   },
 
   _cpuMonitor: function()
