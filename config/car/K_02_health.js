@@ -6,7 +6,7 @@ module.exports = function()
     name: '/health/monitor',
     metrics:
     [
-      { topic: '/car/drive/vesc/voltage', key: 'v', low: 10, high: 100, chemistry: 'LiPo', cells: 4 }
+      { topic: '/car/drive/vesc/voltage', key: 'v', low: 10, high: 100, chemistry: 'LiPo', cells: 3 }
     ]
   });
 }
