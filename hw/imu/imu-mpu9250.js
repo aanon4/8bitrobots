@@ -9,11 +9,6 @@ const fs = require('fs');
 const MPU9250 =
 {
   XG_OFFSET_H:   0x13,
-  XG_OFFSET_L:   0x14,
-  YG_OFFSET_H:   0x15,
-  YG_OFFSET_L:   0x16,
-  ZG_OFFSET_H:   0x17,
-  ZG_OFFSET_L:   0x18,
   SMPLRT_DIV:    0x19,
   CONFIG:        0x1A,
   GYRO_CONFIG:   0x1B,
@@ -122,6 +117,9 @@ imu.prototype =
     const my = (data[1] * MRES * this._magCalibration[1] - this._magBias[1]) * this._magScale[1];
     const mz = (data[2] * MRES * this._magCalibration[2] - this._magBias[2]) * this._magScale[2];
 
+//console.log(this._magScale);
+//console.log('mx', data[0].toFixed(2), mx.toFixed(2));
+//console.log('my', data[1].toFixed(2), my.toFixed(2));
     this._MadgwickQuaternionUpdate(-ax, ay, az, gx * Math.PI / 180.0, -gy * Math.PI / 180.0, -gz * Math.PI / 180.0,  my,  -mx, mz);
 
     this._adOrientation.publish(
@@ -144,8 +142,8 @@ imu.prototype =
 
       this._calibrateMPU9250();
       this._configureMPU9250();
-      this._calibrateAK8963();
       this._configureAK8963();
+      this._calibrateAK8963();
       this._saveCalibrationDate();
 
       this._adCalibration.publish({ confidence: 3 })
@@ -278,7 +276,13 @@ imu.prototype =
       
     for (let ii = 0; ii < packet_count; ii++) 
     {
-      const fdata = read(MPU9250.FIFO_R_W, 12); // read data for averaging
+      //const fdata = read(MPU9250.FIFO_R_W, 12); // read data for averaging
+      const fdata = Buffer.alloc(12);
+      for (let jj = 0; jj < 12; jj++)
+      {
+        fdata[jj] = read(MPU9250.FIFO_R_W, 1)[0];
+      }
+      //console.log(fdata);
       let accel_temp =
       [
         fdata.readInt16BE(0),
@@ -349,16 +353,11 @@ imu.prototype =
 
   _updateRawBiasMPU9250: function()
   {
-    const write = (address, byte) => {
-      this._writeMPU9250(address, byte);
+    const write = (address, bytes) => {
+      this._writeMPU9250Bytes(address, bytes);
     }
     const data = this._gyroBiasRaw;
-    write(MPU9250.XG_OFFSET_H, data[0]);
-    write(MPU9250.XG_OFFSET_L, data[1]);
-    write(MPU9250.YG_OFFSET_H, data[2]);
-    write(MPU9250.YG_OFFSET_L, data[3]);
-    write(MPU9250.ZG_OFFSET_H, data[4]);
-    write(MPU9250.ZG_OFFSET_L, data[5]);
+    write(MPU9250.XG_OFFSET_H, data);
   },
 
   _calibrateAK8963: function()
@@ -404,11 +403,12 @@ imu.prototype =
       (mag_max[2] - mag_min[2]) / 2   // get average z axis max chord length in counts
     ];
     const avg_rad = ((mag_scale[0] + mag_scale[1] + mag_scale[2]) / 3);
+//console.log(mag_max, mag_min, mag_scale, avg_rad, this._magCalibration, MRES);
 
     this._magBias = [ mag_bias[0] * MRES * this._magCalibration[0], mag_bias[1] * MRES * this._magCalibration[1], mag_bias[2] * MRES * this._magCalibration[2] ];
     if (avg_rad === 0)
     {
-      this._magScale = [ 1, 1, 1 ];
+      throw new Error();
     }
     else
     {
@@ -435,12 +435,15 @@ imu.prototype =
     if ((this._readAK8963(AK8963.ST1) & 0x01) != 0)
     {
       const data = this._readAK8963Bytes(AK8963.XOUT_L, 7);
-      this._currentAKData =
-      [
-        data.readInt16LE(0),
-        data.readInt16LE(2),
-        data.readInt16LE(4)
-      ];
+      if ((data[6] & 0x08) === 0)
+      {
+        this._currentAKData =
+        [
+          data.readInt16LE(0),
+          data.readInt16LE(2),
+          data.readInt16LE(4)
+        ];
+      }
     }
     return this._currentAKData;
   },
@@ -448,6 +451,11 @@ imu.prototype =
   _writeMPU9250: function(address, byte)
   {
     this._i2cMPU9250.writeBytes(Buffer.from([ address, byte ]));
+  },
+
+  _writeMPU9250Bytes: function(address, bytes)
+  {
+    this._i2cMPU9250.writeBytes(Buffer.from([ address ].concat(bytes)));
   },
 
   _readMPU9250: function(address)
