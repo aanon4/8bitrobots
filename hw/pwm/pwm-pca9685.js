@@ -110,37 +110,37 @@ pwmChannel.prototype =
     this._plans.push(plan);
     if (this._plans.length === 1)
     {
-      let idx = 0;
       const run = () => {
-        const plan = this._plans[0];
-        if (plan.idle)
+        if (this._plans.length > 0)
         {
-          this._pwm._setPulseMs(this._subaddress, 0);
-          this._plans.shift();
-        }
-        else if ('movement' in plan)
-        {
-          this._lastMs = plan.movement[idx++];
-          this._pwm._setPulseMs(this._subaddress, this._lastMs);
-          if (idx >= plan.movement.length)
+          const plan = this._plans[0];
+          if ('idle' in plan)
           {
-            idx = 0;
+            if (plan.idle)
+            {
+              this._pwm._setPulseMs(this._subaddress, 0);
+            }
             this._plans.shift();
+            run();
           }
-        }
-        if (this._plans.length === 0)
-        {
-          clearInterval(this._timer);
+          else if ('movement' in plan)
+          {
+            this._planner.execute(plan.movement, this.getCyclePeriod(),
+              (value) => {
+                this._lastMs = value;
+                this._pwm._setPulseMs(this._subaddress, this._lastMs);
+              },
+              () => {
+                this._plans.shift();
+                run();
+              }
+            );
+          }
         }
       }
       run();
-      if (this._plans.length !== 0)
-      {
-        clearInterval(this._timer);
-        this._timer = setInterval(run, this.getCyclePeriod());
-      }
     }
-  },
+  }
 };
 
 function PWM(config)

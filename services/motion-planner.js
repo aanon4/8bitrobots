@@ -36,6 +36,25 @@ Planner.prototype =
     });
 
     return Float32Array.from(motion);
+  },
+
+  execute: function(motion, period, stepFn, doneFn)
+  {
+    let timer = null;
+    let idx = 0;
+    const run = () => {
+      stepFn(motion[idx++]);
+      if (idx >= motion.length)
+      {
+        clearInterval(timer);
+        doneFn();
+      }
+    }
+    run();
+    if (idx < motion.length)
+    {
+      timer = setInterval(run, period);
+    }
   }
 }
 
