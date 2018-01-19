@@ -8,7 +8,6 @@ const fs = require('fs');
 
 const MPU9250 =
 {
-  XG_OFFSET_H:   0x13,
   SMPLRT_DIV:    0x19,
   CONFIG:        0x1A,
   GYRO_CONFIG:   0x1B,
@@ -79,7 +78,7 @@ imu.prototype =
     this._configure(this._reset);
     this._clock = setInterval(() => {
       this._processTick();
-    }, 100);
+    }, 10);
     return this;
   },
 
@@ -107,9 +106,9 @@ imu.prototype =
     const ay = data[1] * ARES - this._accelBias[1];
     const az = data[2] * ARES - this._accelBias[2];
 
-    const gx = data[4] * GRES;
-    const gy = data[5] * GRES;
-    const gz = data[6] * GRES;
+    const gx = data[4] * GRES - this._gyroBias[0];
+    const gy = data[5] * GRES - this._gyroBias[1];
+    const gz = data[6] * GRES - this._gyroBias[2];
 
     data = this._readAK8963Data();
 
@@ -117,9 +116,6 @@ imu.prototype =
     const my = (data[1] * MRES * this._magCalibration[1] - this._magBias[1]) * this._magScale[1];
     const mz = (data[2] * MRES * this._magCalibration[2] - this._magBias[2]) * this._magScale[2];
 
-//console.log(this._magScale);
-//console.log('mx', data[0].toFixed(2), mx.toFixed(2));
-//console.log('my', data[1].toFixed(2), my.toFixed(2));
     this._MadgwickQuaternionUpdate(-ax, ay, az, gx * Math.PI / 180.0, -gy * Math.PI / 180.0, -gz * Math.PI / 180.0,  my,  -mx, mz);
 
     this._adOrientation.publish(
@@ -151,7 +147,6 @@ imu.prototype =
     }
     else
     {
-      this._updateRawBiasMPU9250();
       this._configureMPU9250();
       this._configureAK8963();
     }
@@ -282,7 +277,6 @@ imu.prototype =
       {
         fdata[jj] = read(MPU9250.FIFO_R_W, 1)[0];
       }
-      //console.log(fdata);
       let accel_temp =
       [
         fdata.readInt16BE(0),
@@ -320,20 +314,6 @@ imu.prototype =
       accel_bias[2] += accelsensitivity;
     }
       
-    // Construct the gyro biases for push to the hardware gyro bias registers, which are reset to zero upon device startup
-    this._gyroBiasRaw =
-    [
-      (-gyro_bias[0] / 4  >> 8) & 0xFF, // Divide by 4 to get 32.9 LSB per deg/s to conform to expected bias input format
-      (-gyro_bias[0] / 4)       & 0xFF, // Biases are additive, so change sign on calculated average gyro biases
-      (-gyro_bias[1] / 4  >> 8) & 0xFF,
-      (-gyro_bias[1] / 4)       & 0xFF,
-      (-gyro_bias[2] / 4  >> 8) & 0xFF,
-      (-gyro_bias[2] / 4)       & 0xFF
-    ];
-  
-    // Push gyro biases to hardware registers
-    this._updateRawBiasMPU9250();
-    
     // Output scaled gyro biases 
     this._gyroBias =
     [
@@ -341,7 +321,7 @@ imu.prototype =
       gyro_bias[1] / gyrosensitivity,
       gyro_bias[2] / gyrosensitivity
     ];
-    
+
     // Output scaled accelerometer biases 
     this._accelBias =
     [
@@ -349,15 +329,6 @@ imu.prototype =
       accel_bias[1] / accelsensitivity,
       accel_bias[2] / accelsensitivity
     ];
-  },
-
-  _updateRawBiasMPU9250: function()
-  {
-    const write = (address, bytes) => {
-      this._writeMPU9250Bytes(address, bytes);
-    }
-    const data = this._gyroBiasRaw;
-    write(MPU9250.XG_OFFSET_H, data);
   },
 
   _calibrateAK8963: function()
@@ -403,7 +374,6 @@ imu.prototype =
       (mag_max[2] - mag_min[2]) / 2   // get average z axis max chord length in counts
     ];
     const avg_rad = ((mag_scale[0] + mag_scale[1] + mag_scale[2]) / 3);
-//console.log(mag_max, mag_min, mag_scale, avg_rad, this._magCalibration, MRES);
 
     this._magBias = [ mag_bias[0] * MRES * this._magCalibration[0], mag_bias[1] * MRES * this._magCalibration[1], mag_bias[2] * MRES * this._magCalibration[2] ];
     if (avg_rad === 0)
@@ -494,8 +464,7 @@ imu.prototype =
       magBias: this._magBias,
       magScale: this._magScale,
       accelBias: this._accelBias,
-      gyroBias: this._gyroBias,
-      gyroBiasRaw: this._gyroBiasRaw
+      gyroBias: this._gyroBias
     };
     fs.writeFileSync('./saved/imu-calibration-data' + this._name.replace(/\//g, '-') + '.json', JSON.stringify(calibrationData));
   },
@@ -509,7 +478,6 @@ imu.prototype =
       this._magScale = calibrationData.magScale;
       this._accelBias = calibrationData.accelBias;
       this._gyroBias = calibrationData.gyroBias;
-      this._gyroBiasRaw = calibrationData.gyroBiasRaw;
       return true;
     }
     catch (_)
