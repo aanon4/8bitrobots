@@ -2,7 +2,7 @@ console.info('Loading Kinematics.');
 
 const THREE = require('../services/three');
 
-const AUTOLEVEL_DELAY = 10;
+const AUTOLEVEL_DELAY = 5000; // 5 seconds
 
 const TOPIC_SETLEVEL = { topic: 'set_level' };
 
@@ -108,30 +108,33 @@ kinematics.prototype =
     let orientation = this._orientations[event.name];
     if (!orientation)
     {
-      orientation = { count: 0, levels: { pitch: 0, roll: 0, heading: 0 } };
+      orientation = { when: Date.now() + AUTOLEVEL_DELAY, levels: { pitch: 0, roll: 0, heading: 0 } };
       this._orientations[event.name] = orientation;
     }
 
     // Convert quaternion conjugate to euler
     let q = new THREE.Quaternion(event.x, event.y, event.z, event.w);
-    let v = new THREE.Object3D();
-    v.setRotationFromQuaternion(q);
+    let v = new THREE.Euler();
+    v.setFromQuaternion(q);
     let euler =
     {
-      pitch: -v.rotation.x,
-      roll: -v.rotation.y,
-      heading: v.rotation.z,
+      pitch: v.x,
+      roll: v.y,
+      heading: v.z,
     };
 
-    if (orientation.count++ === AUTOLEVEL_DELAY)
+    if (orientation.when !== 0 && orientation.when < Date.now())
     {
       // Auto-level
+      orientation.when = 0;
       orientation.levels.pitch = euler.pitch;
       orientation.levels.roll = euler.roll;
     }
  
     const center = new THREE.Vector2();
 
+    // Store the various axes rotations as vectors. This allows us to easily average
+    // multiple rotations later.
     orientation.confidence = event.confidence;
     orientation.pitch = new THREE.Vector2(1, 0).rotateAround(center, euler.pitch - orientation.levels.pitch);
     orientation.roll = new THREE.Vector2(1, 0).rotateAround(center, euler.roll - orientation.levels.roll);
