@@ -21,6 +21,7 @@
     <span ontouchstart="gesture('manual')">Manual</span>
   </div>
   <img id="video">
+  <img id="compass" src="image/compass.png">
   <script>
     const SCREEN_WIDTH = screen.height;
     const SCREEN_HEIGHT = screen.width;
@@ -144,6 +145,11 @@
     });
     tick = setInterval(moveStick, 500); // Movement heatbeat
     document.getElementById('video').src = window.location.protocol + '//' + window.location.hostname + ':8081/video';
+    
+    ros.subscribe({ topic: '/kinematics/angular' }, function(e)
+    {
+      document.getElementById('compass').style.transform = 'rotate(' + (e.heading * 180 / Math.PI) + 'deg)';
+    });
   </script>
 </body>
 </html>

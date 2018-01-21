@@ -9,6 +9,7 @@ module.exports = function()
       '/': 'config/car/ui/controller.html',
       '/js/ros.js': './services/ros.js',
       '/js/ros-webconnector.js': 'config/robot/ui/ros-webconnector.js',
+      '/image/compass.png': 'config/car/ui/compass.png'
     }
   });
 }

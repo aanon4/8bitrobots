@@ -29,7 +29,7 @@ module.exports = function()
         next: new MOTOR(
         {
           esc: vesc,
-          reverse: true
+          reverse: false
         })
       }),
       ros: 'topicOnly'
