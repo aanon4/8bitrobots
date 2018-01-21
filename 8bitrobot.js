@@ -20,13 +20,19 @@ console.info('*** Starting 8BitRobot: ' + configName);
 // Log any uncaught exceptions
 process.on('uncaughtException', function(e)
 {
+  console.error('Uncaught exception:');
+  console.error(e.stack);
+});
+// Log any unhandled promise exceptions
+process.on('unhandledRejection', function(e, p)
+{
+  console.error('Unhandled Promise rejection:');
   console.error(e.stack);
 });
 
 // Load up some generally useful pieces before we load specific services.
 require('./services/globals');
 require('./services/debugger');
-require('./services/logger');
 require('./services/telemetry');
 require('./services/services').loadConfig(configName);
 
