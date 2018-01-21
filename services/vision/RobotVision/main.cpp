@@ -4,9 +4,7 @@
 using namespace cv;
 using namespace std;
 
-const float FRAME_DELAY = 8; // I'm seeing an 8-frame delay to render
-const float MAX_LATENCY = 0.100; // 100ms is the acceptable latency
-const float FRAME_RATE = (int)(FRAME_DELAY / MAX_LATENCY); // So this is the required frame rate
+const float FRAME_RATE = 10;
 const chrono::milliseconds frame_time((int)(1000.0 / FRAME_RATE));
 
 int main()

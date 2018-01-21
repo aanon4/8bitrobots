@@ -14,8 +14,8 @@ void VideoServer::run()
       class MJPEG {
       public:
         static void send_image(VideoServer* server, const shared_ptr<HttpServer::Response> &response) {
+          auto start = chrono::steady_clock::now();
           unique_lock<mutex> lk(server->image_lock);
-          server->image_notify.wait(lk);
           if (server->image.empty()) {
             vector<int> params;
             params.push_back(IMWRITE_JPEG_QUALITY);
@@ -29,13 +29,16 @@ void VideoServer::run()
           response->write((const char*)server->image.data(), size);
           lk.unlock();
           response->write_more("\r\n");
-          response->send([server, response](const SimpleWeb::error_code &ec) {
+          response->send([server, response, start](const SimpleWeb::error_code &ec) {
             if (!ec) {
               send_image(server, response);
             }
             else {
               // Done
-              server->active--;
+              if (server->active > 0)
+              {
+                server->active--;
+              }
             }
           });
         }
@@ -63,11 +66,10 @@ void VideoServer::run()
 
 void VideoServer::set_image(Mat& frame)
 {
-  if (active > 0 && image_lock.try_lock())
+  if (image_lock.try_lock())
   {
     frame.copyTo(this->frame);
     image.clear();
-    image_notify.notify_all();
     image_lock.unlock();
   }
 }
