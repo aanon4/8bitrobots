@@ -119,18 +119,18 @@ imu.prototype =
       return;
     }
 
-    // Continually calibrate the compass
+    // Continually calibrate the magnometer
     let avg_scale = 0;
     for (let axis = 0; axis < 3; axis++)
     {
       const v = data[axis];
       if (v > this._magLimits.max[axis])
       {
-        this._magLimits.max[axis] = v;
+        this._magLimits.max[axis] += (v - this._magLimits.max[axis]) / 5;
       }
       if (v < this._magLimits.min[axis])
       {
-        this._magLimits.min[axis] = v;
+        this._magLimits.min[axis] -= (this._magLimits.min[axis] - v) / 5;
       }
       const bias = (this._magLimits.max[axis] + this._magLimits.min[axis]) / 2;
       const scale = (this._magLimits.max[axis] - this._magLimits.min[axis]) / 2;

@@ -1,3 +1,5 @@
+'use strict';
+
 console.info('Loading Kinematics.');
 
 const THREE = require('../services/three');
