@@ -5,6 +5,10 @@ using namespace std;
 using namespace cv;
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
+const float FRAME_RATE = 30;
+const chrono::milliseconds frame_time((int)(1000.0 / FRAME_RATE));
+
+
 void VideoServer::run()
 {
   server.config.port = 8081;
@@ -31,6 +35,10 @@ void VideoServer::run()
           response->write_more("\r\n");
           response->send([server, response, start](const SimpleWeb::error_code &ec) {
             if (!ec) {
+              auto duration = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start);
+              if (duration < frame_time) {
+                this_thread::sleep_for(frame_time - duration);
+              }
               send_image(server, response);
             }
             else {
@@ -44,6 +52,7 @@ void VideoServer::run()
         }
       };
       SimpleWeb::CaseInsensitiveMultimap headers;
+      headers.emplace("Cache-Control", "no-cache, must-revalidate");
       headers.emplace("Content-Type", "multipart/x-mixed-replace;boundary=opencv_video");
       response->write(SimpleWeb::StatusCode::success_ok, headers);
       this->active++;
@@ -54,11 +63,15 @@ void VideoServer::run()
 
   
   server.resource["^/test$"]["GET"] = [](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> /*request*/) {
-    response->write("<html><body><img width='640' height='480' src='/video'></body></html>");
+    response->write("<html><body><img width='640' height='480' src='/video?" + to_string(rand()) + "'></body></html>");
   };
 
-  server.on_error = [](shared_ptr<HttpServer::Request> /*request*/, const SimpleWeb::error_code & /*ec*/) {
+  server.on_error = [this](shared_ptr<HttpServer::Request> /*request*/, const SimpleWeb::error_code & /*ec*/) {
     // Handle errors here
+    if (this->active > 0)
+    {
+      this->active--;
+    }
   };
 
   server.start();
