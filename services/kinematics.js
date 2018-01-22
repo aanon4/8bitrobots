@@ -44,19 +44,19 @@ kinematics.prototype =
     this._adCalibration = this._node.advertise(TOPIC_K_CALIBRATION);
     this._adPosition = this._node.advertise(TOPIC_K_POSITION);
 
-    this._monitor.forEach((prefix) =>
+    this._monitor.forEach((mon) =>
     {
-      this._node.subscribe(this._topicName(prefix, TOPIC_ORIENTATION), (event) =>
+      this._node.subscribe(this._topicName(mon.name, TOPIC_ORIENTATION), (event) =>
       {
-        this._imuOrientation(event);
+        this._imuOrientation(mon, event);
       })
-      this._node.subscribe(this._topicName(prefix, TOPIC_ACCELERATION), (event) =>
+      this._node.subscribe(this._topicName(mon.name, TOPIC_ACCELERATION), (event) =>
       {
-        this._imuAcceleration(event);
+        this._imuAcceleration(mon, event);
       });
-      this._node.subscribe(this._topicName(prefix, TOPIC_CALIBRATION), (event) =>
+      this._node.subscribe(this._topicName(mon.name, TOPIC_CALIBRATION), (event) =>
       {
-        this._imuCalibration(event);
+        this._imuCalibration(mon, event);
       });
     });
 
@@ -78,11 +78,11 @@ kinematics.prototype =
   
   disable: function()
   {
-    this._monitor.forEach((prefix) =>
+    this._monitor.forEach((mon) =>
     {
-      this._node.unsubscribe(this._topicName(prefix, TOPIC_ORIENTATION));
-      this._node.unsubscribe(this._topicName(prefix, TOPIC_ACCELERATION));
-      this._node.unsubscribe(this._topicName(prefix, TOPIC_CALIBRATION));
+      this._node.unsubscribe(this._topicName(mon.name, TOPIC_ORIENTATION));
+      this._node.unsubscribe(this._topicName(mon.name, TOPIC_ACCELERATION));
+      this._node.unsubscribe(this._topicName(mon.name, TOPIC_CALIBRATION));
     });
 
     this._node.unsubscribe(TOPIC_SETLEVEL);
@@ -104,14 +104,14 @@ kinematics.prototype =
     return ntopic;
   },
 
-  _imuOrientation: function(event)
+  _imuOrientation: function(imu, event)
   {
     // Update orientation from IMU
-    let orientation = this._orientations[event.name];
+    let orientation = this._orientations[imu.name];
     if (!orientation)
     {
-      orientation = { when: Date.now() + AUTOLEVEL_DELAY, levels: { pitch: 0, roll: 0, heading: 0 } };
-      this._orientations[event.name] = orientation;
+      orientation = { when: Date.now() + AUTOLEVEL_DELAY, levels: { pitch: 0, roll: 0, heading: imu.headingOffset } };
+      this._orientations[imu.name] = orientation;
     }
 
     // Convert quaternion conjugate to euler
@@ -191,17 +191,12 @@ kinematics.prototype =
     }
   },
   
-  _imuAcceleration: function(event)
+  _imuAcceleration: function(imu, event)
   {
-    if (this._monitor.indexOf(event.name) === -1)
-    {
-      return;
-    }
-
     if (event.confidence > 0)
     {
       // Update acceleration from IMU
-      var acc = this._accelerations[event.name] || (this._accelerations[event.name] = {});
+      var acc = this._accelerations[imu.name] || (this._accelerations[imu.name] = {});
       acc.x = event.linearaccel.x;
       acc.y = event.linearaccel.y;
       acc.z = event.linearaccel.z;
@@ -229,15 +224,10 @@ kinematics.prototype =
     }
   },
   
-  _imuCalibration: function(event)
+  _imuCalibration: function(imu, event)
   {
-    if (this._monitor.indexOf(event.name) === -1)
-    {
-      return;
-    }
-
     var now = Date.now();
-    var cal = this._calibrations[event.name] || (this._calibrations[event.name] = {});
+    var cal = this._calibrations[imu.name] || (this._calibrations[imu.name] = {});
     cal.condidence = event.confidence;
     if (event.confidence > 0)
     {
