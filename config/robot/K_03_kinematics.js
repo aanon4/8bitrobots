@@ -4,7 +4,10 @@ module.exports = function()
   return new Kinematics(
   {
     name: '/kinematics/manager',
-    monitor: [ '/imu/body' ],
+    monitor:
+    [
+      { name: '/imu/body', headingOffset: 0 }
+    ],
     calibrationTimeout: 5000
   });
 }
