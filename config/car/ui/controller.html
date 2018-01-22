@@ -144,7 +144,7 @@
       }
     });
     tick = setInterval(moveStick, 500); // Movement heatbeat
-    document.getElementById('video').src = window.location.protocol + '//' + window.location.hostname + ':8081/video';
+    document.getElementById('video').src = window.location.protocol + '//' + window.location.hostname + ':8081/video?r=' + Math.random();
     
     ros.subscribe({ topic: '/kinematics/angular' }, function(e)
     {
