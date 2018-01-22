@@ -325,10 +325,20 @@ imu.prototype =
     {
       this._writeUart(data);
       let response = this._readUart();
-      let status = this._readUart();
-      if (response == 0xEE && status == 0x01)
+      if (address == BNO055.SYS_TRIGGER)
       {
-        return;
+        if (response == 0xEE)
+        {
+          return;
+        }
+      }
+      else
+      {
+        let status = this._readUart();
+        if (response == 0xEE && status == 0x01)
+        {
+          return;
+        }
       }
     }
     throw new Error();
@@ -342,6 +352,7 @@ imu.prototype =
 
   _readUart: function()
   {
+    //console.log('read');
     if (this._uartBuffer.length == 0)
     {
       let timeout = Date.now() + UART_TIMEOUT;
@@ -354,7 +365,9 @@ imu.prototype =
         throw new Error();
       }
     }
-    return this._uartBuffer.shift();
+    let v = this._uartBuffer.shift();
+    //console.log(v);
+    return v;
   },
 
   _readBytesSim(address, readLen)
@@ -599,6 +612,7 @@ imu.prototype =
       }
       catch (_)
       {
+        console.error('Reset failed');
       }
 
       // Wait for the device to be ready
