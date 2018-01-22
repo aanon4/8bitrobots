@@ -462,7 +462,7 @@ imu.prototype =
     this._calibration.sys = (status & 0xC0) >> 6;
     //console.log(this._calibration);
 
-    this._confidence = this._calibration.sys;
+    this._confidence = this._calibration.sys + 1;
     var diff = false;
     for (var s in this._calibration)
     {
