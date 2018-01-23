@@ -144,9 +144,21 @@ Master.prototype =
     runMaster(global.webserver);
     this._node.service(SERVICE_LIST, (request) =>
     {
-      let topics = [];
-      let services = [];
-      __rosEmitter.eventNames().forEach((name) => {
+      const topics = [];
+      const services = [];
+      let eventNames = [];
+      if (__rosEmitter.eventNames)
+      {
+        eventNames = __rosEmitter.eventNames();
+      }
+      else
+      {
+        for (let name in __rosEmitter._events)
+        {
+          eventNames.push(name);
+        } 
+      }
+      eventNames.forEach((name) => {
         if (name.match(/\/__subscribe$/))
         {
           topics.push(name.substring(0, name.length - 12));
