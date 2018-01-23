@@ -27,7 +27,7 @@ rosEmitter = {};
     try
     {
       var opened = false;
-      socket = new WebSocket('ws://' + window.location.host + '/socket');
+      socket = new WebSocket('ws://' + window.location.host + '/ros');
       socket.onopen = function()
       {
         opened = true;

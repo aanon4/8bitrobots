@@ -27,7 +27,7 @@ function runMaster(webserver)
 
   websocketserver.on('request', function(request)
   {
-    if (request.resource !== '/socket')
+    if (request.resource !== '/ros')
     {
       request.reject();
     }

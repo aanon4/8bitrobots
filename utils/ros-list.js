@@ -21,7 +21,7 @@ if (argv.length !== 0)
   process.exit(1);
 }
 
-const NODE = new ROS_SLAVE({ name: '/ros-list', target: `ws://${target}:8080/socket` }).enable()._node;
+const NODE = new ROS_SLAVE({ name: '/ros-list', target: `ws://${target}:8080/ros` }).enable()._node;
 
 const LIST = NODE.proxy({ service: '/list' });
 LIST({}).then((list) => {

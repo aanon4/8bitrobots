@@ -21,7 +21,7 @@ if (argv.length !== 2)
   process.exit(1);
 }
 
-const NODE = new ROS_SLAVE({ name: '/ros-cmd', target: `ws://${target}:8080/socket` }).enable()._node;
+const NODE = new ROS_SLAVE({ name: '/ros-cmd', target: `ws://${target}:8080/ros` }).enable()._node;
 
 const CMD = NODE.proxy({ service: `${argv[0]}` });
 CMD(JSON.parse(argv[1])).then((result) => {
