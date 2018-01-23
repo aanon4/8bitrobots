@@ -284,17 +284,12 @@ imu.prototype =
 
   _readBytesI2C: function(address, readLen)
   {
-    let ret = [];
-    for (var i = 0; i < readLen; i++)
-    {
-      ret[i] = this._i2c.writeAndReadBytes([ address + i ], 1)[0];
-    }
-    return ret;
+    return Array.prototype.slice.call(this._i2c.writeAndReadBytes(Buffer.from([ address ]), readLen), 0);
   },
 
   _writeBytesI2C: function(address, bytes)
   {
-    return this._i2c.writeBytes([ address ].concat(bytes));
+    return this._i2c.writeBytes(Buffer.from([ address ].concat(bytes)));
   },
 
   _readBytesUart: function(address, readLen)
