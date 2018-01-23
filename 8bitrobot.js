@@ -30,11 +30,11 @@ process.on('unhandledRejection', function(e, p)
   console.error(e.stack);
 });
 
-// Load up some generally useful pieces before we load specific services.
-require('./services/globals');
-require('./services/debugger');
-require('./services/services').loadConfig(configName);
-//require('./services/telemetry');
+// Load up some generally useful pieces before we load specific modules.
+require('./modules/globals');
+require('./modules/debugger');
+require('./modules/services').loadConfig(configName);
+//require('./modules/telemetry');
 
 // Shutdown cleanly
 process.on('SIGINT', function()

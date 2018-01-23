@@ -3,8 +3,8 @@
 'use strict';
 
 console.info = function(){};
-const ROS_SLAVE = require('../services/slave');
-const ROS = require('../services/ros');
+const ROS_SLAVE = require('../modules/slave');
+const ROS = require('../modules/ros');
 
 let target = 'localhost';
 const argv = process.argv.slice(2);

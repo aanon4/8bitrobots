@@ -2,7 +2,7 @@
 
 console.info('Loading Kinematics.');
 
-const THREE = require('../services/three');
+const THREE = require('../modules/three');
 
 const AUTOLEVEL_DELAY = 5000; // 5 seconds
 

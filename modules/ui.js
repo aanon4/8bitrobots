@@ -5,7 +5,7 @@ console.info('Loading UI.');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const Service = require('../services/services');
+const Service = require('../modules/services');
 
 
 function incoming(request, response)

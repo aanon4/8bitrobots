@@ -1,6 +1,6 @@
 console.info('Loading Cameras.');
 
-const Service = require('../../services/services');
+const Service = require('../../modules/services');
 const Lights = require('./lights');
 const Gimbal = require('../gimbal');
 

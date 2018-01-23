@@ -10,10 +10,10 @@ const TOPIC_SHUTDOWN = { topic: '/health/shutdown' };
 
 function runSlave(target)
 {
-  let id = UUID();
+  const id = UUID();
 
-  var connection = null;
-  var pending = [];
+  let connection = null;
+  let pending = [];
 
   function send(event)
   {
@@ -32,7 +32,7 @@ function runSlave(target)
     doSend();
   }
 
-  let websocketclient = new websocket.client();
+  const websocketclient = new websocket.client();
 
   function reconnect()
   {
@@ -56,7 +56,7 @@ function runSlave(target)
       {
         try
         {
-          let msg = JSON.parse(message.utf8Data);
+          const msg = JSON.parse(message.utf8Data);
           switch (msg.op)
           {
             case 'addListener':
@@ -91,7 +91,7 @@ function runSlave(target)
     });
     connection.on('close', () =>
     {
-      for (var name in remoteListeners)
+      for (let name in remoteListeners)
       {
         __rosEmitter.removeListener(name, remoteListeners[name]);
       }
@@ -99,7 +99,7 @@ function runSlave(target)
       reconnect();
     });
 
-    let pend = pending;
+    const pend = pending;
     pending = [];
     pend.forEach((fn) =>
     {

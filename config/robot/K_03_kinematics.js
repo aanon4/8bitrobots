@@ -1,6 +1,6 @@
 module.exports = function()
 {
-  const Kinematics = require('services/kinematics');
+  const Kinematics = require('modules/kinematics');
   return new Kinematics(
   {
     name: '/kinematics/node',

@@ -1,6 +1,6 @@
 'use strict';
 
-const ROSAPIAngle = require('services/ros-api-angle');
+const ROSAPIAngle = require('modules/ros-api-angle');
 
 function servo(config, settings)
 {

@@ -2,8 +2,8 @@
 
 console.info('Loading Robot Brain.');
 
-const MotionPlanner = require('services/motion-planner');
-const StateManager = require('services/state-manager');
+const MotionPlanner = require('modules/motion-planner');
+const StateManager = require('modules/state-manager');
 
 const TOPIC_STATE = { topic: 'state' };
 

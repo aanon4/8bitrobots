@@ -1,6 +1,6 @@
 'use strict';
 
-const ROSAPIVelocity = require('services/ros-api-velocity');
+const ROSAPIVelocity = require('modules/ros-api-velocity');
 
 
 function wheel(config, settings)

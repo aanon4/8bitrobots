@@ -3,7 +3,7 @@
 console.info('Loading PCA9685 controllers.');
 
 const native = require('.');
-const MotionPlanner = require('services/motion-planner');
+const MotionPlanner = require('modules/motion-planner');
 
 
 function pwmChannel(pwm, subaddress)

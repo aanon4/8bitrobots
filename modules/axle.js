@@ -2,8 +2,8 @@
 
 console.info('Loading Axle.');
 
-const ROSAPIAngle = require('services/ros-api-angle');
-const ROSAPIVelocity = require('services/ros-api-velocity');
+const ROSAPIAngle = require('modules/ros-api-angle');
+const ROSAPIVelocity = require('modules/ros-api-velocity');
 
 function axle(config)
 {

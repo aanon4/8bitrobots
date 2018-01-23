@@ -3,7 +3,7 @@
 console.info('Loading Health Monitor.');
 
 const usage = require('usage');
-const filters = require('../services/filters');
+const filters = require('../modules/filters');
 
 const batteryCurves =
 {

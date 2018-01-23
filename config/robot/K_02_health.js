@@ -1,6 +1,6 @@
 module.exports = function()
 {
-  const Health = require('services/health');
+  const Health = require('modules/health');
   return new Health(
   {
     name: '/health/node',

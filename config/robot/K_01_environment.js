@@ -1,6 +1,6 @@
 module.exports = function()
 {
-  const Environment = require('services/environment');
+  const Environment = require('modules/environment');
   return new Environment(
   {
     name: '/environment/node',

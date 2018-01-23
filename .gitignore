@@ -1,7 +1,7 @@
 private
 node_modules/*
 hw/board/*/native/build/*
-services/vision/RobotVision/build
+modules/vision/RobotVision/build
 saved/*
 
 npm-debug.log

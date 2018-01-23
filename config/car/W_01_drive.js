@@ -1,6 +1,6 @@
 module.exports = function()
 {
-  const AXLE = require('services/axle');
+  const AXLE = require('modules/axle');
   const SERVO = require('hw/servo/servo-hs422');
   const WHEEL = require('hw/wheel/wheel-63mm');
   const MOTOR = require('hw/motor/motor-tenshock-rc906-11y-1750kv');

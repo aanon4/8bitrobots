@@ -2,7 +2,7 @@
 
 console.info('Loading RaspberryPi GPIO/PWM controllers.');
 
-const MotionPlanner = require('services/motion-planner');
+const MotionPlanner = require('modules/motion-planner');
 
 let PIGPIO;
 if (!SIMULATOR)

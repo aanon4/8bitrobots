@@ -2,7 +2,7 @@
 
 console.info('Loading Gesture: Idle');
 
-const MP = require('services/motion-planner');
+const MP = require('modules/motion-planner');
 
 const Limits =
 {

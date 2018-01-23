@@ -1,7 +1,7 @@
 'use strict';
 
 const native = require('.');
-const MotionPlanner = require('services/motion-planner');
+const MotionPlanner = require('modules/motion-planner');
 
 console.info('Loading BeagleBoneBlue Servo controllers.');
 

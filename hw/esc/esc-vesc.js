@@ -4,7 +4,7 @@ console.info('Loading VESCs (UART).');
 
 const SerialPort = require('serialport');
 const crc16 = require('crc16');
-const MotionPlanner = require('services/motion-planner');
+const MotionPlanner = require('modules/motion-planner');
 
 const STATE =
 {

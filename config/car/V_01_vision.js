@@ -1,7 +1,7 @@
 
 module.exports = function()
 {
-  const Vision = require('services/vision/vision-opencv');
+  const Vision = require('modules/vision/vision-opencv');
 
   return new Vision(
   {
