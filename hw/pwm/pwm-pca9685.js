@@ -127,8 +127,8 @@ pwmChannel.prototype =
           {
             this._planner.execute(plan.movement, this.getCyclePeriod(),
               (value) => {
-                this._lastMs = value;
-                this._pwm._setPulseMs(this._subaddress, this._lastMs);
+                this._currentMs = value;
+                this._pwm._setPulseMs(this._subaddress, this._currentMs);
               },
               () => {
                 this._plans.shift();
