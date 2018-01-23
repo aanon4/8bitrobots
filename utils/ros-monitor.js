@@ -20,8 +20,7 @@ if (argv.length === 0)
   process.exit(1);
 }
 
-const SLAVE = new ROS_SLAVE({ target: `ws://${target}:8080/socket` }).enable();
-const NODE = SLAVE._node;
+const NODE = new ROS_SLAVE({ name: '/ros-monitor', target: `ws://${target}:8080/socket` }).enable()._node;
 
 function logTopic(e)
 {

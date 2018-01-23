@@ -114,6 +114,8 @@ function runSlave(target)
   });
   websocketclient.connect(target);
 
+  let _sendToMaster = [];
+
   __rosEmitter.on('removeListener', (eventName, listener) =>
   {
     if (listener.__remote !== id)
@@ -131,6 +133,10 @@ function runSlave(target)
   });
   __rosEmitter.on('newListener', (eventName, listener) =>
   {
+    if (_sendToMaster.indexOf(listener) !== -1)
+    {
+      return;
+    }
     if (eventName in localListeners)
     {
       localListeners[eventName]++;
@@ -139,6 +145,28 @@ function runSlave(target)
     {
       localListeners[eventName] = 1;
       send({ op: 'addListener', name: eventName });
+      if (eventName.substr(-10) === '/__connect')
+      {
+        function connectToMaster(event)
+        {
+          if (event.available === null)
+          {
+            send({ op: 'emit', name: eventName, event: event });
+          }
+          else if (event.available === true)
+          {
+            const newEventName = eventName.substring(0, eventName.length - 10);
+            function sendToMaster(event)
+            {
+              send({ op: 'emit', name: newEventName, event: event });
+            }
+            _sendToMaster.push(sendToMaster);
+            __rosEmitter.addListener(newEventName, sendToMaster);
+          }
+        }
+        _sendToMaster.push(connectToMaster);
+        __rosEmitter.addListener(eventName, connectToMaster);
+      }
     }
   });
 };

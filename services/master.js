@@ -5,6 +5,7 @@ console.info('Loading Master.');
 const websocket = require('websocket');
 const UUID = require('uuid/v4');
 
+const SERVICE_LIST_TOPICS = { service: 'list' };
 
 function runMaster(webserver)
 {
@@ -14,7 +15,7 @@ function runMaster(webserver)
   });
 
   let connections = {};
-  var localListeners = {};
+  let localListeners = {};
   function sendAll(event)
   {
     event = JSON.stringify(event);
@@ -100,7 +101,7 @@ function runMaster(webserver)
 
   __rosEmitter.on('removeListener', (eventName, listener) =>
   {
-    if (!listener.__remote)
+    /*if (!listener.__remote)
     {
       if (localListeners[eventName] == 1)
       {
@@ -111,11 +112,11 @@ function runMaster(webserver)
       {
         localListeners[eventName]--;
       }
-    }
+    }*/
   });
   __rosEmitter.on('newListener', (eventName, listener) =>
   {
-    if (!listener.__remote)
+    /*if (!listener.__remote)
     {
       if (eventName in localListeners)
       {
@@ -126,7 +127,7 @@ function runMaster(webserver)
         localListeners[eventName] = 1;
         sendAll({ op: 'addListener', name: eventName });
       }
-    }
+    }*/
   });
 };
 
@@ -141,6 +142,25 @@ Master.prototype =
   enable: function()
   {
     runMaster(global.webserver);
+    this._node.service(SERVICE_LIST_TOPICS, (request) =>
+    {
+      let topics = [];
+      let services = [];
+      __rosEmitter.eventNames().forEach((name) => {
+        if (name.match(/\/__subscribe$/))
+        {
+          topics.push(name.substring(0, name.length - 12));
+        }
+        else if (name.match(/\/__connect$/))
+        {
+          services.push(name.substring(0, name.length - 10));
+        }
+      });
+      return {
+        topics: topics,
+        services: services
+      };
+    });
     return this;
   },
 

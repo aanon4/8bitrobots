@@ -39,13 +39,13 @@ rosNodeInternal.prototype =
 {
   subscribe: function(options, callback)
   {
-    let topic = this.resolveName(options.topic);
+    const topic = this.resolveName(options.topic);
     if (topic in this._subscribers)
     {
       throw new Error();
     }
-    let uuid = this.resolveName(`~${UUID()}`);
-    let subscriber = (event) =>
+    const uuid = this.resolveName(`~${UUID()}`);
+    const subscriber = (event) =>
     {
       emitter.removeListener(uuid, subscriber);
       if (event.latched)
@@ -100,24 +100,23 @@ rosNodeInternal.prototype =
         let event = Object.assign({ timestamp: Date.now(), topic: topic }, msg);
         latched = event;
         emitter.emit(topic, event);
-        emitter.emit('*', event); // This needs topic to be in the msg :-()
       }
     }
   },
 
   unadvertise: function(options)
   {
-    let topic = this.resolveName(options.topic);
+    const topic = this.resolveName(options.topic);
 
     console.info(` -${topic}`);
 
-    let fn = this._advertisers[topic];
+    const fn = this._advertisers[topic];
     fn && fn();
   },
 
   service: function(options, fn)
   {
-    let service = this.resolveName(options.service);
+    const service = this.resolveName(options.service);
 
     console.info(` +${service}`);
 
@@ -125,9 +124,9 @@ rosNodeInternal.prototype =
     {
       throw new Error(`Duplicate service ${service}`);
     }
-    let serviceHandler = (request) =>
+    const serviceHandler = (request) =>
     {
-      let id = request.id;
+      const id = request.id;
       try
       {
         Promise.resolve(fn(request)).then((reply) =>
@@ -148,7 +147,7 @@ rosNodeInternal.prototype =
     }
     emitter.addListener(service, serviceHandler);
 
-    let connectHandler = (event) =>
+    const connectHandler = (event) =>
     {
       if (event.available === null)
       {
@@ -167,33 +166,33 @@ rosNodeInternal.prototype =
 
   unservice: function(options)
   {
-    let service = this.resolveName(options.service);
+    const service = this.resolveName(options.service);
 
     console.info(` -${service}`);
 
-    let fn = this._services[service];
+    const fn = this._services[service];
     fn && fn();
   },
 
   proxy: function(options)
   {
-    let service = this.resolveName(options.service);
+    const service = this.resolveName(options.service);
     if (service in this._proxies)
     {
       throw new Error();
     }
   
-    let pending = {};
-    let replyHandler = (reply) =>
+    const pending = {};
+    const replyHandler = (reply) =>
     {
       pending[reply.id.i](reply);
     }
-    let uuid = this.resolveName(`~${UUID()}`);
+    const uuid = this.resolveName(`~${UUID()}`);
     emitter.addListener(uuid, replyHandler);
 
-    var waitCallbacks = [];
-    var iteration = 0;
-    let fn = function(request)
+    let waitCallbacks = [];
+    let iteration = 0;
+    const fn = function(request)
     {
       let i = ++iteration;
       return new Promise((resolve, reject) =>
@@ -225,16 +224,16 @@ rosNodeInternal.prototype =
       });
     };
 
-    let availableHandler = (event) =>
+    const availableHandler = (event) =>
     {
       if (event.available === true)
       {
         emitter.removeListener(`${service}/__connect`, availableHandler);
-        let callbacks = waitCallbacks;
+        const callbacks = waitCallbacks;
         waitCallbacks = null;
         callbacks.forEach((callback) =>
         {
-          callback(fn);
+          callback();
         });
       }
     }
@@ -244,7 +243,7 @@ rosNodeInternal.prototype =
     {
       if (waitCallbacks === null)
       {
-        callback(fn);
+        callback(n);
       }
       else
       {
@@ -269,7 +268,7 @@ rosNodeInternal.prototype =
 
   unproxy: function(options)
   {
-    let fn = this._proxies[this.resolveName(options.service)];
+    const fn = this._proxies[this.resolveName(options.service)];
     fn && fn();
   },
 
