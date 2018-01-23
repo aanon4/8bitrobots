@@ -43,11 +43,12 @@ function runSlave(target)
     }, 1000);
   }
 
+  let remoteListeners = {};
+  let localListeners = {};
+
   websocketclient.on('connect', (conn) =>
   {
     connection = conn;
-    var remoteListeners = {};
-    var localListeners = {};
 
     connection.on('message', (message) =>
     {
@@ -113,19 +114,6 @@ function runSlave(target)
   });
   websocketclient.connect(target);
 
-  __rosEmitter.on('newListener', (eventName, listener) =>
-  {
-    if (eventName in localListeners)
-      {
-        localListeners[eventName]++;
-      }
-      else
-      {
-        localListeners[eventName] = 1;
-        send({ op: 'addListener', name: eventName });
-      }
-    }
-  });
   __rosEmitter.on('removeListener', (eventName, listener) =>
   {
     if (listener.__remote !== id)
@@ -139,6 +127,18 @@ function runSlave(target)
       {
         localListeners[eventName]--;
       }
+    }
+  });
+  __rosEmitter.on('newListener', (eventName, listener) =>
+  {
+    if (eventName in localListeners)
+    {
+      localListeners[eventName]++;
+    }
+    else
+    {
+      localListeners[eventName] = 1;
+      send({ op: 'addListener', name: eventName });
     }
   });
 };

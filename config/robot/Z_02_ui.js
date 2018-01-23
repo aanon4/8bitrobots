@@ -10,7 +10,7 @@ module.exports = function()
       '/': 'config/robot/ui/controller.html',
       '/head': 'config/robot/ui/head.html',
       '/js/ros.js': './services/ros.js',
-      '/js/ros-webconnector.js': 'config/robot/ui/ros-webconnector.js',
+      '/js/ros-webconnector.js': './services/ros-webconnector.js',
     }
   });
 }

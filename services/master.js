@@ -98,22 +98,6 @@ function runMaster(webserver)
     }
   });
 
-  
-  __rosEmitter.on('newListener', (eventName, listener) =>
-  {
-    if (!listener.__remote)
-    {
-      if (eventName in localListeners)
-      {
-        localListeners[eventName]++;
-      }
-      else
-      {
-        localListeners[eventName] = 1;
-        sendAll({ op: 'addListener', name: eventName });
-      }
-    }
-  });
   __rosEmitter.on('removeListener', (eventName, listener) =>
   {
     if (!listener.__remote)
@@ -126,6 +110,21 @@ function runMaster(webserver)
       else
       {
         localListeners[eventName]--;
+      }
+    }
+  });
+  __rosEmitter.on('newListener', (eventName, listener) =>
+  {
+    if (!listener.__remote)
+    {
+      if (eventName in localListeners)
+      {
+        localListeners[eventName]++;
+      }
+      else
+      {
+        localListeners[eventName] = 1;
+        sendAll({ op: 'addListener', name: eventName });
       }
     }
   });
