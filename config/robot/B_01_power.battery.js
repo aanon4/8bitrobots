@@ -3,7 +3,7 @@ module.exports = function()
   const Power = require('hw/board/beagleboneblue/power');
   return new Power(
   {
-    name: '/battery/monitor',
+    name: '/battery/node',
     input: 'battery'
   });
 }

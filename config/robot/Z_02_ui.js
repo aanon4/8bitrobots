@@ -3,8 +3,7 @@ module.exports = function()
   const UI = require('services/ui');
   return new UI(
   {
-    name: '/ui',
-    camera: '/camera',
+    name: '/ui/node',
     pages:
     {
       '/': 'config/robot/ui/controller.html',

@@ -5,7 +5,7 @@ console.info('Loading Master.');
 const websocket = require('websocket');
 const UUID = require('uuid/v4');
 
-const SERVICE_LIST_TOPICS = { service: 'list' };
+const SERVICE_LIST = { service: '/list' };
 
 function runMaster(webserver)
 {
@@ -142,7 +142,7 @@ Master.prototype =
   enable: function()
   {
     runMaster(global.webserver);
-    this._node.service(SERVICE_LIST_TOPICS, (request) =>
+    this._node.service(SERVICE_LIST, (request) =>
     {
       let topics = [];
       let services = [];
@@ -166,6 +166,7 @@ Master.prototype =
 
   disable: function()
   {
+    this._node.unservice(SERVICE_LIST);
     return this;
   },
 };

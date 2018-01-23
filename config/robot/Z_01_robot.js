@@ -67,7 +67,7 @@ module.exports = function()
 
   return new Robot(
   {
-    name: '/robot/manager',
+    name: '/robot/node',
     brain: require('config/robot/brain/robot'),
     wheels: Object.assign({},
       makeWheel('left', 3, 'nor'),

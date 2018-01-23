@@ -9,7 +9,7 @@ module.exports = function()
 
   const vesc = new VESC(
   {
-    name: '/car/drive/vesc/monitor',
+    name: '/car/drive/vesc/node',
     can:
     {
       can: CAN,
@@ -20,10 +20,10 @@ module.exports = function()
 
   return new AXLE(
   {
-    name: '/car/drive/axle',
+    name: '/car/drive/node',
     drive: new WHEEL(
     {
-      name: '/car/drive/wheel/monitor',
+      name: '/car/drive/wheel/node',
       motor: new GEARING(
       {
         next: new MOTOR(
@@ -36,7 +36,7 @@ module.exports = function()
     }),
     steering: new SERVO(
     {
-      name: `/car/drive/servo/monitor`,
+      name: `/car/drive/servo/node`,
       pwm: vesc.openServo(),
       minAngle: Math.PI / 2 - 0.50,
       maxAngle: Math.PI / 2 + 0.50,

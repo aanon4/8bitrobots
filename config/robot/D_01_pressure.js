@@ -9,7 +9,7 @@ module.exports = function()
     const HPT = require('hw/environ/environ-bmp280');
     return new HPT(
     {
-      name: '/environ/monitor',
+      name: '/environ/node',
       i2c: i2c
     });
   }

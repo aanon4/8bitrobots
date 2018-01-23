@@ -3,7 +3,7 @@ module.exports = function()
   const UI = require('services/ui');
   return new UI(
   {
-    name: '/ui',
+    name: '/ui/node',
     pages:
     {
       '/': 'config/car/ui/controller.html',

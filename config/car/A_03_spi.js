@@ -5,7 +5,6 @@ global.SPI = SPI.open({
   channel: 0,
   mode: 0,
   speed: 8000000, // 8Mhz
-  //select: 'low'
 });
 
 module.exports = function() {}

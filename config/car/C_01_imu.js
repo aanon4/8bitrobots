@@ -3,7 +3,7 @@ module.exports = function()
   const Imu = require('hw/imu/imu-bno055');
   return new Imu(
   {
-    name: '/imu/monitor',
+    name: '/imu/node',
     reset: true,
     extClock: true,
     uart: { port: '/dev/ttyS0', baud: 115200 },

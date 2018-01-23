@@ -3,7 +3,7 @@ module.exports = function()
   const Environment = require('services/environment');
   return new Environment(
   {
-    name: '/environment/monitor',
+    name: '/environment/node',
     external: [ '/environ' ]
   });
 }

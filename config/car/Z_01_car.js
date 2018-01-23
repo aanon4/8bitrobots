@@ -5,7 +5,7 @@ module.exports = function()
 
   return new Car(
   {
-    name: '/car/manager',
+    name: '/car/node',
     axle: '/car/drive',
     velocityScale: 5.0
   });
