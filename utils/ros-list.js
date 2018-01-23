@@ -2,6 +2,7 @@
 
 'use strict';
 
+console.info = function(){};
 const ROS_SLAVE = require('../services/slave');
 const ROS = require('../services/ros');
 
