@@ -33,8 +33,8 @@ process.on('unhandledRejection', function(e, p)
 // Load up some generally useful pieces before we load specific services.
 require('./services/globals');
 require('./services/debugger');
-require('./services/telemetry');
 require('./services/services').loadConfig(configName);
+//require('./services/telemetry');
 
 // Shutdown cleanly
 process.on('SIGINT', function()

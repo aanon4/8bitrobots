@@ -17,7 +17,11 @@ catch (_)
 }
 
 const w = fs.createWriteStream(LOG_CONFIG.NAME, { autoClose: false });
-rosNode.init('/telemetry').subscribe({ topic: '*' }, (event) =>
-{
-  w.write(`${JSON.stringify(event)}\n`);
+const node = rosNode.init('/telemetry/node');
+node.proxy({ service: '/list' })().then((lists) => {
+  lists.topics.forEach((topic) => {
+    node.subscribe({ topic: topic }, (event) => {
+      w.write(`${JSON.stringify(event)}\n`);
+    });
+  });
 });
