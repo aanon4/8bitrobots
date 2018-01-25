@@ -18,22 +18,22 @@ function controller(robot)
   {
     name: 'robot'
   });
-
-  var files = require('fs').readdirSync(`${__dirname}/gestures`);
-  files.sort();
-  files.forEach((file) =>
-  {
-    if (/.*\.js$/.test(file))
-    {
-      this.load(require(`./gestures/${file}`));
-    }
-  });
 }
 
 controller.prototype =
 {
   enable: function()
   {
+    const files = require('fs').readdirSync(`${__dirname}/gestures`);
+    files.sort();
+    files.forEach((file) =>
+    {
+      if (/.*\.js$/.test(file))
+      {
+        this.load(require(`./gestures/${file}`));
+      }
+    });
+
     this._adState = this.robot._node.advertise(TOPIC_STATE);
     this._adState.publish({ state: this.getState() });
 
