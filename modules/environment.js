@@ -92,7 +92,7 @@ environment.prototype =
     if (this._externals.length)
     {
       this._external.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_EXTERNAL);
-     this._external.pressure._ad = this._node.advertise(TOPIC_PRESSURE_EXTERNAL);
+      this._external.pressure._ad = this._node.advertise(TOPIC_PRESSURE_EXTERNAL);
       this._external.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_EXTERNAL);
     }
 
@@ -101,14 +101,22 @@ environment.prototype =
 
   disable: function()
   {
-    this._node.unadvertise(TOPIC_TEMPERATURE_INTERNAL);
-    this._node.unadvertise(TOPIC_PRESSURE_INTERNAL);
-    this._node.unadvertise(TOPIC_HUMIDITY_INTERNAL);
-    this._node.unadvertise(TOPIC_TEMPERATURE_EXTERNAL);
-    this._node.unadvertise(TOPIC_PRESSURE_EXTERNAL);
-    this._node.unadvertise(TOPIC_HUMIDITY_EXTERNAL);
-
-    this._node.unadvertise(TOPIC_WATER);
+    if (this._internals.length)
+    {
+      this._node.unadvertise(TOPIC_TEMPERATURE_INTERNAL);
+      this._node.unadvertise(TOPIC_PRESSURE_INTERNAL);
+      this._node.unadvertise(TOPIC_HUMIDITY_INTERNAL);
+    }
+    if (this._externals.length)
+    {
+      this._node.unadvertise(TOPIC_TEMPERATURE_EXTERNAL);
+      this._node.unadvertise(TOPIC_PRESSURE_EXTERNAL);
+      this._node.unadvertise(TOPIC_HUMIDITY_EXTERNAL);
+    }
+    if (this._adWater)
+    {
+      this._node.unadvertise(TOPIC_WATER);
+    }
     this._node.unsubscribe(TOPIC_SETWATER);
 
     this._internals.forEach((internal) =>
