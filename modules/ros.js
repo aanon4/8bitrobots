@@ -2,36 +2,33 @@
 
 console.info('Loading ROS API.');
 
-var emitter;
-var UUID;
+let root;
+const UUID = function()
+{
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+};
 if (typeof process === 'object')
 {
-  const EventEmitter = require('events');
-  UUID = require('uuid/v4');
-  emitter = new EventEmitter();
-  emitter.setMaxListeners(50);
-  global.__rosEmitter = emitter;
+  root = () => {
+    return global.rosRoot;
+  }
 }
 else
 {
-  UUID = function()
-  {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-      return v.toString(16);
-    });
-  };
-  emitter = window.rosEmitter;
+  root = () => {
+    return window.rosRoot;
+  }
 }
 
-let rosNodes = {};
+const rosNodes = {};
 
 function rosNodeInternal(name)
 {
   this._name = name;
   this._subscribers = {};
-  this._advertisers = {};
-  this._services = {};
   this._proxies = {};
 }
 
@@ -45,29 +42,37 @@ rosNodeInternal.prototype =
       throw new Error();
     }
     const uuid = this.resolveName(`~${UUID()}`);
-    const subscriber = (event) =>
-    {
-      emitter.removeListener(uuid, subscriber);
-      if (event.latched)
+
+    const listener = (msg) => {
+      switch (msg.op)
       {
-        callback(event.latched);
+        case 'subscribed':
+          break;
+
+        case 'unsubscribed':
+          root().subscribe(uuid, listener, topic, { timestamp: Date.now(), op: 'subscribe', topic: topic, subscriber: uuid });
+          break;
+
+        case 'topic':
+          callback(msg.event);
+          break;
+
+        default:
+          break;
       }
     }
-    this._subscribers[topic] = () =>
-    {
-      emitter.removeListener(topic, callback);
-      emitter.removeListener(uuid, subscriber);
+    listener.remove = () => {
+      root().publish(topic, { timestamp: Date.now(), op: 'unsubscribe', subscriber: uuid });
       delete this._subscribers[topic];
     }
-    emitter.addListener(topic, callback);
-    emitter.addListener(uuid, subscriber);
-    emitter.emit(`${topic}/__subscribe`, { timestamp: Date.now(), subscriber: uuid });
+    this._subscribers[topic] = uuid;
+  
+    root().subscribe(uuid, listener, topic, { timestamp: Date.now(), op: 'subscribe', topic: topic, subscriber: uuid });
   },
 
   unsubscribe: function(options)
   {
-    let fn = this._subscribers[this.resolveName(options.topic)];
-    fn && fn();
+    root().unsubscribe(this._subscribers[this.resolveName(options.topic)]);
   },
 
   advertise: function(options)
@@ -76,30 +81,50 @@ rosNodeInternal.prototype =
 
     console.info(` +${topic}`);
 
-    if (topic in this._advertisers)
-    {
-      throw new Error(`Duplicate advert ${topic}`);
-    }
-    var latched = null;
-    let advertiser = (event) =>
-    {
-      emitter.emit(event.subscriber, { timestamp: Date.now(), latched: latched });
-    }
-    if (options.latching || !('latching' in options)) // latching by default
-    {
-      emitter.addListener(`${topic}/__subscribe`, advertiser);
-      this._advertisers[topic] = () =>
+    let latched = null;
+    const subscribers = [];
+    const advertiser = (msg) => {
+      switch (msg.op)
       {
-        emitter.removeListener(`${topic}/__subscribe`, advertiser);
-        delete this._advertisers[topic];
+        case 'subscribe':
+          subscribers.push(msg.subscriber);
+          root().publish(msg.subscriber, { timestamp: Date.now(), op: 'subscribed', subscriber: msg.subscriber });
+          if (latched)
+          {
+            root().publish(msg.subscriber, { timestamp: Date.now(), op: 'topic', subscriber: msg.subscriber, event: latched });
+          }
+          break;
+
+        case 'unsubscribe':
+          const idx = subscribers.indexOf(msg.subscriber);
+          if (idx !== -1)
+          {
+            subscribers.splice(idx, 1);
+          }
+          break;
+
+        default:
+          break;
       }
     }
+    advertiser.remove = () => {
+      subscribers.forEach((subscriber) => {
+        root().publish(subscriber, { timestamp: Date.now(), op: 'unsubscribed', subscriber: subscriber });
+      });
+    }
+    root().advertise(topic, advertiser);
+
+    let latching = ('latching' in options) ? options.latching : true;
     return {
-      publish: function(msg)
+      publish: function(event)
       {
-        let event = Object.assign({ timestamp: Date.now(), topic: topic }, msg);
-        latched = event;
-        emitter.emit(topic, event);
+        if (latching)
+        {
+          latched = event;
+        }
+        subscribers.forEach((subscriber) => {
+          root().publish(subscriber, { timestamp: Date.now(), op: 'topic', subscriber: subscriber, topic: topic, event: event });
+        });
       }
     }
   },
@@ -110,8 +135,7 @@ rosNodeInternal.prototype =
 
     console.info(` -${topic}`);
 
-    const fn = this._advertisers[topic];
-    fn && fn();
+    root().unadvertise(topic);
   },
 
   service: function(options, fn)
@@ -119,49 +143,43 @@ rosNodeInternal.prototype =
     const service = this.resolveName(options.service);
 
     console.info(` +${service}`);
-
-    if (service in this._services)
+  
+    const proxies = [];
+    const serviceHandler = (msg) =>
     {
-      throw new Error(`Duplicate service ${service}`);
-    }
-    const serviceHandler = (request) =>
-    {
-      const id = request.id;
-      try
+      switch (msg.op)
       {
-        Promise.resolve(fn(request)).then((reply) =>
-        {
-          if (id)
+        case 'call':
+          Promise.resolve(fn(msg.call)).then((reply) => {
+            root().reply(msg.caller, { timestamp: Date.now(), op: 'reply', caller: msg.caller, replyid: msg.replyid, reply: reply });
+          }).catch((e) => {
+            root().reply(msg.caller, { timestamp: Date.now(), op: 'exception', caller: msg.caller, replyid: msg.replyid, exception: e });
+          });
+          break;
+
+        case 'connect':
+          proxies.push(msg.connector);
+          root().reply(msg.connector, { timestamp: Date.now(), op: 'connected', connector: msg.connector });
+          break;
+
+        case 'disconnect':
+          const idx = proxies.indexOf(msg.disconnector);
+          if (idx !== -1)
           {
-            emitter.emit(id.uuid, Object.assign({ id: id, timestamp: Date.now() }, reply));
+            proxies.splice(idx, 1);
           }
-        });
-      }
-      catch (e)
-      {
-        if (id)
-        {
-          emitter.emit(id.uuid, { id: id, timestamp: Date.now(), __exception: e });
-        }
-      }
-    }
-    emitter.addListener(service, serviceHandler);
+          break;
 
-    const connectHandler = (event) =>
-    {
-      if (event.available === null)
-      {
-        emitter.emit(`${service}/__connect`, { timestamp: Date.now(), available: true });
+        default:
+          break;
       }
     }
-    this._services[service] = () =>
-    {
-      emitter.removeListener(service, serviceHandler);
-      emitter.removeListener(`${service}/__connect`, connectHandler);
-      delete this._services[service];
+    serviceHandler.remove = () => {
+      proxies.forEach((proxy) => {
+        root().reply(proxy, { timestamp: Date.now(), op: 'disconnected', connector: proxy });
+      });
     }
-    emitter.addListener(`${service}/__connect`, connectHandler);
-    emitter.emit(`${service}/__connect`, { timestamp: Date.now(), available: true });
+    root().service(service, serviceHandler);
   },
 
   unservice: function(options)
@@ -170,8 +188,7 @@ rosNodeInternal.prototype =
 
     console.info(` -${service}`);
 
-    const fn = this._services[service];
-    fn && fn();
+    root().unservice(service);
   },
 
   proxy: function(options)
@@ -182,94 +199,85 @@ rosNodeInternal.prototype =
       throw new Error();
     }
   
-    const pending = {};
-    const replyHandler = (reply) =>
-    {
-      pending[reply.id.i](reply);
-    }
     const uuid = this.resolveName(`~${UUID()}`);
-    emitter.addListener(uuid, replyHandler);
 
-    let waitCallbacks = [];
-    let iteration = 0;
-    const fn = function(request)
+    let waiting = [];
+    const pending = {};
+    let replyid = 0;
+    const replyHandler = (msg) =>
     {
-      let i = ++iteration;
-      return new Promise((resolve, reject) =>
+      const pend = pending[msg.replyid];
+      if (pend)
       {
-        pending[i] = (reply) =>
-        {
-          delete pending[reply.id.i];
-          if (reply.__exception)
+        delete pending[msg.replyid];
+      }
+      switch (msg.op)
+      {
+        case 'connected':
+          const waited = waiting;
+          waiting = null;
+          waited.forEach((wait) => {
+            wait();
+          });
+          break;
+
+        case 'disconnected':
+          waiting = [];
+          root().connect(uuid, replyHandler, service, { timestamp: Date.now(), op: 'connect', service: service, connector: uuid });
+          break;
+    
+        case 'reply':
+          pend && pend(msg.reply, null);
+          break;
+
+        case 'exception':
+          pend && pend(null, msg.exception);
+          break;
+
+        default:
+          break;
+      }
+    }
+    
+    replyHandler.remove = () => {
+      root().call(service, { timestamp: Date.now(), op: 'disconnect', connector: uuid });
+      delete this._proxies[service];
+    }
+
+    this._proxies[service] = uuid;
+
+    root().connect(uuid, replyHandler, service, { timestamp: Date.now(), op: 'connect', service: service, connector: uuid });
+
+    return (request) => {
+      const rid = ++replyid;
+      return new Promise((resolve, reject) => {
+        pending[rid] = (reply, exception) => {
+          if (exception)
           {
-            reject(reply.__exception);
+            reject(exception);
           }
           else
           {
             resolve(reply);
           }
         }
-        let event = Object.assign({ id: { uuid: uuid, i: i }, timestamp: Date.now() }, request)
-        if (waitCallbacks === null)
+        if (waiting === null)
         {
-          emitter.emit(service, event);
+          root().call(service, { timestamp: Date.now(), op: 'call', service: service, caller: uuid, replyid: rid, call: request } );
         }
         else
         {
-          fn.wait(() =>
-          {
-            emitter.emit(service, event);
+          waiting.push(() => {
+            root().call(service, { timestamp: Date.now(), op: 'call', service: service, caller: uuid, replyid: rid, call: request } );
           });
         }
       });
-    };
-
-    const availableHandler = (event) =>
-    {
-      if (event.available === true)
-      {
-        emitter.removeListener(`${service}/__connect`, availableHandler);
-        const callbacks = waitCallbacks;
-        waitCallbacks = null;
-        callbacks.forEach((callback) =>
-        {
-          callback();
-        });
-      }
     }
-    emitter.addListener(`${service}/__connect`, availableHandler);
-
-    fn.wait = (callback) =>
-    {
-      if (waitCallbacks === null)
-      {
-        callback(n);
-      }
-      else
-      {
-        waitCallbacks.push(callback);
-        emitter.emit(`${service}/__connect`, { timestamp: Date.now(), available: null });
-      }
-    }
-
-    this._proxies[service] = () =>
-    {
-      emitter.removeListener(uuid, replyHandler);
-      emitter.removeListener(`${service}/__connect`, availableHandler);
-      for (var key in pending)
-      {
-        delete pending[key];
-      }
-      delete this._proxies[service];
-    }
-  
-    return fn;
   },
 
   unproxy: function(options)
   {
-    const fn = this._proxies[this.resolveName(options.service)];
-    fn && fn();
+    root().disconnect(this._subscribers[this.resolveName(options.service)]);
   },
 
   resolveName: function(name)

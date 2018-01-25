@@ -32,7 +32,8 @@ process.on('unhandledRejection', function(e, p)
 
 // Load up some generally useful pieces before we load specific modules.
 require('./modules/globals');
-require('./modules/debugger');
+require('./modules/ros');
+//require('./modules/debugger');
 require('./modules/services').loadConfig(configName);
 //require('./modules/telemetry');
 

@@ -8,5 +8,3 @@ else
 {
   global.SIMULATOR = true;
 }
-
-require('./ros');
