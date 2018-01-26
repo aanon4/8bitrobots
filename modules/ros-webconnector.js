@@ -5,72 +5,105 @@
 
   window.rosRoot =
   {
+    _advertisers: {},
+    _services: {},
     _subscribers: {},
     _proxies: {},
-  
-    advertise: function(target, handler)
-    {
-      throw new Error('Not supported yet');
-    },
-  
-    unadvertise: function(target)
-    {
-      throw new Error('Not supported yet');
-    },
-  
-    subscribe: function(uuid, handler, target, msg)
-    {
-      this._subscribers[uuid] = handler;
-      this.sendToMaster(msg);
-    },
-  
-    unsubscribe: function(uuid)
-    {
-      let fn = this._subscribers[uuid];
-      delete this._subscribers[uuid];
-      fn.remove();
-    },
-  
-    publish: function(target, msg)
-    {
-      let fn = this._subscribers[target];
-      fn && fn(msg);
-    },
-  
-    service: function(target, handler)
-    {
-      throw new Error('Not supported yet');
-    },
-  
-    unservice: function(target)
-    {
-      throw new Error('Not supported yet');
-    },
-  
-    connect: function(uuid, handler, target, msg)
-    {
-      this._proxies[uuid] = handler;
-      this.sendToMaster(msg);
-    },
-  
-    disconnect: function(target, msg)
-    {
-      const fn = this._proxies[target];
-      delete this._proxies[target];
-      fn.remove();
-    },
-  
-    call: function(target, msg)
-    {
-      this.sendToMaster(msg);
-    },
-  
-    reply: function(target, msg)
-    {
-      let fn = this._proxies[target];
-      fn && fn(msg);
-    },
 
+    event: function(msg, handler)
+    {
+      switch (msg.op)
+      {
+        case 'advertise':
+        {
+          this._advertisers[msg.topic] = handler;
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'unadvertise':
+        {
+          const fn = this._advertisers[msg.topic];
+          delete this._advertisers[msg.topic];
+          fn.remove();
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'subscribe-req':
+        {
+          this._subscribers[msg.subscriber] = handler;
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'unsubscribe-req':
+        {
+          const fn = this._subscribers[msg.subscriber];
+          delete this._subscribers[msg.subscriber];
+          fn.remove();
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'subscribe-ack':
+        case 'unsubscribe-ack':
+        case 'unsubscribe-force':
+        case 'topic':
+        {
+          const fn = this._subscribers[msg.subscriber];
+          fn && fn(msg);
+          break;
+        }
+        case 'service':
+        {
+          this._services[msg.service] = handler;
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'unservice':
+        {
+          const fn = this._services[msg.service];
+          delete this._services[msg.service];
+          fn.remove();
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'connect-req':
+        {
+          this._proxies[msg.connector] = handler;
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'disconnect-req':
+        {
+          const fn = this._proxies[msg.connector];
+          delete this._proxies[msg.connector];
+          fn.remove();
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'call':
+        {
+          this.sendToMaster(msg);
+          break;
+        }
+        case 'connect-ack':
+        case 'disconnect-ack':
+        case 'disconnect-force':
+        {
+          const fn = this._proxies[msg.connector];
+          fn && fn(msg);
+          break;
+        }
+        case 'reply':
+        case 'exception':
+        {
+          const fn = this._proxies[msg.caller];
+          fn && fn(msg);
+          break;
+        }
+        default:
+          throw new Error(JSON.stringify(msg));
+      }
+    },
+  
     sendToMaster: function(msg)
     {
       msg = JSON.stringify(msg);
@@ -114,27 +147,7 @@
         try
         {
           //console.log('<-', event.data);
-          var msg = JSON.parse(event.data);
-          switch (msg.op)
-          {
-            case 'connected':
-              rosRoot.reply(msg.connector, msg);
-              break;
-
-            case 'subscribed':
-              break;
-
-            case 'topic':
-              rosRoot.publish(msg.subscriber, msg);
-              break;
-
-            case 'reply':
-              rosRoot.reply(msg.caller, msg);
-              break;
-
-            default:
-              break;
-          }
+          rosRoot.event(JSON.parse(event.data));
         }
         catch (e)
         {
@@ -149,17 +162,29 @@
         socket = null;
         if (opened)
         {
-          let oldProxies = rosRoot._proxies;
-          let oldSubscribers = rosRoot._subscribers;
+          const oldProxies = rosRoot._proxies;
+          const oldSubscribers = rosRoot._subscribers;
+          const oldServices = rosRoot._services;
+          const oldAdvertisers = rosRoot._advertisers;
           rosRoot._proxies = {};
           rosRoot._subscribers = {};
-          for (let proxy in oldProxies)
-          {
-            oldProxies[proxy]({ timestamp: Date.now(), op: 'disconnected', connector: proxy });
-          }
+          rosRoot._services = {};
+          rosRoot._advertisers = {};
           for (let subscriber in oldSubscribers)
           {
-            oldSubscribers[subscriber]({ timestamp: Date.now(), op: 'unsubscribed', subscriber: subscriber });
+            oldSubscribers[subscriber]({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
+          }
+          for (let proxy in oldProxies)
+          {
+            oldProxies[proxy]({ timestamp: Date.now(), op: 'disconnect-force', connector: proxy });
+          }
+          for (let topic in oldAdvertisers)
+          {
+            oldAdvertisers[topic]({ timestamp: Date.now(), op: 'unadvertise', topic: topic });
+          }
+          for (let service in oldServices)
+          {
+            oldServices[service]({ timestamp: Date.now(), op: 'unservice', service: service });
           }
           connect(true);
         }

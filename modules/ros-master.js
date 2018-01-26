@@ -11,110 +11,138 @@ global.rosRoot =
   _proxies: {},
   _pending: {},
 
-  advertise: function(target, handler)
+  event: function(msg, handler)
   {
-    this._advertisers[target] = handler;
-    const targets = this._pending[target];
-    if (targets)
+    switch (msg.op)
     {
-      delete this._pending[target];
-      targets.forEach((fn) => {
-        fn();
-      });
+      case 'advertise':
+      {
+        this._advertisers[msg.topic] = handler;
+        const targets = this._pending[msg.topic];
+        if (targets)
+        {
+          delete this._pending[msg.topic];
+          targets.forEach((fn) => {
+            fn();
+          });
+        }
+        break;
+      }
+      case 'unadvertise':
+      {
+        const fn = this._advertisers[msg.topic];
+        delete this._advertisers[msg.topic];
+        fn.remove();
+        break;
+      }
+      case 'subscribe-req':
+      {
+        const fn = this._advertisers[msg.topic];
+        if (fn)
+        {
+          this._subscribers[msg.subscriber] = handler;
+          fn(msg);
+        }
+        else
+        {
+          const pending = this._pending[msg.subscriber] || (this._pending[msg.subscriber] = []);
+          pending.push(() => {
+            this.event(msg, handler);
+          });
+        }
+        break;
+      }
+      case 'unsubscribe-req':
+      {
+        const fn = this._subscribers[msg.subscriber];
+        if (fn)
+        {
+          delete this._subscribers[msg.subscriber];
+          fn.remove();
+        }
+        else
+        {
+          delete this._pending[msg.subscriber];
+        }
+        break;
+      }
+      case 'subscribe-ack':
+      case 'unsubscribe-ack':
+      case 'unsubscribe-force':
+      case 'topic':
+      {
+        const fn = this._subscribers[msg.subscriber];
+        fn && fn(msg);
+        break;
+      }
+      case 'service':
+      {
+        this._services[msg.service] = handler;
+        const targets = this._pending[msg.service];
+        if (targets)
+        {
+          delete this._pending[msg.service];
+          targets.forEach((fn) => {
+            fn();
+          });
+        }
+        break;
+      }
+      case 'unservice':
+      {
+        const fn = this._services[msg.service];
+        delete this._services[msg.service];
+        fn.remove();
+        break;
+      }
+      case 'connect-req':
+      {
+        const fn = this._services[msg.service];
+        if (fn)
+        {
+          this._proxies[msg.connector] = handler;
+          fn(msg);
+        }
+        else
+        {
+          const pending = this._pending[msg.service] || (this._pending[msg.service] = []);
+          pending.push(() => {
+            this.event(msg, handler);
+          });
+        }
+        break;
+      }
+      case 'disconnect-req':
+      {
+        const fn = this._proxies[msg.connector];
+        delete this._proxies[msg.connector];
+        fn.remove();
+        break;
+      }
+      case 'call':
+      {
+        const fn = this._services[msg.service];
+        fn && fn(msg);
+        break;
+      }
+      case 'connect-ack':
+      case 'disconnect-ack':
+      case 'disconnect-force':
+      {
+        const fn = this._proxies[msg.connector];
+        fn && fn(msg);
+        break;
+      }
+      case 'reply':
+      case 'exception':
+      {
+        const fn = this._proxies[msg.caller];
+        fn && fn(msg);
+        break;
+      }
+      default:
+        throw new Error(JSON.stringify(msg));
     }
-  },
-
-  unadvertise: function(target)
-  {
-    const fn = this._advertisers[target];
-    delete this._advertisers[target];
-    fn.remove();
-  },
-
-  subscribe: function(uuid, handler, target, msg)
-  {
-    this._subscribers[uuid] = handler;
-    let fn = this._advertisers[target];
-    if (fn)
-    {
-      fn(msg);
-    }
-    else
-    {
-      const pending = this._pending[target] || (this._pending[target] = []);
-      pending.push(() => {
-        this.subscribe(uuid, handler, target, msg);
-      });
-    }
-  },
-
-  unsubscribe: function(uuid)
-  {
-    let fn = this._subscribers[uuid];
-    delete this._subscribers[uuid];
-    fn.remove();
-  },
-
-  publish: function(target, msg)
-  {
-    let fn = this._subscribers[target];
-    fn && fn(msg);
-  },
-
-  service: function(target, handler)
-  {
-    this._services[target] = handler;
-    const targets = this._pending[target];
-    if (targets)
-    {
-      delete this._pending[target];
-      targets.forEach((fn) => {
-        fn();
-      });
-    }
-  },
-
-  unservice: function(target)
-  {
-    const fn = this._services[target];
-    delete this._services[target];
-    fn.remove();
-  },
-
-  connect: function(uuid, handler, target, msg)
-  {
-    this._proxies[uuid] = handler;
-    let fn = this._services[target];
-    if (fn)
-    {
-      fn(msg);
-    }
-    else
-    {
-      const pending = this._pending[target] || (this._pending[target] = []);
-      pending.push(() => {
-        this.connect(uuid, handler, target, msg);
-      });
-    }
-  },
-
-  disconnect: function(target, msg)
-  {
-    const fn = this._proxies[target];
-    delete this._proxies[target];
-    fn.remove();
-  },
-
-  call: function(target, msg)
-  {
-    let fn = this._services[target];
-    fn && fn(msg);
-  },
-
-  reply: function(target, msg)
-  {
-    let fn = this._proxies[target];
-    fn && fn(msg);
   }
 };
 
@@ -150,8 +178,10 @@ function runMaster(webserver)
         connection.sendUTF(JSON.stringify(msg));
       }
 
-      const subscribers = [];
-      const proxies = [];
+      const subscribers = {};
+      const proxies = {};
+      const advertisers = {};
+      const services = {};
 
       connection.on('message', function(message)
       {
@@ -163,39 +193,52 @@ function runMaster(webserver)
             //console.log('<-', message.utf8Data);
             switch (msg.op)
             {
-              case 'subscribe':
+              case 'subscribe-req':
                 const shandler = (msg) => {
                   send(msg);
                 };
                 shandler.remove = () => {
+                  delete subscribers[msg.subscriber];
                 }
                 subscribers[msg.subscriber] = true;
-                rosRoot.subscribe(msg.subscriber, shandler, msg.topic, msg);
+                rosRoot.event(msg, shandler);
                 break;
 
-              case 'unsubscribe':
-                rosRoot.unsubscribe(msg.subscriber);
-                break;
-
-              case 'connect':
+              case 'connect-req':
                 const chandler = (msg) => {
                   send(msg);
                 }
                 chandler.remove = () => {
+                  delete proxies[msg.connection];
                 }
                 proxies[msg.connector] = true;
-                rosRoot.connect(msg.connector, chandler, msg.service, msg);
+                rosRoot.event(msg, chandler);
                 break;
 
-              case 'disconnect':
-                rosRoot.disconnect(msg.connector);
+              case 'advertise':
+                const ahandler = (msg) => {
+                  send(msg);
+                }
+                ahandler.remove = () => {
+                  delete advertisers[msg.topic];
+                }
+                advertisers[msg.topic] = true;
+                rosRoot.event(msg, ahandler);
                 break;
 
-              case 'call':
-                rosRoot.call(msg.service, msg);
+              case 'service':
+                const vhandler = (msg) => {
+                  send(msg);
+                }
+                vhandler.remote = () => {
+                  delete services[msg.service];
+                }
+                services[msg.service] = true;
+                rosRoot.event(msg, vhandler);
                 break;
-  
+
               default:
+                rosRoot.event(msg);
                 break;
             }
           }
@@ -209,11 +252,19 @@ function runMaster(webserver)
       {
         for (let uuid in subscribers)
         {
-          rosRoot.unsubscribe(uuid);
+          rosRoot.event({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: uuid });
         }
         for (let uuid in proxies)
         {
-          rosRoot.disconnect(uuid);
+          rosRoot.event({ timestamp: Date.now(), op: 'disconnect-force', connector: uuid });
+        }
+        for (let topic in advertisers)
+        {
+          rosRoot.event({ timestamp: Date.now(), op: 'unadvertise', topic: topic });
+        }
+        for (let service in services)
+        {
+          rosRoot.event({ timestamp: Date.now(), op: 'unservice', service: service });
         }
         delete connections[id];
       });
