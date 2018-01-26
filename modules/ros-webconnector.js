@@ -87,15 +87,10 @@
         case 'connect-ack':
         case 'disconnect-ack':
         case 'disconnect-force':
-        {
-          const fn = this._proxies[msg.connector];
-          fn && fn(msg);
-          break;
-        }
         case 'reply':
         case 'exception':
         {
-          const fn = this._proxies[msg.caller];
+          const fn = this._proxies[msg.connector];
           fn && fn(msg);
           break;
         }

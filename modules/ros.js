@@ -150,9 +150,9 @@ rosNodeInternal.prototype =
       {
         case 'call':
           Promise.resolve(fn(msg.call)).then((reply) => {
-            rosEvent({ timestamp: Date.now(), op: 'reply', caller: msg.caller, replyid: msg.replyid, reply: reply });
+            rosEvent({ timestamp: Date.now(), op: 'reply', connector: msg.connector, replyid: msg.replyid, reply: reply });
           }).catch((e) => {
-            rosEvent({ timestamp: Date.now(), op: 'exception', caller: msg.caller, replyid: msg.replyid, exception: e });
+            rosEvent({ timestamp: Date.now(), op: 'exception', connector: msg.connector, replyid: msg.replyid, exception: e });
           });
           break;
 
@@ -262,12 +262,12 @@ rosNodeInternal.prototype =
         }
         if (waiting === null)
         {
-          rosEvent({ timestamp: Date.now(), op: 'call', service: service, caller: uuid, replyid: rid, call: request } );
+          rosEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
         }
         else
         {
           waiting.push(() => {
-            rosEvent({ timestamp: Date.now(), op: 'call', service: service, caller: uuid, replyid: rid, call: request } );
+            rosEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
           });
         }
       });
@@ -276,8 +276,9 @@ rosNodeInternal.prototype =
 
   unproxy: function(options)
   {
-    const uuid = this._subscribers[this.resolveName(options.service)];
-    rosEvent({ timestamp: Date.now(), op: 'disconnect-req', connector: uuid });
+    const service = this.resolveName(options.service);
+    const uuid = this._proxies[service];
+    rosEvent({ timestamp: Date.now(), op: 'disconnect-req', service: service, connector: uuid });
   },
 
   resolveName: function(name)
