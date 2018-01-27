@@ -22,14 +22,14 @@ sensor.prototype =
 {
   enable: function()
   {
-    this._i2c.writeBytes([ 0x1E ]); // Reset
+    this._i2c.writeBytes(Buffer.from([ 0x1E ])); // Reset
     this._delay(10);
 
     // Read calibration
     this._c = [];
     for (var i = 0; i < 7; i++)
     {
-      var data = this._i2c.writeAndReadBytes([ 0xA0 + i * 2 ], 2);
+      var data = this._i2c.writeAndReadBytes(Buffer.from([ 0xA0 + i * 2 ]), 2);
       this._c[i] = (data[0] << 8) | data[1];
     }
   
@@ -52,15 +52,15 @@ sensor.prototype =
   _process: function()
   { 
     // Read pressure (D1) and temp (D2)
-    this._i2c.writeBytes([ 0x4A ]);
+    this._i2c.writeBytes(Buffer.from([ 0x4A ]));
     setTimeout(() =>
     {
-      var data = this._i2c.writeAndReadBytes([ 0x00 ], 3);
+      var data = this._i2c.writeAndReadBytes(Buffer.from([ 0x00 ]), 3);
       const D1 = (data[0] << 16) | (data[1] << 8) | data[2];
-      this._i2c.writeBytes([ 0x5A ]);
+      this._i2c.writeBytes(Buffer.from([ 0x5A ]));
       setTimeout(() =>
       {
-        var data = this._i2c.writeAndReadBytes([ 0x00 ], 3);
+        var data = this._i2c.writeAndReadBytes(Buffer.from([ 0x00 ]), 3);
         const D2 = (data[0] << 16) | (data[1] << 8) | data[2];
         
         const C = this._c;

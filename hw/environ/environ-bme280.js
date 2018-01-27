@@ -60,8 +60,8 @@ sensor.prototype =
   enable: function()
   {
     // Read calibration
-    const c0 = this._i2c.writeAndReadBytes([ BME280.DIG_T1 ], 26);
-    const c1 = this._i2c.writeAndReadBytes([ BME280.DIG_H2 ], 16);
+    const c0 = this._i2c.writeAndReadBytes(Buffer.from([ BME280.DIG_T1 ]), 26);
+    const c1 = this._i2c.writeAndReadBytes(Buffer.from([ BME280.DIG_H2 ]), 16);
     this._dig =
     {
       T1: onec(c0[1], c0[0]),
@@ -87,8 +87,8 @@ sensor.prototype =
     };
     
     // Configure
-    this._i2c.writeBytes([ BME280.CTRL_HUM, 0x01 ]); // 1x oversampling
-    this._i2c.writeBytes([ BME280.CTRL_MEAS, 0x47 ]); // 001 001 11 - 1x oversampling, normal
+    this._i2c.writeBytes(Buffer.from([ BME280.CTRL_HUM, 0x01 ])); // 1x oversampling
+    this._i2c.writeBytes(Buffer.from([ BME280.CTRL_MEAS, 0x47 ])); // 001 001 11 - 1x oversampling, normal
 
     this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
     this._adPressure = this._node.advertise(TOPIC_PRESSURE);
@@ -140,7 +140,7 @@ sensor.prototype =
     {
       // Read lots of raw data:
       //  pressure, temperature, humidity
-      const data = this._i2c.writeAndReadBytes([ BME280.PRESSURE ], 8);
+      const data = this._i2c.writeAndReadBytes(Buffer.from([ BME280.PRESSURE ]), 8);
       
       // Calculate temperature
       const adc_T = (data[3] << 12) + (data[4] << 4) + (data[5] >> 4);
