@@ -23,17 +23,14 @@ if (argv.length === 0)
 
 const NODE = new ROS_SLAVE({ name: '/ros-monitor', target: `ws://${target}:8080/ros` }).enable()._node;
 
-function logTopic(e)
+function logTopic(topic, msg)
 {
-  const event = Object.assign({}, e);
-  delete event.__remote;
-  delete event.timestamp;
-  console.log(JSON.stringify(event));
+  console.log(`${argv.length === 1 ? '' : (topic + ': ')}${JSON.stringify(msg)}`);
 }
 
 argv.forEach((topic) => {
-  NODE.subscribe({ topic: topic }, (e) => {
-    logTopic(e);
+  NODE.subscribe({ topic: topic }, (msg) => {
+    logTopic(topic, msg);
   });
 });
 
