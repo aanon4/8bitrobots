@@ -14,23 +14,45 @@ if (tidx !== -1)
   target = argv[tidx + 1];
   argv.splice(tidx, 2);
 }
+let timestamp = false;
+const sidx = argv.indexOf('--timestamp');
+if (sidx !== -1)
+{
+  timestamp = true;
+  argv.splice(sidx, 1);
+}
 
 if (argv.length === 0)
 {
-  console.log('Usage: ros-monitor [--target hostname] topic ....');
+  console.log('Usage: ros-monitor [--target hostname] [--timestamp] topic ....');
   process.exit(1);
 }
+let all = (argv.length === 1 && argv[0] === 'ALL');
 
 const NODE = new ROS_SLAVE({ name: '/ros-monitor', target: `ws://${target}:8080/ros` }).enable()._node;
 
 function logTopic(topic, msg)
 {
-  console.log(`${argv.length === 1 ? '' : (topic + ': ')}${JSON.stringify(msg)}`);
+  console.log(`${timestamp ? Date.now() + ': ' : ''}${argv.length > 1 || all ? (topic + ': ') : ''}${JSON.stringify(msg)}`);
 }
 
-argv.forEach((topic) => {
-  NODE.subscribe({ topic: topic }, (msg) => {
-    logTopic(topic, msg);
+if (all)
+{
+  const LIST = NODE.proxy({ service: '/list' });
+  LIST({}).then((list) => {
+    NODE.unproxy({ service: '/list' });
+    list.topics.forEach((topic) => {
+      NODE.subscribe({ topic: topic }, (msg) => {
+        logTopic(topic, msg);
+      });
+    });
   });
-});
-
+}
+else
+{
+  argv.forEach((topic) => {
+    NODE.subscribe({ topic: topic }, (msg) => {
+      logTopic(topic, msg);
+    });
+  });
+}
