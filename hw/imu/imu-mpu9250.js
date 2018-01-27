@@ -155,7 +155,6 @@ imu.prototype =
 
     this._adOrientation.publish(
     {
-      name: this._name,
       confidence: 3,
       w: this._q[0],
       x: this._q[1],
