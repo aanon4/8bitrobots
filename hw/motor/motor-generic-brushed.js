@@ -2,6 +2,7 @@
 
 function motor(config, settings)
 {
+  this._name = config.name;
   this._hbridge = config.hbridge;
   this._scale = config.reverse ? -1 : 1;
   this._last = null;

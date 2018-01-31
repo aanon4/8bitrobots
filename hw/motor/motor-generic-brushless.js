@@ -1,5 +1,6 @@
 function motor(config, settings)
 {
+  this._name = config.name;
   this._esc = config.esc;
   this._esc.setKVandPoles(settings.kV, settings.poles);
   this._scale = config.reverse ? -1 : 1;
