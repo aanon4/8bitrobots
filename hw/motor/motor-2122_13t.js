@@ -5,7 +5,7 @@ const genericMotor = require('./motor-generic-brushless');
 const settings =
 {
   kV: 1000,
-  volts: 12,
+  maxV: 12,
   watts: 100,
   amps: 12,
   poles: 14,
