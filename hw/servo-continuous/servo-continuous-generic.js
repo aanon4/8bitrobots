@@ -86,7 +86,17 @@ cservo.prototype =
 
   isRPMChanging: function()
   {
-    return this._pwm.isPulseChanging();
+    return this._pwmChannel.isPulseChanging();
+  },
+
+  idle: function(idle)
+  {
+    this._pwmChannel.idle(idle);
+  },
+
+  brake: function()
+  {
+    this.setRPM(0);
   }
 };
 
