@@ -42,7 +42,9 @@ car.prototype =
     this._axle =
     {
       set_velocity: this._node.proxy({ service: `${this._axleRoot}/set_velocity`}),
-      set_angle: this._node.proxy({ service: `${this._axleRoot}/set_angle`})
+      set_angle: this._node.proxy({ service: `${this._axleRoot}/set_angle`}),
+      set_velocity_idle: this._node.proxy({ service: `${this._axleRoot}/set_velocity_idle`}),
+      set_angle_idle: this._node.proxy({ service: `${this._axleRoot}/set_angle_idle`})
     };
     this._startHeartbeat();
     return this;
@@ -71,6 +73,9 @@ car.prototype =
       case 'strafe':
         this.velocityTarget('strafe', movement.value);
         break;
+
+      case 'idle':
+        this.velocityTarget('idle');
 
       default:
         break;
@@ -140,19 +145,29 @@ car.prototype =
     {
       case 'forward':
         this._forwardVelocityTarget = velocity;
+        this._steeringAngleTarget = Math.PI / 2 + (Math.PI / 4 * this._strafeVelocityTarget);
+        this._axle.set_velocity({ velocity: this._forwardVelocityTarget * this._velocityScale });
+        this._axle.set_angle({ angle: this._steeringAngleTarget });
         break;
 
       case 'strafe':
         this._strafeVelocityTarget = velocity;
+        this._steeringAngleTarget = Math.PI / 2 + (Math.PI / 4 * this._strafeVelocityTarget);
+        this._axle.set_velocity({ velocity: this._forwardVelocityTarget * this._velocityScale });
+        this._axle.set_angle({ angle: this._steeringAngleTarget });
+        break;
+
+      case 'idle':
+        this._strafeVelocityTarget = 0;
+        this._strafeVelocityTarget = 0;
+        this._steeringAngleTarget = Math.PI / 2;
+        this._axle.set_velocity_idle({ idle: true });
+        this._axle.set_angle_idle({ idle: true });
         break;
 
       default:
         break;
     }
-
-    this._steeringAngleTarget = Math.PI / 2 + (Math.PI / 4 * this._strafeVelocityTarget);
-    this._axle.set_velocity({ velocity: this._forwardVelocityTarget * this._velocityScale });
-    this._axle.set_angle({ angle: this._steeringAngleTarget });
   }
 }
 
