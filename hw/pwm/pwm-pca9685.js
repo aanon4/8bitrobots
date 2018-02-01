@@ -27,6 +27,10 @@ pwmChannel.prototype =
   disable: function()
   {
     this._enabled = false;
+    if (this._plans.length === 0)
+    {
+      this._pwm._setPulseMs(this._subaddress, 0);
+    }
     return this;
   },
 
@@ -111,7 +115,11 @@ pwmChannel.prototype =
     if (this._plans.length === 1)
     {
       const run = () => {
-        if (this._plans.length > 0)
+        if (!this._enabled)
+        {
+          this._pwm._setPulseMs(this._subaddress, 0);
+        }
+        else if (this._plans.length > 0)
         {
           const plan = this._plans[0];
           if ('idle' in plan)
