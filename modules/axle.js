@@ -116,7 +116,7 @@ axle.prototype =
     }
     else
     {
-      let c = Math.sin(angleRadians);
+      let c = Math.cos(angleRadians);
       this._left.setVelocity(this._lastVelocity * (1 + c), changeMs, func);
       this._right.setVelocity(this._lastVelocity * (1 - c), changeMs, func);
     }
@@ -130,14 +130,14 @@ axle.prototype =
     }
     else
     {
-      let left = this._left.getCurrentVelocity();
-      let right = this._right.getCurrentVelocity();
-      let selected = right;
-      if (Math.abs(left) < Math.abs(right))
+      if (this._lastVelocity == 0)
       {
-        selected = left;
+        return Math.PI / 2;
       }
-      return this._lastVelocity / selected;
+      else
+      {
+        return Math.acos(this._left.getCurrentVelocity() / this._lastVelocity - 1);
+      }
     }
   },
 
@@ -149,7 +149,7 @@ axle.prototype =
     }
     else
     {
-      return false; // Unknown
+      return this._left.isVelocityChanging() || this._right.isVelocityChanging(); // Approximate, because they could be changing at the same rate
     }
   }
 };
