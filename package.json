@@ -15,5 +15,8 @@
     "usage": "x",
     "uuid": "^3.0.1",
     "websocket": "^1.0.24"
+  },
+  "scripts": {
+    "install": "cd hw/board/raspberrypi/native ; ./build.sh"
   }
 }
