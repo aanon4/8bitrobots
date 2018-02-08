@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "crc16": "^1.0.0",
-    "deasync": "^0.1.9",
+    "deasync": "https://github.com/aanon4/deasync.git",
     "i2c-bus": "x",
     "node-gyp": "x",
     "pigpio": "^0.6.4",
