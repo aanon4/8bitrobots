@@ -10,7 +10,7 @@
     "node-gyp": "x",
     "pigpio": "^0.6.4",
     "serialport": "^4.0.7",
-    "spi": "^0.2.0",
+    "spi": "https://github.com/russtheaerialist-retired-projects/node-spi.git",
     "synaptic": "^1.0.10",
     "usage": "x",
     "uuid": "^3.0.1",
