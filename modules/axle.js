@@ -117,8 +117,8 @@ axle.prototype =
     else
     {
       let c = Math.cos(angleRadians);
-      this._left.setVelocity(this._lastVelocity * (1 + c), changeMs, func);
-      this._right.setVelocity(this._lastVelocity * (1 - c), changeMs, func);
+      this._left.setVelocity(this._lastVelocity * (1 - c), changeMs, func);
+      this._right.setVelocity(this._lastVelocity * (1 + c), changeMs, func);
     }
   },
 
@@ -136,7 +136,7 @@ axle.prototype =
       }
       else
       {
-        return Math.acos(this._left.getCurrentVelocity() / this._lastVelocity - 1);
+        return Math.acos(this._right.getCurrentVelocity() / this._lastVelocity - 1);
       }
     }
   },
