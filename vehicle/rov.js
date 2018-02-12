@@ -30,7 +30,7 @@ function neutralize1(v)
 function pilot(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._kinematics = config.kinematics;
   this._power = config.power;
   

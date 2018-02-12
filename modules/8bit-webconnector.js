@@ -3,7 +3,7 @@
   var pending = [];
   var socket = null;
 
-  window.rosRoot =
+  var Root =
   {
     _advertisers: {},
     _services: {},
@@ -117,17 +117,18 @@
       doSend();
     }
   };
+  window['8Bit'] = Root;
 
   function connect(reconnect)
   {
     if (reconnect)
     {
-      window.dispatchEvent(new Event('ROSReconnecting'));
+      window.dispatchEvent(new Event('8BitReconnecting'));
     }
     try
     {
       var opened = false;
-      socket = new WebSocket('ws://' + window.location.host + '/ros');
+      socket = new WebSocket('ws://' + window.location.host + '/8BitApiV1');
       socket.onopen = function()
       {
         opened = true;
@@ -142,7 +143,7 @@
         try
         {
           //console.log('<-', event.data);
-          rosRoot.event(JSON.parse(event.data));
+          Root.event(JSON.parse(event.data));
         }
         catch (e)
         {
@@ -157,14 +158,14 @@
         socket = null;
         if (opened)
         {
-          const oldProxies = rosRoot._proxies;
-          const oldSubscribers = rosRoot._subscribers;
-          const oldServices = rosRoot._services;
-          const oldAdvertisers = rosRoot._advertisers;
-          rosRoot._proxies = {};
-          rosRoot._subscribers = {};
-          rosRoot._services = {};
-          rosRoot._advertisers = {};
+          const oldProxies = Root._proxies;
+          const oldSubscribers = Root._subscribers;
+          const oldServices = Root._services;
+          const oldAdvertisers = Root._advertisers;
+          Root._proxies = {};
+          Root._subscribers = {};
+          Root._services = {};
+          Root._advertisers = {};
           for (let subscriber in oldSubscribers)
           {
             oldSubscribers[subscriber]({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });

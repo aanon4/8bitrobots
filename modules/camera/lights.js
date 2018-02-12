@@ -5,7 +5,7 @@ const SERVICE_SETLIGHTS = { service: 'set_lights' };
 function lights(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._pwm = config.pwm;
 }
 

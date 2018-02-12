@@ -8,8 +8,8 @@ module.exports = function()
     pages:
     {
       '/head': 'config/robot/ui/head.html',
-      '/js/ros.js': './modules/ros.js',
-      '/js/ros-webconnector.js': './modules/ros-webconnector.js',
+      '/js/8bit.js': './modules/8bit.js',
+      '/js/8bit-webconnector.js': './modules/8bit-webconnector.js',
     }
   });
 }

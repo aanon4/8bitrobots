@@ -1,11 +1,11 @@
 'use strict';
 
-const ROSAPIAngle = require('modules/ros-api-angle');
+const APIAngle = require('modules/8bit-api-angle');
 
 function servo(config, settings)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._pwmChannel = config.pwm;
   this._settings = settings;
   this._trim = config.trim || 0;
@@ -21,7 +21,7 @@ function servo(config, settings)
   this._reverse = config.reverse || false;
   this._angle2pulse = (this._settings.maxPulseMs - this._settings.minPulseMs) / (this._settings.maxAngle - this._settings.minAngle);
   this._enabled = false;
-  this._rosApiAngle = new ROSAPIAngle(this, config.ros);
+  this._apiAngle = new APIAngle(this, config.api);
 }
 
 servo.prototype =
@@ -156,7 +156,7 @@ servo.prototype =
       this._lastAngle = this._stateManager.get(`${this._name}-angle`);
     }
     this.setAngle(this._lastAngle);
-    this._rosApiAngle.enable();
+    this._apiAngle.enable();
   },
 
   disable: function()
@@ -166,7 +166,7 @@ servo.prototype =
       return;
     }
     this._enabled = false;
-    this._rosApiAngle.disable();
+    this._apiAngle.disable();
     this._lastAngle = this.getCurrentAngle();
     if (this._stateManager)
     {

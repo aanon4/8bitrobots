@@ -19,7 +19,7 @@ console.info('*** Starting 8BitRobot: ' + configName);
 
 // Load up some generally useful pieces before we load specific modules.
 require('./modules/globals');
-require('./modules/ros');
+require('./modules/8bit');
 require('./modules/services').loadConfig(configName);
 
 // Shutdown cleanly

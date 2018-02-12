@@ -86,7 +86,7 @@ const TOPIC_VOLTAGE = { topic: 'voltage' };
 function vesc(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   if (config.uart)
   {
     this._sendDutyMsg = this._sendDutyMsgUART;

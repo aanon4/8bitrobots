@@ -7,7 +7,7 @@ const TOPIC_CURVAL = { topic: 'button_state' };
 function button(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._gpio = config.gpio;
   this._enabled = false;
 }

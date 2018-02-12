@@ -1,13 +1,13 @@
 'use strict';
 
-console.info('Loading Slave ROS.');
+console.info('Loading 8-Bit Slave.');
 
 const websocket = require('websocket');
 const UUID = require('uuid/v4');
 
 const TOPIC_SHUTDOWN = { topic: '/health/shutdown' };
 
-global.rosRoot =
+const Root =
 {
   _advertisers: {},
   _services: {},
@@ -103,6 +103,7 @@ global.rosRoot =
     }
   }
 };
+global['8Bit'] = Root;
 
 function runSlave(target)
 {
@@ -129,7 +130,7 @@ function runSlave(target)
     doSend();
   }
 
-  rosRoot.sendToMaster = (msg) => {
+  Root.sendToMaster = (msg) => {
     send(msg);
   }
 
@@ -161,7 +162,7 @@ function runSlave(target)
         try
         {
           //console.log('<-', message.utf8Data);
-          rosRoot.event(JSON.parse(message.utf8Data));
+          Root.event(JSON.parse(message.utf8Data));
         }
         catch (e)
         {
@@ -172,14 +173,14 @@ function runSlave(target)
     connection.on('close', () =>
     {
       connection = null;
-      const oldProxies = rosRoot._proxies;
-      const oldSubscribers = rosRoot._subscribers;
-      const oldServices = rosRoot._services;
-      const oldAdvertisers = rosRoot._advertisers;
-      rosRoot._proxies = {};
-      rosRoot._subscribers = {};
-      rosRoot._services = {};
-      rosRoot._advertisers = {};
+      const oldProxies = Root._proxies;
+      const oldSubscribers = Root._subscribers;
+      const oldServices = Root._services;
+      const oldAdvertisers = Root._advertisers;
+      Root._proxies = {};
+      Root._subscribers = {};
+      Root._services = {};
+      Root._advertisers = {};
       for (let subscriber in oldSubscribers)
       {
         oldSubscribers[subscriber]({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
@@ -210,8 +211,8 @@ function runSlave(target)
 function Slave(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
-  this._target = config.target;
+  this._node = Node.init(config.name);
+  this._target = `ws://${config.target}:8080/8BitApiV1`
 }
 
 Slave.prototype =

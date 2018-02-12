@@ -179,7 +179,7 @@ function twoc(a, b)
 function imu(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._uart = config.uart;
   this._axisRemap = config.remap || null;
   this._clockBit = config.extClock ? 0x80 : 0x00;

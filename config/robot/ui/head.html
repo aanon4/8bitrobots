@@ -104,10 +104,10 @@
     100% { top: -90px }
   }
 </style>
-<script src="js/ros-webconnector.js"></script>
-<script src="js/ros.js"></script>
+<script src="js/8bit-webconnector.js"></script>
+<script src="js/8bit.js"></script>
 <script>
-  window.addEventListener('ROSReconnecting', function()
+  window.addEventListener('8BitReconnecting', function()
   {
     function ping()
     {
@@ -134,7 +134,7 @@
     }
     ping();
   });
-  var ros = rosNode.init('/headui');
+  var ros = Node.init('/headui');
   ros.subscribe({ topic: '/robot/head-hoz/current_angle' }, function(angle)
   {
     var l = document.querySelector('#left .pupil');

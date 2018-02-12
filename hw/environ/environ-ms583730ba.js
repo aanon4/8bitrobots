@@ -14,7 +14,7 @@ function twoc(h, l)
 function sensor(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._i2c = config.i2c;
 }
 

@@ -13,7 +13,7 @@ const SERVICE_GESTURE = { service: 'execute_gesture' };
 function car(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._axleRoot = config.axle;
   this._velocityScale = config.velocityScale || 1.0;
 
@@ -72,6 +72,17 @@ car.prototype =
 
       case 'strafe':
         this.velocityTarget('strafe', movement.value);
+        break;
+
+      case 'movement':
+        if ('forward' in movement)
+        {
+          this.velocityTarget('forward', movement.forward);
+        }
+        if ('strafe' in movement)
+        {
+          this.velocityTarget('strafe', movement.strafe);
+        }
         break;
 
       case 'idle':

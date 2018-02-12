@@ -5,7 +5,7 @@ console.info('Loading UI.');
 function UI(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._addpages = `${config.target}/add_pages`;
   this._pages = config.pages;
 }

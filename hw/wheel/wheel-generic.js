@@ -1,16 +1,16 @@
 'use strict';
 
-const ROSAPIVelocity = require('modules/ros-api-velocity');
+const APIVelocity = require('modules/8bit-api-velocity');
 
 
 function wheel(config, settings)
 {
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._config = config;
   // Diameter is in mm, rpm is in revolutions / minutues, velocity is in meters / second
   this._track = Math.PI * settings.diameter / 1000 / 60; // m
   this._motor = config.motor;
-  this._rosApiVelocity = new ROSAPIVelocity(this, config.ros);
+  this._apiVelocity = new APIVelocity(this, config.api);
 }
 
 wheel.prototype =
@@ -18,13 +18,13 @@ wheel.prototype =
   enable: function()
   {
     this._motor.enable();
-    this._rosApiVelocity.enable();
+    this._apiVelocity.enable();
     return this;
   },
 
   disable: function()
   {
-    this._rosApiVelocity.disable();
+    this._apiVelocity.disable();
     this._motor.disable();
     return this;
   },

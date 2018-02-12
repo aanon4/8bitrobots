@@ -32,7 +32,7 @@ module.exports = function()
           reverse: false
         })
       }),
-      ros: 'topicOnly'
+      api: 'topicOnly'
     }),
     steering: new SERVO(
     {
@@ -43,7 +43,7 @@ module.exports = function()
       defaultAngle: Math.PI / 2,
       trim: 0,
       reverse: true,
-      ros: 'topicOnly'
+      api: 'topicOnly'
     })
   });
 }

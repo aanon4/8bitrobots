@@ -24,7 +24,7 @@ const TOPIC_WATER = { topic: '/environment/water_density' };
 function kinematics(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._monitor = config.monitor;
   this._calibrations = {};
   this._orientations = {};

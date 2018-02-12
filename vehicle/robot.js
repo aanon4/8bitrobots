@@ -26,7 +26,7 @@ const SERVICE_GESTURE = { service: 'execute_gesture' };
 function robot(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
 
   this._wheels = config.wheels || {};
   this._servos = config.servos || {};

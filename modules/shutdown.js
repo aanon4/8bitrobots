@@ -10,7 +10,7 @@ const TOPIC_SHUTDOWN = { topic: '/health/shutdown' };
 function shutdown(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
 }
 
 shutdown.prototype =

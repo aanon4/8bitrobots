@@ -52,7 +52,7 @@ const TOPIC_CALIBRATION = { topic: 'calibration' };
 function imu(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._i2cMPU9250 = config.i2c.MPU9250;
   this._i2cAK8963 = config.i2c.AK8963;
   this._clock = null;

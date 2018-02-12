@@ -1,8 +1,8 @@
 'use strict';
 
-console.info('Loading ROS API.');
+console.info('Loading 8-Bit API.');
 
-let rosEvent;
+let nodeEvent;
 const UUID = function()
 {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -12,27 +12,27 @@ const UUID = function()
 };
 if (typeof process === 'object')
 {
-  rosEvent = (msg, handler) => {
-    return global.rosRoot.event(msg, handler);
+  nodeEvent = (msg, handler) => {
+    return global['8Bit'].event(msg, handler);
   }
 }
 else
 {
-  rosEvent = (msg, handler) => {
-    return window.rosRoot.event(msg, handler);
+  nodeEvent = (msg, handler) => {
+    return window['8Bit'].event(msg, handler);
   }
 }
 
-const rosNodes = {};
+const nodes = {};
 
-function rosNodeInternal(name)
+function nodeInternal(name)
 {
   this._name = name;
   this._subscribers = {};
   this._proxies = {};
 }
 
-rosNodeInternal.prototype = 
+nodeInternal.prototype = 
 {
   subscribe: function(options, callback)
   {
@@ -47,7 +47,7 @@ rosNodeInternal.prototype =
       switch (msg.op)
       {
         case 'unsubscribe-force':
-          rosEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
+          nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
           break;
 
         case 'topic':
@@ -63,14 +63,14 @@ rosNodeInternal.prototype =
     }
     this._subscribers[topic] = uuid;
   
-    rosEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
+    nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
   },
 
   unsubscribe: function(options)
   {
     const topic = this.resolveName(options.topic);
     const uuid = this._subscribers[topic];
-    rosEvent({ timestamp: Date.now(), op: 'unsubscribe-req', topic: topic, subscriber: uuid });
+    nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-req', topic: topic, subscriber: uuid });
   },
 
   advertise: function(options)
@@ -86,10 +86,10 @@ rosNodeInternal.prototype =
       {
         case 'subscribe-req':
           subscribers.push(msg.subscriber);
-          rosEvent({ timestamp: Date.now(), op: 'subscribe-ack', subscriber: msg.subscriber });
+          nodeEvent({ timestamp: Date.now(), op: 'subscribe-ack', subscriber: msg.subscriber });
           if (latched)
           {
-            rosEvent({ timestamp: Date.now(), op: 'topic', subscriber: msg.subscriber, event: latched });
+            nodeEvent({ timestamp: Date.now(), op: 'topic', subscriber: msg.subscriber, event: latched });
           }
           break;
 
@@ -99,7 +99,7 @@ rosNodeInternal.prototype =
           {
             subscribers.splice(idx, 1);
           }
-          rosEvent({ timestamp: Date.now(), op: 'unsubscribe-ack', subscriber: msg.subscriber });
+          nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-ack', subscriber: msg.subscriber });
           break;
 
         default:
@@ -108,10 +108,10 @@ rosNodeInternal.prototype =
     }
     advertiser.remove = () => {
       subscribers.forEach((subscriber) => {
-        rosEvent({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
+        nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
       });
     }
-    rosEvent({ timestamp: Date.now(), op: 'advertise', topic: topic }, advertiser);
+    nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic }, advertiser);
 
     let latching = ('latching' in options) ? options.latching : true;
     return {
@@ -122,7 +122,7 @@ rosNodeInternal.prototype =
           latched = event;
         }
         subscribers.forEach((subscriber) => {
-          rosEvent({ timestamp: Date.now(), op: 'topic', subscriber: subscriber, topic: topic, event: event });
+          nodeEvent({ timestamp: Date.now(), op: 'topic', subscriber: subscriber, topic: topic, event: event });
         });
       }
     }
@@ -134,7 +134,7 @@ rosNodeInternal.prototype =
 
     console.info(` -${topic}`);
 
-    rosEvent({ timestamp: Date.now(), op: 'unadvertise', topic: topic });
+    nodeEvent({ timestamp: Date.now(), op: 'unadvertise', topic: topic });
   },
 
   service: function(options, fn)
@@ -150,15 +150,15 @@ rosNodeInternal.prototype =
       {
         case 'call':
           Promise.resolve(fn(msg.call)).then((reply) => {
-            rosEvent({ timestamp: Date.now(), op: 'reply', connector: msg.connector, replyid: msg.replyid, reply: reply });
+            nodeEvent({ timestamp: Date.now(), op: 'reply', connector: msg.connector, replyid: msg.replyid, reply: reply });
           }).catch((e) => {
-            rosEvent({ timestamp: Date.now(), op: 'exception', connector: msg.connector, replyid: msg.replyid, exception: e });
+            nodeEvent({ timestamp: Date.now(), op: 'exception', connector: msg.connector, replyid: msg.replyid, exception: e });
           });
           break;
 
         case 'connect-req':
           proxies.push(msg.connector);
-          rosEvent({ timestamp: Date.now(), op: 'connect-ack', connector: msg.connector });
+          nodeEvent({ timestamp: Date.now(), op: 'connect-ack', connector: msg.connector });
           break;
 
         case 'disconnect-req':
@@ -167,7 +167,7 @@ rosNodeInternal.prototype =
           {
             proxies.splice(idx, 1);
           }
-          rosEvent({ timestamp: Date.now(), op: 'disconnect-ack', connector: msg.connector });
+          nodeEvent({ timestamp: Date.now(), op: 'disconnect-ack', connector: msg.connector });
           break;
 
         default:
@@ -176,10 +176,10 @@ rosNodeInternal.prototype =
     }
     serviceHandler.remove = () => {
       proxies.forEach((proxy) => {
-        rosEvent({ timestamp: Date.now(), op: 'disconnect-force', connector: proxy });
+        nodeEvent({ timestamp: Date.now(), op: 'disconnect-force', connector: proxy });
       });
     }
-    rosEvent({ timestamp: Date.now(), op: 'service', service: service }, serviceHandler);
+    nodeEvent({ timestamp: Date.now(), op: 'service', service: service }, serviceHandler);
   },
 
   unservice: function(options)
@@ -188,7 +188,7 @@ rosNodeInternal.prototype =
 
     console.info(` -${service}`);
 
-    rosEvent({ timestamp: Date.now(), op: 'unservice', service: service });
+    nodeEvent({ timestamp: Date.now(), op: 'unservice', service: service });
   },
 
   proxy: function(options)
@@ -223,7 +223,7 @@ rosNodeInternal.prototype =
 
         case 'disconnect-force':
           waiting = [];
-          rosEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
+          nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
           break;
     
         case 'reply':
@@ -245,7 +245,7 @@ rosNodeInternal.prototype =
 
     this._proxies[service] = uuid;
 
-    rosEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
+    nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
 
     return (request) => {
       const rid = ++replyid;
@@ -262,12 +262,12 @@ rosNodeInternal.prototype =
         }
         if (waiting === null)
         {
-          rosEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
+          nodeEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
         }
         else
         {
           waiting.push(() => {
-            rosEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
+            nodeEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
           });
         }
       });
@@ -278,7 +278,7 @@ rosNodeInternal.prototype =
   {
     const service = this.resolveName(options.service);
     const uuid = this._proxies[service];
-    rosEvent({ timestamp: Date.now(), op: 'disconnect-req', service: service, connector: uuid });
+    nodeEvent({ timestamp: Date.now(), op: 'disconnect-req', service: service, connector: uuid });
   },
 
   resolveName: function(name)
@@ -302,21 +302,21 @@ rosNodeInternal.prototype =
   }
 };
 
-var rosNodeWrapper =
+var nodeWrapper =
 {
   init: function(name)
   {
-    let node = new rosNodeInternal(name);
-    rosNodes[name] = node;
+    let node = new nodeInternal(name);
+    nodes[name] = node;
     return node;
   }
 };
 
 if (typeof process === 'object')
 {
-  global.rosNode = rosNodeWrapper;
+  global.Node = nodeWrapper;
 }
 else
 {
-  window.rosNode = rosNodeWrapper;
+  window.Node = nodeWrapper;
 }

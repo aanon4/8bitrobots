@@ -48,7 +48,7 @@ process.on('unhandledRejection', function(e, p)
 function comm(config)
 {
   this._name = '/console/node';
-  this._node = rosNode.init(this._name);
+  this._node = Node.init(this._name);
 }
 
 comm.prototype =

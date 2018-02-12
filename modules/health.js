@@ -36,7 +36,7 @@ const TOPIC_SHUTDOWN = { topic: 'shutdown' };
 function health(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._metrics = config.metrics || [];
   this._values = [];
   for (var i = 0; i < this._metrics.length; i++)

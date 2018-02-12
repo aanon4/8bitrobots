@@ -1,8 +1,8 @@
 'use strict';
 
-console.info('Loading Master ROS.');
+console.info('Loading 8-Bit Master.');
 
-global.rosRoot =
+const Root =
 {
   _advertisers: {},
   _services: {},
@@ -140,6 +140,7 @@ global.rosRoot =
     }
   }
 };
+global['8Bit'] = Root;
 
 const websocket = require('websocket');
 const UUID = require('uuid/v4');
@@ -157,7 +158,7 @@ function runMaster(webserver)
 
   websocketserver.on('request', function(request)
   {
-    if (request.resource !== '/ros')
+    if (request.resource !== '/8BitApiV1')
     {
       request.reject();
     }
@@ -196,7 +197,7 @@ function runMaster(webserver)
                   delete subscribers[msg.subscriber];
                 }
                 subscribers[msg.subscriber] = true;
-                rosRoot.event(msg, shandler);
+                Root.event(msg, shandler);
                 break;
 
               case 'connect-req':
@@ -207,7 +208,7 @@ function runMaster(webserver)
                   delete proxies[msg.connection];
                 }
                 proxies[msg.connector] = true;
-                rosRoot.event(msg, chandler);
+                Root.event(msg, chandler);
                 break;
 
               case 'advertise':
@@ -218,7 +219,7 @@ function runMaster(webserver)
                   delete advertisers[msg.topic];
                 }
                 advertisers[msg.topic] = true;
-                rosRoot.event(msg, ahandler);
+                Root.event(msg, ahandler);
                 break;
 
               case 'service':
@@ -229,11 +230,11 @@ function runMaster(webserver)
                   delete services[msg.service];
                 }
                 services[msg.service] = true;
-                rosRoot.event(msg, vhandler);
+                Root.event(msg, vhandler);
                 break;
 
               default:
-                rosRoot.event(msg);
+                Root.event(msg);
                 break;
             }
           }
@@ -247,19 +248,19 @@ function runMaster(webserver)
       {
         for (let uuid in subscribers)
         {
-          rosRoot.event({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: uuid });
+          Root.event({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: uuid });
         }
         for (let uuid in proxies)
         {
-          rosRoot.event({ timestamp: Date.now(), op: 'disconnect-force', connector: uuid });
+          Root.event({ timestamp: Date.now(), op: 'disconnect-force', connector: uuid });
         }
         for (let topic in advertisers)
         {
-          rosRoot.event({ timestamp: Date.now(), op: 'unadvertise', topic: topic });
+          Root.event({ timestamp: Date.now(), op: 'unadvertise', topic: topic });
         }
         for (let service in services)
         {
-          rosRoot.event({ timestamp: Date.now(), op: 'unservice', service: service });
+          Root.event({ timestamp: Date.now(), op: 'unservice', service: service });
         }
         delete connections[id];
       });
@@ -270,7 +271,7 @@ function runMaster(webserver)
 function Master(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
 }
 
 Master.prototype =
@@ -281,8 +282,8 @@ Master.prototype =
     this._node.service(SERVICE_LIST, (request) =>
     {
       return {
-        topics: Object.keys(rosRoot._advertisers),
-        services: Object.keys(rosRoot._services)
+        topics: Object.keys(Root._advertisers),
+        services: Object.keys(Root._services)
       };
     });
     return this;

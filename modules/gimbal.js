@@ -10,7 +10,7 @@ function r2d(r)
 function gimbal(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
 
   function dummy(){}
   this._pan = config.pan || dummy;

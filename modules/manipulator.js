@@ -20,7 +20,7 @@ const deployPeriod = 2000;
 function manipulator(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._servos = {};
   config.servos.forEach(function(servo)
   {

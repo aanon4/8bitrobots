@@ -3,8 +3,8 @@
 'use strict';
 
 console.info = function(){};
-const ROS_SLAVE = require('../modules/ros-slave');
-const ROS = require('../modules/ros');
+const API_SLAVE = require('../modules/8bit-slave');
+require('../modules/8bit');
 
 let target = 'localhost';
 const argv = process.argv.slice(2);
@@ -17,11 +17,11 @@ if (tidx !== -1)
 
 if (argv.length !== 0)
 {
-  console.log('Usage: ros-list [--target hostname]');
+  console.log('Usage: 8bit-list [--target hostname]');
   process.exit(1);
 }
 
-const NODE = new ROS_SLAVE({ name: '/ros-list', target: `ws://${target}:8080/ros` }).enable()._node;
+const NODE = new API_SLAVE({ name: '/8bit-list', target: target }).enable()._node;
 
 const LIST = NODE.proxy({ service: '/list' });
 LIST({}).then((list) => {

@@ -10,7 +10,7 @@ const TOPIC_CONTROL = { topic: 'set_control' };
 function camera(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._calibration = config.calibration;
   (config.servos || []).forEach(function(servo)
   {

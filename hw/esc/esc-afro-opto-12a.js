@@ -12,7 +12,7 @@ const settings =
 
 function esc(config)
 {
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._pwmChannel = config.pwm;
   this._maxRPM = 0;
   this._powerTopic = config.power;

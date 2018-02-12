@@ -3,8 +3,8 @@
 'use strict';
 
 console.info = function(){};
-const ROS_SLAVE = require('../modules/ros-slave');
-const ROS = require('../modules/ros');
+const API_SLAVE = require('../modules/8bit-slave');
+require('../modules/8bit');
 
 let target = 'localhost';
 const argv = process.argv.slice(2);
@@ -24,12 +24,12 @@ if (sidx !== -1)
 
 if (argv.length === 0)
 {
-  console.log('Usage: ros-monitor [--target hostname] [--timestamp] topic ....');
+  console.log('Usage: 8bit-monitor [--target hostname] [--timestamp] topic ....');
   process.exit(1);
 }
 let all = (argv.length === 1 && argv[0] === 'ALL');
 
-const NODE = new ROS_SLAVE({ name: '/ros-monitor', target: `ws://${target}:8080/ros` }).enable()._node;
+const NODE = new API_SLAVE({ name: '/8bit-monitor', target: target }).enable()._node;
 
 function logTopic(topic, msg)
 {

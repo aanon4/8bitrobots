@@ -2,20 +2,20 @@
 
 console.info('Loading Axle.');
 
-const ROSAPIAngle = require('modules/ros-api-angle');
-const ROSAPIVelocity = require('modules/ros-api-velocity');
+const APIAngle = require('modules/8bit-api-angle');
+const APIVelocity = require('modules/8bit-api-velocity');
 
 function axle(config)
 {
   this._name = config.name;
-  this._node = rosNode.init(config.name);
+  this._node = Node.init(config.name);
   this._left = config.left;
   this._right = config.right;
   this._drive = config.drive;
   this._steering = config.steering;
   this._lastVelocity = 0;
-  this._rosApiAngle = new ROSAPIAngle(this, config.ros);
-  this._rosApiVelocity = new ROSAPIVelocity(this, config.ros);
+  this._apiAngle = new APIAngle(this, config.api);
+  this._apiVelocity = new APIVelocity(this, config.api);
 }
 
 axle.prototype = 
@@ -26,15 +26,15 @@ axle.prototype =
     this._right && this._right.enable();
     this._drive && this._drive.enable();
     this._steering && this._steering.enable();
-    this._rosApiAngle.enable();
-    this._rosApiVelocity.enable();
+    this._apiAngle.enable();
+    this._apiVelocity.enable();
     return this;
   },
   
   disable: function()
   {
-    this._rosApiVelocity.disable();
-    this._rosApiAngle.disable();
+    this._apiVelocity.disable();
+    this._apiAngle.disable();
     this._steering && this._steering.disable();
     this._drive && this._drive.disable();
     this._right && this._right.disable();
