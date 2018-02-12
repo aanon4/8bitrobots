@@ -4,14 +4,14 @@ const CServo = require('./servo-continuous-generic');
 
 const settings =
 {
-  kV:       21.6, // 130rpm @ 6v
+  kV:       22.0, // 110rpm @ 5v
   periodMs: 20.0,
   minV:      4.8,
   maxV:      6.0,
-  maxRpm:  130.0,
-  minPulse:  0.9,
-  maxPulse:  2.1,
-  deadBand:  0.01,
+  maxRpm:    130.0,
+  minPulse:  1.020,
+  maxPulse:  1.520,
+  deadBand:  0.050,
   size:
   {
     length: 23.2,
