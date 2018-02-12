@@ -19,8 +19,8 @@ int main()
   thread capture_thread([&server, &lane]() {
     VideoCapture cap;
     cap.open(0, CAP_ANY);
-    cap.set(CAP_PROP_FRAME_WIDTH, 320);
-    cap.set(CAP_PROP_FRAME_HEIGHT, 240);
+    cap.set(CAP_PROP_FRAME_WIDTH, 640);
+    cap.set(CAP_PROP_FRAME_HEIGHT, 480);
     cap.set(CAP_PROP_FPS, FRAME_RATE);
     if (!cap.isOpened()) {
       cerr << "Error";
@@ -32,9 +32,6 @@ int main()
 
       Mat frame;
       cap.read(frame);
-
-      //lane.process_image(frame);
-      //lane.get_result(&frame);
 
       // Send frame off to be viewed
       server.set_image(frame);
