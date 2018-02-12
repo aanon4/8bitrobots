@@ -41,7 +41,7 @@ pwmChannel.prototype =
       {
         end: onMs,
         func: func,
-        time: periodMs
+        time: periodMs || 0
       }
     ]);
   },
@@ -91,7 +91,10 @@ pwmChannel.prototype =
 
   idle: function(idle)
   {
-    this._enqueue({ idle: idle });
+    if (this._currentMs !== 0)
+    {
+      this._enqueue({ idle: idle });
+    }
   },
 
   setCyclePeriod: function(cycleMs)
@@ -126,6 +129,7 @@ pwmChannel.prototype =
           {
             if (plan.idle)
             {
+              this._currentMs = 0;
               this._pwm._setPulseMs(this._subaddress, 0);
             }
             this._plans.shift();
