@@ -16,10 +16,6 @@ function car(config)
   this._node = Node.init(config.name);
   this._axleRoot = config.axle;
   this._velocityScale = config.velocityScale || 1.0;
-
-  this._forwardVelocityTarget = 0;
-  this._strafeVelocityTarget = 0;
-  this._steeringAngleTarget = 0;
 }
 
 car.prototype =
@@ -66,27 +62,21 @@ car.prototype =
   
     switch (movement.action)
     {
-      case 'forward':
-        this.velocityTarget('forward', movement.value);
-        break;
-
-      case 'strafe':
-        this.velocityTarget('strafe', movement.value);
-        break;
-
       case 'movement':
         if ('forward' in movement)
         {
-          this.velocityTarget('forward', movement.forward);
+          this._axle.set_velocity({ velocity: this._forwardScale(movement.forward) });
         }
         if ('strafe' in movement)
         {
-          this.velocityTarget('strafe', movement.strafe);
+          this._axle.set_angle({ angle: Math.PI / 2 + (Math.PI / 4 * movement.strafe) });
         }
         break;
 
       case 'idle':
-        this.velocityTarget('idle');
+        this._axle.set_velocity_idle({ idle: true });
+        this._axle.set_angle_idle({ idle: true });
+        break;
 
       default:
         break;
@@ -150,35 +140,15 @@ car.prototype =
     //console.log('heartbeat lost');
   },
 
-  velocityTarget: function(name, velocity)
+  _forwardScale: function(velocity)
   {
-    switch (name)
+    // Scale the velocity input so we have better slow motor control.
+    const sign = Math.sign(velocity);
+    if (Math.abs(velocity) > 1)
     {
-      case 'forward':
-        this._forwardVelocityTarget = velocity;
-        this._steeringAngleTarget = Math.PI / 2 + (Math.PI / 4 * this._strafeVelocityTarget);
-        this._axle.set_velocity({ velocity: this._forwardVelocityTarget * this._velocityScale });
-        this._axle.set_angle({ angle: this._steeringAngleTarget });
-        break;
-
-      case 'strafe':
-        this._strafeVelocityTarget = velocity;
-        this._steeringAngleTarget = Math.PI / 2 + (Math.PI / 4 * this._strafeVelocityTarget);
-        this._axle.set_velocity({ velocity: this._forwardVelocityTarget * this._velocityScale });
-        this._axle.set_angle({ angle: this._steeringAngleTarget });
-        break;
-
-      case 'idle':
-        this._strafeVelocityTarget = 0;
-        this._strafeVelocityTarget = 0;
-        this._steeringAngleTarget = Math.PI / 2;
-        this._axle.set_velocity_idle({ idle: true });
-        this._axle.set_angle_idle({ idle: true });
-        break;
-
-      default:
-        break;
+      velocity = 1;
     }
+    return sign * velocity * velocity * this._velocityScale;
   }
 }
 

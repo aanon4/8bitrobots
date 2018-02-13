@@ -286,12 +286,15 @@ robot.prototype =
   
     switch (movement.action)
     {
-      case 'forward':
-        this.velocityActual('forward', movement.value);
-        break;
-
-      case 'strafe':
-        this.velocityActual('strafe', movement.value);
+      case 'movement':
+        if ('forward' in movement)
+        {
+          this.velocityActual('forward', movement.forward);
+        }
+        if ('strafe' in movement)
+        {
+          this.velocityActual('strafe', movement.strafe);
+        }
         break;
 
       default:

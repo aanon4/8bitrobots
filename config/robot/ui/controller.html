@@ -120,8 +120,7 @@
       var y = animate.target.top - animate.current.top;
       x = Math.max(-active, Math.min(x, active)) / active;
       y = Math.max(-active, Math.min(y, active)) / active;
-      setMovement({ action: 'forward', value: y });
-      setMovement({ action: 'strafe', value: x });
+      setMovement({ action: 'movement', forward: y, strafe: x });
     }
     stick.addEventListener('touchstart', function(e)
     {
