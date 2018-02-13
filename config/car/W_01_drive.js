@@ -44,6 +44,7 @@ module.exports = function()
       trim: 0,
       reverse: true,
       api: 'topicOnly'
-    })
+    }),
+    velocityScale: 5.0
   });
 }

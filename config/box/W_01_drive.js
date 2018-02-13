@@ -26,6 +26,7 @@ module.exports = function()
         reverse: true
       }),
       api: 'topicOnly'
-    })
+    }),
+    velocityScale: 0.4
   });
 }

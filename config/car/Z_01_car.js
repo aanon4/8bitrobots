@@ -6,7 +6,6 @@ module.exports = function()
   return new Car(
   {
     name: '/car/node',
-    axle: '/car/drive',
-    velocityScale: 5.0
+    axle: '/car/drive'
   });
 };

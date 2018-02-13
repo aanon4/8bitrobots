@@ -15,7 +15,6 @@ function car(config)
   this._name = config.name;
   this._node = Node.init(config.name);
   this._axleRoot = config.axle;
-  this._velocityScale = config.velocityScale || 1.0;
 }
 
 car.prototype =
@@ -148,7 +147,7 @@ car.prototype =
     {
       velocity = 1;
     }
-    return sign * velocity * velocity * this._velocityScale;
+    return sign * velocity * velocity;
   }
 }
 

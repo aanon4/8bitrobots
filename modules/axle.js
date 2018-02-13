@@ -13,7 +13,9 @@ function axle(config)
   this._right = config.right;
   this._drive = config.drive;
   this._steering = config.steering;
+  this._velocityScale = config.velocityScale;
   this._lastVelocity = 0;
+  this._lastAngle = 0;
   this._apiAngle = new APIAngle(this, config.api);
   this._apiVelocity = new APIVelocity(this, config.api);
 }
@@ -44,27 +46,26 @@ axle.prototype =
   
   setVelocity(velocity, changeMs, func)
   {
+    this._lastVelocity = velocity;
     if (this._drive)
     {
-      this._drive.setVelocity(velocity, changeMs, func);
+      this._drive.setVelocity(velocity * this._velocityScale, changeMs, func);
     }
     else
     {
-      this._left.setVelocity(velocity, changeMs, func);
-      this._right.setVelocity(velocity, changeMs, func);
+      this._setTankVelocity(changeMs, func);
     }
-    this._lastVelocity = velocity;
   },
 
   getCurrentVelocity: function()
   {
     if (this._drive)
     {
-      return this._drive.getCurrentVelocity();
+      return this._drive.getCurrentVelocity() / this._velocityScale;
     }
     else
     {
-      return (this._left.getCurrentVelocity() + this._right.getCurrentVelocity()) / 2;
+      return (this._left.getCurrentVelocity() + this._right.getCurrentVelocity()) / (2 * this._velocityScale);
     }
   },
 
@@ -110,15 +111,14 @@ axle.prototype =
 
   setAngle: function(angleRadians, changeMs, func)
   {
+    this._lastAngle = angleRadians;
     if (this._steering)
     {
       this._steering.setAngle(angleRadians, changeMs, func);
     }
     else
     {
-      let c = Math.cos(angleRadians);
-      this._left.setVelocity(this._lastVelocity * (1 - c), changeMs, func);
-      this._right.setVelocity(this._lastVelocity * (1 + c), changeMs, func);
+      this._setTankVelocity(changeMs, func);
     }
   },
 
@@ -151,6 +151,13 @@ axle.prototype =
     {
       return this._left.isVelocityChanging() || this._right.isVelocityChanging(); // Approximate, because they could be changing at the same rate
     }
+  },
+
+  _setTankVelocity: function(changeMs, func)
+  {
+    let tank = Math.cos(this._lastAngle) / 2;
+    this._left.setVelocity(this._velocityScale * (this._lastVelocity + tank), changeMs, func);
+    this._right.setVelocity(this._velocityScale * (this._lastVelocity - tank), changeMs, func);
   }
 };
 
