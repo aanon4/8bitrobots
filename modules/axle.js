@@ -156,8 +156,8 @@ axle.prototype =
   _setTankVelocity: function(changeMs, func)
   {
     let tank = Math.cos(this._lastAngle) / 2;
-    this._left.setVelocity(this._velocityScale * (this._lastVelocity + tank), changeMs, func);
-    this._right.setVelocity(this._velocityScale * (this._lastVelocity - tank), changeMs, func);
+    this._left.setVelocity(this._velocityScale * Math.min(Math.max((this._lastVelocity + tank), -1), 1), changeMs, func);
+    this._right.setVelocity(this._velocityScale * Math.min(Math.max((this._lastVelocity - tank), -1), 1), changeMs, func);
   }
 };
 
