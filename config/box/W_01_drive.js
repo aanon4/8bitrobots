@@ -27,6 +27,6 @@ module.exports = function()
       }),
       api: 'topicOnly'
     }),
-    velocityScale: 0.4
+    maxVelocity: 0.4 // m/s
   });
 }

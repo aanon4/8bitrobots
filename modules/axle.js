@@ -13,7 +13,7 @@ function axle(config)
   this._right = config.right;
   this._drive = config.drive;
   this._steering = config.steering;
-  this._velocityScale = config.velocityScale;
+  this._maxVelocity = config.maxVelocity;
   this._lastVelocity = 0;
   this._lastAngle = 0;
   this._apiAngle = new APIAngle(this, config.api);
@@ -46,10 +46,10 @@ axle.prototype =
   
   setVelocity(velocity, changeMs, func)
   {
-    this._lastVelocity = velocity;
+    this._lastVelocity = Math.min(Math.max(velocity, -1), 1);
     if (this._drive)
     {
-      this._drive.setVelocity(velocity * this._velocityScale, changeMs, func);
+      this._drive.setVelocity(velocity * this._maxVelocity, changeMs, func);
     }
     else
     {
@@ -61,11 +61,11 @@ axle.prototype =
   {
     if (this._drive)
     {
-      return this._drive.getCurrentVelocity() / this._velocityScale;
+      return this._drive.getCurrentVelocity() / this._maxVelocity;
     }
     else
     {
-      return (this._left.getCurrentVelocity() + this._right.getCurrentVelocity()) / (2 * this._velocityScale);
+      return (this._left.getCurrentVelocity() + this._right.getCurrentVelocity()) / (2 * this._maxVelocity);
     }
   },
 
@@ -156,8 +156,8 @@ axle.prototype =
   _setTankVelocity: function(changeMs, func)
   {
     let tank = Math.cos(this._lastAngle) / 2;
-    this._left.setVelocity(this._velocityScale * Math.min(Math.max((this._lastVelocity + tank), -1), 1), changeMs, func);
-    this._right.setVelocity(this._velocityScale * Math.min(Math.max((this._lastVelocity - tank), -1), 1), changeMs, func);
+    this._left.setVelocity(this._maxVelocity * Math.min(Math.max((this._lastVelocity + tank), -1), 1), changeMs, func);
+    this._right.setVelocity(this._maxVelocity * Math.min(Math.max((this._lastVelocity - tank), -1), 1), changeMs, func);
   }
 };
 

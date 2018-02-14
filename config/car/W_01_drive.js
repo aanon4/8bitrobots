@@ -45,6 +45,6 @@ module.exports = function()
       reverse: true,
       api: 'topicOnly'
     }),
-    velocityScale: 5.0
+    maxVelocity: 5.0 // m/s
   });
 }
