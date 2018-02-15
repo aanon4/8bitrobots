@@ -68,7 +68,7 @@ car.prototype =
         }
         if ('strafe' in movement)
         {
-          this._axle.set_angle({ angle: Math.PI / 2 + (Math.PI / 4 * movement.strafe) });
+          this._axle.set_angle({ angle: this._strafeScale(movement.strafe) });
         }
         break;
 
@@ -148,6 +148,11 @@ car.prototype =
       velocity = 1;
     }
     return sign * velocity * velocity;
+  },
+
+  _strafeScale: function(strafe)
+  {
+    return Math.PI / 2 + (Math.PI / 4 * strafe);
   }
 }
 
