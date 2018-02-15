@@ -1,19 +1,19 @@
-console.info('Loading FS90R continuous servos.');
+console.info('Loading FT90R continuous digital servos.');
 
 const CServo = require('./servo-continuous-generic');
 
 const settings =
 {
-  kV:       22.0, // 110rpm @ 5v
+  kV:       28.0, // 170rpm @ 6v
   periodMs: 20.0,
   minV:      4.8,
   maxV:      6.0,
-  maxRpm:    130.0,
+  maxRpm:    170.0,
   bands:
   {
-    ccw: [ 1.470, 1.200 ],
-    n:   [ 1.470, 1.530 ],
-    cw:  [ 1.530, 1.800 ]
+    ccw: [ 1.480, 1.200 ],
+    n:   [ 1.480, 1.520 ],
+    cw:  [ 1.520, 1.800 ]
   },
   size:
   {

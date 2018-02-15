@@ -5,24 +5,9 @@ function cservo(config, settings)
   this._settings = settings;
   this._direction = config.reverse ? -1 : 1;
   this._volts = config.volts || this._settings.minV;
+  this._trimMs = config.trim || 0;
   this._pwmChannel.setCyclePeriod(this._settings.periodMs);
-
-  // Calculate forward and backward bands
-  this._forward =
-  {
-    slow: (this._settings.minPulse + this._settings.maxPulse + this._settings.deadBand) / 2,
-    fast: this._settings.maxPulse
-  };
-  this._neutral =
-  {
-    bottom: (this._settings.minPulse + this._settings.maxPulse - this._settings.deadBand) / 2,
-    top: (this._settings.minPulse + this._settings.maxPulse + this._settings.deadBand) / 2
-  };
-  this._backward =
-  {
-    slow: (this._settings.minPulse + this._settings.maxPulse - this._settings.deadBand) / 2,
-    fast: this._settings.minPulse
-  };
+  this._bands = this._settings.bands;
 }
 
 cservo.prototype =
@@ -43,45 +28,39 @@ cservo.prototype =
   {
     if (rpm == 0)
     {
-      const value = (this._neutral.bottom + this._neutral.top) / 2;
+      const value = (this._bands.n[0] + this._bands.n[1]) / 2;
       this._pwmChannel.setPulse(value, changeMs, func);
     }
     else
     {
       const dir = (rpm > 0 ? this._direction : -this._direction);
+      const band = (dir == 1 ? this._bands.cw : this._bands.ccw);
       const maxRPM = this._volts * this._settings.kV;
-      rpm = Math.abs(rpm) > maxRPM ? maxRPM : Math.abs(rpm);
-      const fraction = rpm / maxRPM;
-      if (dir === 1)
-      {
-        const value = this._forward.slow + (fraction * (this._forward.fast - this._forward.slow));
-        this._pwmChannel.setPulse(value, changeMs, func);
-      }
-      else
-      {
-        const value = this._backward.slow - (fraction * (this._backward.slow - this._backward.fast));
-        this._pwmChannel.setPulse(value, changeMs, func);
-      }
+      const arpm = Math.abs(rpm) > maxRPM ? maxRPM : Math.abs(rpm);
+      const fraction = arpm / maxRPM;
+      const value = band[0] + (fraction * (band[1] - band[0]));
+      this._pwmChannel.setPulse(value, changeMs, func);
     }
   },
 
   getCurrentRPM: function()
   {
     let pulse = this._pwmChannel.getCurrentPulse();
-    if (pulse > this._neutral.bottom && pulse < this._neutral.top)
+    if (pulse > this._bands.n[0] && pulse < this._bands.n[1])
     {
       return 0;
     }
-    else if (pulse > this._forward.slow)
+    const maxRPM = this._volts * this._settings.kV;
+    for (let k in this._bands)
     {
-      const rpm = (pulse - this._forward.slow) / (this._forward.fast - this._forward.slow);
-      return rpm * this._direction;
+      const band = this._bands[k];
+      if ((band[0] <= band[1] && pulse >= band[0] && pulse <= band[1]) || (band[0] > band[1] && pulse >= band[1] && pulse <= band[0]))
+      {
+        const fraction = (pulse - band[0]) / (band[1] - band[0]);
+        return fraction * maxRPM * (k === 'ccw' ? -this._direction : this._direction);
+      }
     }
-    else
-    {
-      const rpm = (pulse - this._backward.slow) / (this._backward.slow - this._backward.fast);
-      return rpm * this._direction;
-    }
+    return null;
   },
 
   isRPMChanging: function()
