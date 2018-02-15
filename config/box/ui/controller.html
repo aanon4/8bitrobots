@@ -89,6 +89,14 @@
       var y = animate.target.top - animate.current.top;
       x = Math.max(-active, Math.min(x, active)) / active;
       y = Math.max(-active, Math.min(y, active)) / active;
+      if (Math.abs(x) < 0.1)
+      {
+        x = 0;
+      }
+      if (Math.abs(y) < 0.1)
+      {
+        y = 0;
+      }
       if (x == 0 && y == 0)
       {
         setMovement({ action: 'idle' });
