@@ -158,6 +158,7 @@ pwmChannel.prototype =
 function PWM(config)
 {
   this._i2c = config.i2c;
+  this._prescaleTweak = config.prescaleTweak || 0;
   this._channels =
   [
     new pwmChannel(this, 0),
@@ -186,9 +187,11 @@ PWM.prototype =
     if (this._cycleMs === undefined)
     {
       this._cycleMs = cycleMs;
+      this._tick = this._cycleMs / (4096 - 1);
+      const prescale = (Math.round((25 * 1000 * 1000 * cycleMs) / (4096 * 1000)) - 1 + this._prescaleTweak) & 0xFF;                  
       this._i2c.writeBytes(Buffer.from([ 0x00, 0x20 | 0x10 ]));
       this._i2c.writeBytes(Buffer.from([ 0x01, 0x04 ]));
-      this._i2c.writeBytes(Buffer.from([ 0xFE, ((25 * 1000 * 1000 * cycleMs) / (4096 * 1000) - 1) & 0xFF]));
+      this._i2c.writeBytes(Buffer.from([ 0xFE, prescale ]));
       this._i2c.writeBytes(Buffer.from([ 0x00, 0x20 ]));
     }
     else if (this._cycleMs !== cycleMs)
@@ -199,7 +202,7 @@ PWM.prototype =
 
   _setPulseMs: function(subaddress, pulseMs)
   {
-    const v = pulseMs * 4096 / this._cycleMs - 1;
+    const v = pulseMs / this._tick;
     this._i2c.writeBytes(Buffer.from([ 6 + 4 * subaddress, 0, 0, v & 0xFF, (v >> 8) & 0xFF ]));
   },
 
