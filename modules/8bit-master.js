@@ -91,8 +91,11 @@ const Root =
       case 'unservice':
       {
         const fn = this._services[msg.service];
-        delete this._services[msg.service];
-        fn.remove();
+        if (fn)
+        {
+          delete this._services[msg.service];
+          fn.remove();
+        }
         break;
       }
       case 'connect-req':
