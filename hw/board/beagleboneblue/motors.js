@@ -198,10 +198,11 @@ motors.prototype =
     {
       throw new Error('Bad motor channel');
     }
-    let motor = _motors._channels[config.channel];
+    let motor = this._channels[config.channel];
     if (!motor)
     {
       motor = new motorChannel(this, config);
+      this._channels[config.channel] = motor;
     }
     return motor;
   }
