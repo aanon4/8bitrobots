@@ -62,10 +62,10 @@ axle.prototype =
     this._lastVelocity = 0;
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    this._drive.idle(idle);
-    this._steering.idle(idle);
+    this._drive.idle();
+    this._steering.idle();
   },
 
   isVelocityChanging: function()

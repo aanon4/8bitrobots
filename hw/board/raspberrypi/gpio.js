@@ -209,7 +209,7 @@ gpioChannel.prototype =
     return this._targetValue;
   },
 
-  idle: function(idle)
+  idle: function()
   {
   },
 

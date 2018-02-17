@@ -68,9 +68,9 @@ cservo.prototype =
     return this._pwmChannel.isPulseChanging();
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    this._pwmChannel.idle(idle);
+    this._pwmChannel.idle();
   },
 
   brake: function()

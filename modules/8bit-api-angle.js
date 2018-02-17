@@ -33,7 +33,7 @@ angle.prototype =
       });
       this._target._node.service(SERVICE_IDLE, (event) =>
       {
-        this._target.idle(event.idle);
+        this._target.idle();
         return true;
       });
       this._target._node.service(SERVICE_WAITFOR, (event) =>

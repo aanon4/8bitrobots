@@ -136,9 +136,9 @@ pwmChannel.prototype =
     return this;
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    this._enqueue({ idle: idle });
+    this._enqueue({ idle: true });
   },
 
   setCyclePeriod: function(cycleMs)

@@ -38,9 +38,9 @@ motor.prototype =
     }
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    this._hbridge.idle(idle);
+    this._hbridge.idle();
   },
 
   isRPMChanging: function()

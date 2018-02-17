@@ -81,13 +81,10 @@ hbridgeChannel.prototype =
     return this;
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    if (idle)
-    {
-      this._in1.setPulse(0, changeMs, func);
-      this._in2.setPulse(0, changeMs, func);
-    }
+    this._in1.idle();
+    this._in2.idle();
   },
 
   brake: function()
@@ -150,4 +147,4 @@ hbridge.prototype =
   }
 };
 
-module.export = hbridge;
+module.exports = hbridge;

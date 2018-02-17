@@ -89,11 +89,11 @@ pwmChannel.prototype =
     return this._lastMs;
   },
 
-  idle: function(idle)
+  idle: function()
   {
     if (this._currentMs !== 0)
     {
-      this._enqueue({ idle: idle });
+      this._enqueue({ idle: true });
     }
   },
 

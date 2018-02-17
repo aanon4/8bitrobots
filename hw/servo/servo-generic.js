@@ -175,9 +175,9 @@ servo.prototype =
     this._pwmChannel.disable();
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    this._pwmChannel.idle(idle);
+    this._pwmChannel.idle();
   },
 
   getSettings: function()

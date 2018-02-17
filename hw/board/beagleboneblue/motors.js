@@ -16,6 +16,7 @@ function motorChannel(motors, config)
   this._plans = [];
   this._lastValue = null;
   this._kV = 0;
+  this._idled = true;
 }
 
 motorChannel.prototype =
@@ -78,6 +79,11 @@ motorChannel.prototype =
         this._busy = true;
         const run = () =>
         {
+          if (this._idled)
+          {
+            this._idled = false;
+            native.bbb_motors2_enable(this._motors._handle, this._subaddress);
+          }
           native.bbb_motors2_setPlan(this._motors._handle, this._subaddress, this._plans[0], () =>
           {
             this._plans.shift();
@@ -112,6 +118,7 @@ motorChannel.prototype =
       {
         native.bbb_motors2_start(this._motors._handle);
       }
+      this._idled = false;
       native.bbb_motors2_enable(this._motors._handle, this._subaddress);
     }
     return this;
@@ -133,16 +140,10 @@ motorChannel.prototype =
     return this;
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    if (idle)
-    {
-      native.bbb_motors2_disable(this._motors._handle, this._subaddress);
-    }
-    else
-    {
-      native.bbb_motors2_enable(this._motors._handle, this._subaddress);
-    }
+    this._idled = true;
+    native.bbb_motors2_disable(this._motors._handle, this._subaddress);
   },
 
   setKVandPoles: function(kV, poles)

@@ -13,6 +13,7 @@ function servoChannel(servos, config)
   this._planner = new MotionPlanner();
   this._plans = [];
   this._lastMs = null;
+  this._idled = true;
 }
 
 servoChannel.prototype =
@@ -62,18 +63,17 @@ servoChannel.prototype =
         {
           if ('idle' in this._plans[0])
           {
-            if (this._plans[0].idle)
-            {
-              native.bbb_servos2_disable(this._servos._handle, this._subaddress);
-            }
-            else
-            {
-              native.bbb_servos2_enable(this._servos._handle, this._subaddress);
-            }
+            this._idled = true;
+            native.bbb_servos2_disable(this._servos._handle, this._subaddress);
             run();
           }
           else
           {
+            if (this._idled)
+            {
+              this._idled = false;
+              native.bbb_servos2_enable(this._servos._handle, this._subaddress);
+            }
             native.bbb_servos2_setPlan(this._servos._handle, this._subaddress, this._plans[0].movement, run);
           }
         }
@@ -115,6 +115,7 @@ servoChannel.prototype =
       {
         native.bbb_servos2_start(this._servos._handle);
       }
+      this._idled = false;
       native.bbb_servos2_enable(this._servos._handle, this._subaddress);
     }
     return this;
@@ -126,6 +127,7 @@ servoChannel.prototype =
     {
       this._enabled = false;
       this._servos._enabled--;
+      this._idled = true;
       native.bbb_servos2_disable(this._servos._handle, this._subaddress);
       if (this._servos._enabled === 0)
       {
@@ -135,9 +137,9 @@ servoChannel.prototype =
     return this;
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    this._enqueue({ idle: idle });
+    this._enqueue({ idle: true });
   },
 
   setCyclePeriod: function(cycleMs)

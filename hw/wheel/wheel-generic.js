@@ -44,9 +44,9 @@ wheel.prototype =
     this._motor.brake();
   },
 
-  idle: function(idle)
+  idle: function()
   {
-    this._motor.idle(idle);
+    this._motor.idle();
   },
 
   isVelocityChanging: function()
