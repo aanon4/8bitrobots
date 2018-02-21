@@ -137,6 +137,7 @@ car.prototype =
   _heartbeatLost: function()
   {
     //console.log('heartbeat lost');
+    this._handleMovement({ action: 'idle' });
   },
 
   _forwardScale: function(velocity)
