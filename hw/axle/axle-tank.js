@@ -40,7 +40,7 @@ axle.prototype =
   
   setVelocity(velocity, changeMs, func)
   {
-    this._lastVelocity = Math.min(Math.max(velocity, -1), 1);
+    this._lastVelocity = velocity;
     this._setTankVelocity(changeMs, func);
   },
 
@@ -75,14 +75,7 @@ axle.prototype =
 
   getCurrentAngle: function()
   {
-    if (this._lastVelocity == 0)
-    {
-      return Math.PI / 2;
-    }
-    else
-    {
-      return Math.acos(this._right.getCurrentVelocity() / this._lastVelocity - 1);
-    }
+    return this._lastAngle; // Appoximate, rather than calculate the actual current angle
   },
 
   isAngleChanging: function()
@@ -92,9 +85,22 @@ axle.prototype =
 
   _setTankVelocity: function(changeMs, func)
   {
-    let tank = Math.cos(this._lastAngle) / 2;
-    this._left.setVelocity(this._maxVelocity * Math.min(Math.max((this._lastVelocity + tank), -1), 1), changeMs, func);
-    this._right.setVelocity(this._maxVelocity * Math.min(Math.max((this._lastVelocity - tank), -1), 1), changeMs, func);
+    const PI2 = Math.PI / 2;
+    const angle = Math.abs(this._lastAngle);
+
+    let left = 1;
+    let right = 1;
+    if (angle < PI2)
+    {
+      left = 1.2 * angle / PI2 - 0.2;
+    }
+    else if (angle > PI2)
+    {
+      right = -1.2 * angle / PI2 + 2.2;
+    }
+
+    this._left.setVelocity(this._maxVelocity * Math.min(Math.max((this._lastVelocity * left), -1), 1), changeMs, func);
+    this._right.setVelocity(this._maxVelocity * Math.min(Math.max((this._lastVelocity * right), -1), 1), changeMs, func);
   }
 };
 

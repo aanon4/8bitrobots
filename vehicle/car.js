@@ -15,6 +15,8 @@ function car(config)
   this._name = config.name;
   this._node = Node.init(config.name);
   this._axleRoot = config.axle;
+  this._forward = 0;
+  this._strafe = 0;
 }
 
 car.prototype =
@@ -64,15 +66,18 @@ car.prototype =
       case 'movement':
         if ('forward' in movement)
         {
-          this._axle.set_velocity({ velocity: this._forwardScale(movement.forward) });
+          this._forward = Math.min(Math.max(movement.forward, -1), 1);
         }
         if ('strafe' in movement)
         {
-          this._axle.set_angle({ angle: this._strafeScale(movement.strafe) });
+          this._strafe = Math.min(Math.max(movement.strafe, -1), 1);;
         }
+        this._setMotion();
         break;
 
       case 'idle':
+        this._forward = 0;
+        this._strafe = 0;
         this._axle.set_velocity_idle({ idle: true });
         this._axle.set_angle_idle({ idle: true });
         break;
@@ -140,20 +145,21 @@ car.prototype =
     this._handleMovement({ action: 'idle' });
   },
 
-  _forwardScale: function(velocity)
+  _setMotion: function()
   {
-    // Scale the velocity input so we have better slow motor control.
-    const sign = Math.sign(velocity);
-    if (Math.abs(velocity) > 1)
-    {
-      velocity = 1;
-    }
-    return sign * velocity * velocity;
-  },
+    const forward = this._forward;
+    const strafe = this._strafe;
 
-  _strafeScale: function(strafe)
-  {
-    return Math.PI / 2 + (Math.PI / 4 * strafe);
+    // Velocity is the hypotenuse
+    // let velocity = Math.sqrt(forward * forward + strate * strafe);
+    // Scale so velocity ramps up slowly
+    // velocity = Math.sign(forward) * velocity * velocity; 
+    let velocity = (forward < 0 ? -1 : 1) * (forward * forward + strafe * strafe);
+
+    let angle = Math.abs(Math.atan2(forward, strafe));
+
+    this._axle.set_velocity({ velocity: velocity });
+    this._axle.set_angle({ angle: angle });
   }
 }
 
