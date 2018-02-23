@@ -2,7 +2,7 @@ module.exports = function()
 {
   const AXLE = require('hw/axle/axle-tank');
   const WHEEL = require('hw/wheel/wheel-108mm');
-  const MOTOR = require('hw/servo-continuous/servo-continuous-fs90r');
+  const MOTOR = require('hw/servo-continuous/servo-continuous-ft90r');
 
   return new AXLE(
   {
