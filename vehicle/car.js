@@ -154,9 +154,8 @@ car.prototype =
     // let velocity = Math.sqrt(forward * forward + strate * strafe);
     // Scale so velocity ramps up slowly
     // velocity = Math.sign(forward) * velocity * velocity; 
-    let velocity = (forward < 0 ? -1 : 1) * (forward * forward + strafe * strafe);
-
-    let angle = Math.abs(Math.atan2(forward, strafe));
+    const velocity = (forward < 0 ? -1 : 1) * (forward * forward + strafe * strafe);
+    const angle = Math.atan2(forward, strafe);
 
     this._axle.set_velocity({ velocity: velocity });
     this._axle.set_angle({ angle: angle });
