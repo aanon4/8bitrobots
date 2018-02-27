@@ -6,7 +6,9 @@ const THREE = require('../modules/three');
 
 const AUTOLEVEL_DELAY = 5000; // 5 seconds
 
-const TOPIC_SETLEVEL = { topic: 'set_level' };
+const SERVICE_SETLEVEL = { service: 'set_level' };
+const SERVICE_SETWATER = { service: 'set_water_density' };
+const SERVICE_SETAIR = { service: 'set_sea_level' };
 
 const TOPIC_K_ANGULAR = { topic: 'angular' };
 const TOPIC_K_ACCELERATION = { topic: 'acceleration' };
@@ -16,9 +18,7 @@ const TOPIC_K_POSITION = { topic: 'position' };
 const TOPIC_ORIENTATION = { topic: 'orientation' };
 const TOPIC_ACCELERATION = { topic: 'acceleration' };
 const TOPIC_CALIBRATION = { topic: 'calibration' };
-
-const TOPIC_PRESSURE = { topic: '/environment/external/pressure' };
-const TOPIC_WATER = { topic: '/environment/water_density' };
+const TOPIC_PRESSURE = { topic: 'pressure' };
 
 
 function kinematics(config)
@@ -29,10 +29,14 @@ function kinematics(config)
   this._calibrations = {};
   this._orientations = {};
   this._accelerations = {};
+  this._latitude = null;
+  this._longitude = null;
   this._depth = 0;
+  this._altitude = 0;
   this._calibrated = null;
   this._calibrationTimeout = config.calibrationTimeout || 0;
   this._waterDensity = Number.MAX_SAFE_INTEGER;
+  this._seaLevel = 116690.4; // Pa
 }
 
 kinematics.prototype =
@@ -46,31 +50,48 @@ kinematics.prototype =
 
     this._monitor.forEach((mon) =>
     {
-      this._node.subscribe(this._topicName(mon.name, TOPIC_ORIENTATION), (event) =>
+      if ('headingOffset' in mon)
       {
-        this._imuOrientation(mon, event);
-      })
-      this._node.subscribe(this._topicName(mon.name, TOPIC_ACCELERATION), (event) =>
+        this._node.subscribe(this._topicName(mon.name, TOPIC_ORIENTATION), (event) =>
+        {
+          this._imuOrientation(mon, event);
+        })
+        this._node.subscribe(this._topicName(mon.name, TOPIC_ACCELERATION), (event) =>
+        {
+          this._imuAcceleration(mon, event);
+        });
+        this._node.subscribe(this._topicName(mon.name, TOPIC_CALIBRATION), (event) =>
+        {
+          this._imuCalibration(mon, event);
+        });
+      }
+      else if ('seaLevel' in mon)
       {
-        this._imuAcceleration(mon, event);
-      });
-      this._node.subscribe(this._topicName(mon.name, TOPIC_CALIBRATION), (event) =>
+        this._node.subscribe(this._topicName(mon.name, TOPIC_PRESSURE), (event) =>
+        {
+          this._airPressure(mon, event);
+        });
+      }
+      else if ('waterDensity' in mon)
       {
-        this._imuCalibration(mon, event);
-      });
+        this._node.subscribe(this._topicName(mon.name, TOPIC_PRESSURE), (event) =>
+        {
+          this._waterPressure(mon, event);
+        });
+      }
     });
 
-    this._node.subscribe(TOPIC_SETLEVEL, (event) =>
+    this._node.service(SERVICE_SETLEVEL, (request) =>
     {
       this._setLevel();
     });
-    this._node.subscribe(TOPIC_PRESSURE, (event) =>
+    this._node.service(SERVICE_SETWATER, (request) =>
     {
-      this._environPressure(event);
+      this._setEnvironWater(request);
     });
-    this._node.subscribe(TOPIC_WATER, (event) =>
+    this._node.service(SERVICE_SETAIR, (request) =>
     {
-      this._environWater(event);
+      this._setEnvironAir(request);
     });
 
     return this;
@@ -80,14 +101,21 @@ kinematics.prototype =
   {
     this._monitor.forEach((mon) =>
     {
-      this._node.unsubscribe(this._topicName(mon.name, TOPIC_ORIENTATION));
-      this._node.unsubscribe(this._topicName(mon.name, TOPIC_ACCELERATION));
-      this._node.unsubscribe(this._topicName(mon.name, TOPIC_CALIBRATION));
+      if ('headingOffset' in mon)
+      {
+        this._node.unsubscribe(this._topicName(mon.name, TOPIC_ORIENTATION));
+        this._node.unsubscribe(this._topicName(mon.name, TOPIC_ACCELERATION));
+        this._node.unsubscribe(this._topicName(mon.name, TOPIC_CALIBRATION));
+      }
+      else if (('seaLevel' in mon) || ('waterDensity' in mon))
+      {
+        this._node.unsubscribe(this._topicName(mon.name, TOPIC_PRESSURE));
+      }
     });
 
-    this._node.unsubscribe(TOPIC_SETLEVEL);
-    this._node.unsubscribe(TOPIC_PRESSURE);
-    this._node.unsubscribe(TOPIC_WATER);
+    this._node.unservice(SERVICE_SETLEVEL);
+    this._node.unservice(SERVICE_SETWATER);
+    this._node.unservice(SERVICE_SETAIR);
 
     this._node.unadvertise(TOPIC_K_ANGULAR);
     this._node.unadvertise(TOPIC_K_ACCELERATION);
@@ -257,19 +285,35 @@ kinematics.prototype =
       });
     }
   },
-  
-  _environPressure: function(event)
+
+  _airPressure: function(mon, event)
   {
-    this._depth = (event.Pa - 101325) / (this._waterDensity * 9.80665);
+    const seaLevelPa = mon.seaLevel || this._seaLevel;
+    this._altitude = 44330.0 * (1.0 - Math.pow(event.Pa / seaLevelPa, 0.1903));
     this._adPosition.publish(
     {
-      depth: parseFloat(this._depth.toFixed(2)), latitude: undefined, longitude: undefined
+      altitude: parseFloat(this._altitude.toFixed(2)), latitude: this._latitude, longitude: this._longitude
     });
   },
   
-  _environWater: function(event)
+  _waterPressure: function(mon, event)
   {
-    this._waterDensity = event.density;
+    const waterDensity = mon.waterDensity || this._waterDensity;
+    this._depth = (event.Pa - 101325.0) / (waterDensity * 9.80665);
+    this._adPosition.publish(
+    {
+      depth: parseFloat(this._depth.toFixed(2)), latitude: this._latitude, longitude: this._longitude
+    });
+  },
+  
+  _setEnvironWater: function(request)
+  {
+    this._waterDensity = request.density;
+  },
+
+  _setEnvironAir: function(request)
+  {
+    this._seaLevel = request.seaLevel;
   },
 
   _setLevel: function()
