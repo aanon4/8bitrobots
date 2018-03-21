@@ -5,7 +5,7 @@ const NOHEARTBEAT = 0;
 const HEARTBEAT = 1;
 const WAITINGHEARTBEAT = 2;
 
-const TOPIC_SHUTDOWN = { topic: 'shutdown' };
+const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { shutdown: 'String' } };
 const SERVICE_MOVEMENT = { service: 'set_movement' };
 const SERVICE_GESTURE = { service: 'execute_gesture' };
 

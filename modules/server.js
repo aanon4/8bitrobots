@@ -6,7 +6,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const SERVICE_ADD_PAGES = { service: 'add_pages' };
+const SERVICE_ADD_PAGES = { service: 'add_pages', schema: { pages: 'Hash' } };
 
 
 function incoming(request, response)

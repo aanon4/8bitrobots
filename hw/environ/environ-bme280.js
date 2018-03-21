@@ -31,9 +31,9 @@ const BME280 =
   HUMIDITY: 0xFD, // 2-bytes
 };
 
-const TOPIC_HUMIDITY = { topic: 'humidity' };
-const TOPIC_TEMPERATURE = { topic: 'temperature' };
-const TOPIC_PRESSURE = { topic: 'pressure' };
+const TOPIC_HUMIDITY = { topic: 'humidity', schema: { '%': 'Number' } };
+const TOPIC_TEMPERATURE = { topic: 'temperature', schema: { 'C': 'Number' } };
+const TOPIC_PRESSURE = { topic: 'pressure', schema: { 'Pa': 'Number' } };
 
 
 function twoc(h, l)

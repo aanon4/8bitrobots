@@ -179,7 +179,7 @@ nodeInternal.prototype =
         nodeEvent({ timestamp: Date.now(), op: 'disconnect-force', connector: proxy });
       });
     }
-    nodeEvent({ timestamp: Date.now(), op: 'service', service: service }, serviceHandler);
+    nodeEvent({ timestamp: Date.now(), op: 'service', service: service, schema: options.schema }, serviceHandler);
   },
 
   unservice: function(options)

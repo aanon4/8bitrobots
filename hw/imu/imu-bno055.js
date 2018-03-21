@@ -163,10 +163,10 @@ const CALIBRATION_TIMEOUT = 5000; // 5 seconds
 const UART_RETRY = 5;
 const UART_TIMEOUT = 1000;
 
-const TOPIC_ORIENTATION = { topic: 'orientation' };
-const TOPIC_ACCELERATION = { topic: 'acceleration' };
-const TOPIC_CALIBRATION = { topic: 'calibration' };
-const TOPIC_TEMPERATURE = { topic: 'temperature' };
+const TOPIC_ORIENTATION = { topic: 'orientation', schema: { confidence: 'Number', x: 'Number', y: 'Number', z: 'Number', w: 'Number' } };
+const TOPIC_ACCELERATION = { topic: 'acceleration', schema: { confidence: 'Number', linearaccel: { x: 'Number', y: 'Number', z: 'Number' } } };
+const TOPIC_CALIBRATION = { topic: 'calibration', schema: { confidence: 'Number', old: 'Hash', new: 'Hash' } };
+const TOPIC_TEMPERATURE = { topic: 'temperature', schema: { 'C': 'Number' } };
 
 
 function twoc(a, b)
@@ -483,7 +483,7 @@ imu.prototype =
       this._adCalibration.publish(
       {
         old: old,
-        'new': this._calibration,
+        new: this._calibration,
         confidence: this._confidence
       });
       

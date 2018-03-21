@@ -151,7 +151,7 @@ global['8Bit'] = Root;
 const websocket = require('websocket');
 const UUID = require('uuid/v4');
 
-const SERVICE_LIST = { service: '/list' };
+const SERVICE_LIST = { service: '/list', schema: {} };
 
 function runMaster(webserver)
 {

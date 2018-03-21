@@ -10,10 +10,10 @@ const SERVICE_SETLEVEL = { service: 'set_level' };
 const SERVICE_SETWATER = { service: 'set_water_density' };
 const SERVICE_SETAIR = { service: 'set_sea_level' };
 
-const TOPIC_K_ANGULAR = { topic: 'angular' };
-const TOPIC_K_ACCELERATION = { topic: 'acceleration' };
-const TOPIC_K_CALIBRATION = { topic: 'calibration' };
-const TOPIC_K_POSITION = { topic: 'position' };
+const TOPIC_K_ANGULAR = { topic: 'angular', schema: { pitch: 'Number', roll: 'Number', heading: 'Number' } };
+const TOPIC_K_ACCELERATION = { topic: 'acceleration', schema: { x: 'Number', y: 'Number', z: 'Number' } };
+const TOPIC_K_CALIBRATION = { topic: 'calibration', schema: { calibrated: 'Boolean' } };
+const TOPIC_K_POSITION = { topic: 'position', schema: { altitude: 'Number', latitude: 'Number', longitude: 'Number' } };
 
 const TOPIC_ORIENTATION = { topic: 'orientation' };
 const TOPIC_ACCELERATION = { topic: 'acceleration' };

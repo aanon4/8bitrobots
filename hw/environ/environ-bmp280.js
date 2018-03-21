@@ -23,8 +23,8 @@ const BME280 =
   TEMPERATURE: 0xFA, // 3-bytes
 };
 
-const TOPIC_TEMPERATURE = { topic: 'temperature' };
-const TOPIC_PRESSURE = { topic: 'pressure' };
+const TOPIC_TEMPERATURE = { topic: 'temperature', schema: { 'C': 'Number' } };
+const TOPIC_PRESSURE = { topic: 'pressure', schema: { 'Pa': 'Number' } };
 
 
 function twoc(h, l)
