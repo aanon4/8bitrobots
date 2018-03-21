@@ -42,7 +42,7 @@ if (all)
   LIST({}).then((list) => {
     NODE.unproxy({ service: '/list' });
     list.topics.forEach((topic) => {
-      NODE.subscribe({ topic: topic }, (msg) => {
+      NODE.subscribe({ topic: topic.name }, (msg) => {
         logTopic(topic, msg);
       });
     });

@@ -27,11 +27,11 @@ const LIST = NODE.proxy({ service: '/list' });
 LIST({}).then((list) => {
   console.log('Topics:');
   list.topics.forEach((topic) => {
-    console.log(`  ${topic}`);
+    console.log(`  ${topic.name}`);
   });
   console.log('Services:');
   list.services.forEach((service) => {
-    console.log(`  ${service}`);
+    console.log(`  ${service.name}`);
   });
   process.exit(0);
 });

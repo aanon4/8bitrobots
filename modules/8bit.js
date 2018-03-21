@@ -111,7 +111,7 @@ nodeInternal.prototype =
         nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
       });
     }
-    nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic }, advertiser);
+    nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic, schema: options.schema }, advertiser);
 
     let latching = ('latching' in options) ? options.latching : true;
     return {

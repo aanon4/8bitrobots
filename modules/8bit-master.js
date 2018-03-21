@@ -17,7 +17,7 @@ const Root =
     {
       case 'advertise':
       {
-        this._advertisers[msg.topic] = handler;
+        this._advertisers[msg.topic] = { handler: handler, schema: msg.schema };
         const targets = this._pending[msg.topic];
         if (targets)
         {
@@ -31,8 +31,11 @@ const Root =
       case 'unadvertise':
       {
         const fn = this._advertisers[msg.topic];
-        delete this._advertisers[msg.topic];
-        fn.remove();
+        if (fn)
+        {
+          delete this._advertisers[msg.topic];
+          fn.handler.remove();
+        }
         break;
       }
       case 'subscribe-req':
@@ -41,7 +44,7 @@ const Root =
         if (fn)
         {
           this._subscribers[msg.subscriber] = handler;
-          fn(msg);
+          fn.handler(msg);
         }
         else
         {
@@ -72,12 +75,12 @@ const Root =
       case 'topic':
       {
         const fn = this._subscribers[msg.subscriber];
-        fn && fn(msg);
+        fn && fn.handler(msg);
         break;
       }
       case 'service':
       {
-        this._services[msg.service] = handler;
+        this._services[msg.service] = { handler: handler, schema: msg.schema };
         const targets = this._pending[msg.service];
         if (targets)
         {
@@ -94,7 +97,7 @@ const Root =
         if (fn)
         {
           delete this._services[msg.service];
-          fn.remove();
+          fn.handler.remove();
         }
         break;
       }
@@ -104,7 +107,7 @@ const Root =
         if (fn)
         {
           this._proxies[msg.connector] = handler;
-          fn(msg);
+          fn.handler(msg);
         }
         else
         {
@@ -125,7 +128,7 @@ const Root =
       case 'call':
       {
         const fn = this._services[msg.service];
-        fn && fn(msg);
+        fn && fn.handler(msg);
         break;
       }
       case 'connect-ack':
@@ -285,8 +288,12 @@ Master.prototype =
     this._node.service(SERVICE_LIST, (request) =>
     {
       return {
-        topics: Object.keys(Root._advertisers),
-        services: Object.keys(Root._services)
+        topics: Object.keys(Root._advertisers).map((name) => {
+          return { name: name, schema: Root._advertisers[name].schema };
+        }),
+        services: Object.keys(Root._services).map((name) => {
+          return { name: name, schema: Root._services[name].schema };
+        })
       };
     });
     return this;
