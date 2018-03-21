@@ -24,7 +24,7 @@ if (sidx !== -1)
 
 if (argv.length === 0)
 {
-  console.log('Usage: 8bit-monitor [--target hostname] [--timestamp] topic ....');
+  console.log('Usage: 8bit-monitor [--target hostname] [--timestamp] topic .... [ALL]');
   process.exit(1);
 }
 let all = (argv.length === 1 && argv[0] === 'ALL');
