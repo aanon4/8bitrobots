@@ -2,7 +2,7 @@ module.exports = function()
 {
   const i2c = I2C.open(
   {
-    address: 0x28
+    address: 0x29
   });
   if (i2c.valid())
   {
