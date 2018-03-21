@@ -75,7 +75,7 @@ const Root =
       case 'topic':
       {
         const fn = this._subscribers[msg.subscriber];
-        fn && fn.handler(msg);
+        fn && fn(msg);
         break;
       }
       case 'service':
