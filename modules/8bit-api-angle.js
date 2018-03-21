@@ -5,7 +5,7 @@ const MotionPlanner = require('./motion-planner');
 const SERVICE_IDLE = { service: 'set_angle_idle' };
 const SERVICE_SETPOS = { service: 'set_angle' };
 const SERVICE_WAITFOR = { service: 'wait_for_angle' };
-const TOPIC_CURRENT = { topic: 'current_angle' };
+const TOPIC_CURRENT = { topic: 'current_angle', schema: { angle: 'Number', target_angle: 'Number', changing: 'Boolean' } };
 
 function angle(target, type)
 {

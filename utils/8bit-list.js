@@ -14,6 +14,11 @@ if (tidx !== -1)
   target = argv[tidx + 1];
   argv.splice(tidx, 2);
 }
+const sidx = argv.indexOf('--schema');
+if (sidx !== -1)
+{
+  argv.splice(sidx, 2);
+}
 
 if (argv.length !== 0)
 {
@@ -27,11 +32,11 @@ const LIST = NODE.proxy({ service: '/list' });
 LIST({}).then((list) => {
   console.log('Topics:');
   list.topics.forEach((topic) => {
-    console.log(`  ${topic.name}`);
+    console.log(`  ${topic.name}${sidx === -1 ? '' : ': ' + JSON.stringify(topic.schema)}`);
   });
   console.log('Services:');
   list.services.forEach((service) => {
-    console.log(`  ${service.name}`);
+    console.log(`  ${service.name}${sidx === -1 ? '' : ': ' + JSON.stringify(service.schema)}`);
   });
   process.exit(0);
 });
