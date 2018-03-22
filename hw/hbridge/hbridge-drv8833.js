@@ -21,6 +21,8 @@ hbridgeChannel.prototype =
     if (rpm === 0 || maxRPM === 0)
     {
       duty = 0;
+      this._in1.setPulse(0, changeMs, func);
+      this._in2.setPulse(0, changeMs, func);
     }
     else if (rpm > 0)
     {
@@ -66,7 +68,9 @@ hbridgeChannel.prototype =
     if (!this._enabled)
     {
       this._enabled = true;
-      this.idle(false);
+      this._in1.enable();
+      this._in2.enable();
+      this.idle();
     }
     return this;
   },
@@ -76,7 +80,9 @@ hbridgeChannel.prototype =
     if (this._enabled)
     {
       this._enabled = false;
-      this.idle(true);
+      this.idle();
+      this._in1.disable();
+      this._in2.disable();
     }
     return this;
   },
