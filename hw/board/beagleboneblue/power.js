@@ -4,7 +4,7 @@ const native = require('.');
 
 console.info('Loading BeagleBoneBlue power monitors.');
 
-const TOPIC_STATUS = { topic: 'status' };
+const TOPIC_STATUS = { topic: 'status', schema: { v: 'Float' } };
 
 
 function power(config)

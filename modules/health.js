@@ -28,10 +28,10 @@ const batteryCurves =
   ]
 };
 
-const TOPIC_HEALTH = { topic: 'status' };
-const TOPIC_COMPUTE = { topic: 'compute' };
-const TOPIC_BATTERY = { topic: 'battery' };
-const TOPIC_SHUTDOWN = { topic: 'shutdown' };
+const TOPIC_HEALTH = { topic: 'status', schema: { good: 'Boolean', status: 'String', details: 'Array' } };
+const TOPIC_COMPUTE = { topic: 'compute', schema: { 'cpu%': 'Number', 'mem%': 'Number' } };
+const TOPIC_BATTERY = { topic: 'battery', schema: { '%': 'Number' } };
+const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { 'shutdown': 'String' } };
 
 function health(config)
 {
