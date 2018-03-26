@@ -313,7 +313,6 @@ function gpios()
     GPIO9: gpios[13],
     GPIO10: gpios[12],
     GPIO11: gpios[14],
-    GPIO13: gpios[],
     GPIO14: gpios[15],
     GPIO15: gpios[16],
     GPIO17: gpios[0],
