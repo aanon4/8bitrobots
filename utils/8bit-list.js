@@ -22,7 +22,7 @@ if (sidx !== -1)
 
 if (argv.length !== 0)
 {
-  console.log('Usage: 8bit-list [--target hostname]');
+  console.log('Usage: 8bit-list [--target hostname] [--schema]');
   process.exit(1);
 }
 
