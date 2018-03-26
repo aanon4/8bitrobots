@@ -2,7 +2,7 @@
 
 console.info('Loading GPIO Encoders.');
 
-const TOPIC_RATE = { topic: 'rate' };
+const TOPIC_RATE = { topic: 'rate', schema: { count: 'Number', instantRpm: 'Number', averageRpm: 'Number'} };
 
 function encoder(config)
 {

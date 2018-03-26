@@ -45,8 +45,7 @@ const MMODE = 6; // 100hz continuous magnometer data
 const GYRO_MEASURE_ERROR = Math.PI * (60 / 180);
 const BETA = Math.sqrt(3 / 4) * GYRO_MEASURE_ERROR;
 
-const TOPIC_ORIENTATION = { topic: 'orientation' };
-const TOPIC_CALIBRATION = { topic: 'calibration' };
+const TOPIC_ORIENTATION = { topic: 'orientation', schema: { confidence: 'Number', x: 'Number', y: 'Number', z: 'Number', w: 'Number' } };
 
 
 function imu(config)
@@ -75,7 +74,6 @@ imu.prototype =
   enable: function()
   {
     this._adOrientation = this._node.advertise(TOPIC_ORIENTATION);
-    this._adCalibration = this._node.advertise(TOPIC_CALIBRATION);
 
     this._configure();
     this._lastUpdate = Date.now();
@@ -91,7 +89,6 @@ imu.prototype =
     this._clock = null;
 
     this._node.unadvertise(TOPIC_ORIENTATION);
-    this._node.unadvertise(TOPIC_CALIBRATION);
 
     return this;
   },

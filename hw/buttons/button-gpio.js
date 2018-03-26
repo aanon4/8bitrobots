@@ -2,7 +2,7 @@
 
 console.info("Loading GPIO button.");
 
-const TOPIC_CURVAL = { topic: 'button_state' };
+const TOPIC_CURVAL = { topic: 'button_state', schema: { button_state: 'Boolean' } };
 
 function button(config)
 {

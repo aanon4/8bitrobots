@@ -1,7 +1,7 @@
 console.info('Loading MS5837-30BA pressure/temperature sensors.');
 
-const TOPIC_TEMPERATURE = { topic: 'temperature' };
-const TOPIC_PRESSURE = { topic: 'pressure' };
+const TOPIC_TEMPERATURE = { topic: 'temperature', schema: { 'C': 'Number' } };
+const TOPIC_PRESSURE = { topic: 'pressure', schema: { 'Pa': 'Number' } };
 
 
 function twoc(h, l)
