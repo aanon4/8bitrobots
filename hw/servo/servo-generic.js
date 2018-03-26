@@ -43,6 +43,7 @@ servo.prototype =
       return;
     }
     this._enabled = true;
+  
     this._pwmChannel.enable();
     this._pwmChannel.setCyclePeriod(this._settings.periodMs);
 
@@ -59,8 +60,6 @@ servo.prototype =
     }
     this.setAngle(this._lastAngle);
     this._apiAngle.enable();
-
-    
   },
 
   disable: function()

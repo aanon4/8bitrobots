@@ -10,17 +10,26 @@ function ConfigManager(target, defaults)
   this._target = target;
   this._defaults = defaults;
   this._state = new StateManager({ name: `config-${this._target._name.replace(/\//g, '_')}` });
-  this._service = { service: 'config', schema: {} };
+  this._service = { service: 'config' };
+  let schema = {};
   for (let key in defaults)
   {
-    if (typeof defaults[key] === 'number')
+    switch (typeof defaults[key])
     {
-      this._service.schema[key] = 'Number';
+      case 'number':
+        schema[key] = 'Number';
+        break;
+      case 'string':
+        schema[key] = 'String';
+        break;
+      case 'boolean':
+        schema[key] = 'Boolean';
+        break;
+      default:
+        break;
     }
-    else if (typeof defaults[key] === 'string')
-    {
-      this._service.schema[key] = 'String';
-    }
+    this._service.schema = Object.assign({}, schema);
+    this._service.schema.__return = schema;
   }
 }
 
@@ -34,6 +43,12 @@ ConfigManager.prototype =
         this._target.disable();
         this._target.enable();
       }
+      let result = {};
+      for (let key in this._defaults)
+      {
+        result[key] = this._state.get(key) || this._defaults[key];
+      }
+      return result;
     });
   },
 
