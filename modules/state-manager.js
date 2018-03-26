@@ -16,8 +16,17 @@ StateManager.prototype =
 {
   set: function(property, value)
   {
-    this._loadData()[property] = value;
-    this._saveData();
+    const data = this._loadData();
+    if (data[property] !== value)
+    {
+      data[property] = value;
+      this._saveData();
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   },
 
   get: function(property, def)
@@ -29,6 +38,24 @@ StateManager.prototype =
       this._saveData();
     }
     return data[property];
+  },
+
+  update: function(properties, values)
+  {
+    const data = this._loadData();
+    let change = false;
+    properties.forEach((property) => {
+      if (property in values && values[property] !== data[property])
+      {
+        data[property] = values[property];
+        change = true;
+      }
+    });
+    if (change)
+    {
+      this._saveData();
+    }
+    return change;
   },
 
   _loadData: function()
