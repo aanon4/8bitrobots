@@ -1,24 +1,34 @@
 'use strict';
 
 const APIAngle = require('modules/8bit-api-angle');
+const ConfigManager = require('modules/config-manager');
 
 function servo(config, settings)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
-  this._pwmChannel = config.pwm;
   this._settings = settings;
-  this._trim = config.trim || 0;
-  this._scale = config.scale || 1;
-  this._defaultAngle = this._scale * config.defaultAngle || 0;
+
+  let trim = config.trim || 0;
+  let minAngle = Math.max(this._settings.minAngle - trim, config.minAngle || (this._settings.minAngle - trim));
+  let maxAngle = Math.min(this._settings.maxAngle - trim, config.maxAngle || (this._settings.maxAngle - trim));
+  let defaultAngle = config.defaultAngle || ((minAngle + maxAngle) / 2);
+
+  this._config = new ConfigManager(this,
+  {
+    trim: trim,
+    minAngle: minAngle,
+    maxAngle: maxAngle,
+    defaultAngle: defaultAngle,
+    reverse: config.reverse || false
+  });
+
+  this._pwmChannel = config.pwm;
   this._targetAngle = null;
   this._stateManager = config.stateManager;
   this._lastAngle = null;
-  this._minAngle = Math.max(this._settings.minAngle - this._trim, config.minAngle || (this._settings.minAngle - this._trim));
-  this._maxAngle = Math.min(this._settings.maxAngle - this._trim, config.maxAngle || (this._settings.maxAngle - this._trim));
-  this._defaultAngle = config.defaultAngle || ((this._minAngle + this._maxAngle) / 2);
-  this._defaultRate = (config.defaultRateMs || 0) / (this._maxAngle - this._minAngle);
-  this._reverse = config.reverse || false;
+
+  this._defaultRate = (config.defaultRateMs || 0) / (maxAngle - minAngle);
   this._angle2pulse = (this._settings.maxPulseMs - this._settings.minPulseMs) / (this._settings.maxAngle - this._settings.minAngle);
   this._enabled = false;
   this._apiAngle = new APIAngle(this, config.api);
@@ -26,6 +36,50 @@ function servo(config, settings)
 
 servo.prototype =
 {
+  enable: function()
+  {
+    if (this._enabled)
+    {
+      return;
+    }
+    this._enabled = true;
+    this._pwmChannel.enable();
+    this._pwmChannel.setCyclePeriod(this._settings.periodMs);
+
+    this._config.enable();
+    this._trim = this._config.get('trim');
+    this._reverse = this._config.get('reverse');
+    this._minAngle = this._config.get('minAngle');
+    this._maxAngle = this._config.get('maxAngle');
+    this._defaultAngle = this._config.get('maxAngle');
+
+    if (this._stateManager)
+    {
+      this._lastAngle = this._stateManager.get(`${this._name}-angle`);
+    }
+    this.setAngle(this._lastAngle);
+    this._apiAngle.enable();
+
+    
+  },
+
+  disable: function()
+  {
+    if (!this._enabled)
+    {
+      return;
+    }
+    this._enabled = false;
+    this._apiAngle.disable();
+    this._lastAngle = this.getCurrentAngle();
+    if (this._stateManager)
+    {
+      this._stateManager.set(`${this._name}-angle`, this._lastAngle);
+    }
+    this._pwmChannel.disable();
+    this._config.disable();
+  },
+
   setAngle: function(angle, time, func)
   {
     if (this._enabled)
@@ -33,10 +87,6 @@ servo.prototype =
       if (angle === undefined || angle === null)
       {
         angle = this._defaultAngle;
-      }
-      else
-      {
-        angle *= this._scale;
       }
       if (angle < this._minAngle)
       {
@@ -140,39 +190,6 @@ servo.prototype =
   isAngleChanging: function()
   {
     return this._pwmChannel.isPulseChanging();
-  },
-
-  enable: function()
-  {
-    if (this._enabled)
-    {
-      return;
-    }
-    this._enabled = true;
-    this._pwmChannel.enable();
-    this._pwmChannel.setCyclePeriod(this._settings.periodMs);
-    if (this._stateManager)
-    {
-      this._lastAngle = this._stateManager.get(`${this._name}-angle`);
-    }
-    this.setAngle(this._lastAngle);
-    this._apiAngle.enable();
-  },
-
-  disable: function()
-  {
-    if (!this._enabled)
-    {
-      return;
-    }
-    this._enabled = false;
-    this._apiAngle.disable();
-    this._lastAngle = this.getCurrentAngle();
-    if (this._stateManager)
-    {
-      this._stateManager.set(`${this._name}-angle`, this._lastAngle);
-    }
-    this._pwmChannel.disable();
   },
 
   idle: function()

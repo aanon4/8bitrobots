@@ -5,13 +5,12 @@ console.info('Loading GPIO Encoders.');
 const ConfigManager = require('modules/config-manager');
 
 const TOPIC_RATE = { topic: 'rate', schema: { count: 'Number', instantRpm: 'Number', averageRpm: 'Number'} };
-const SERVICE_CONFIG = { service: 'config', schema: { edge: 'String', countsPerRevolution: 'Number', rpmAverage: 'Number' } };
 
 function encoder(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
-  this._config = new ConfigManager(this._name,
+  this._config = new ConfigManager(this,
   {
     edge: config.edge || 'falling',
     countsPerRevolution: config.countsPerRevolution || 0, 
@@ -27,6 +26,7 @@ encoder.prototype =
   {
     this._adRate = this._node.advertise(TOPIC_RATE);
 
+    this._config.enable();
     this._edge = this._config.get('edge');
     this._countsPerRevolution = this._config.get('countsPerRevolution');
     this._rpmAverage = this._config.get('rpmAverage') || this._countsPerRevolution;
@@ -52,20 +52,12 @@ encoder.prototype =
       this._adRate.publish(rate);
     });
 
-    this._node.service(SERVICE_CONFIG, (request) => {
-      if (this._state.update(Object.keys(SERVICE_CONFIG.schema), request))
-      {
-        this.disable();
-        this.enable();
-      }
-    });
-
     return this;
   },
   
   disable: function()
   {
-    this._node.unservice(SERVICE_CONFIG);
+    this._config.disable();
     this._node.unadvertise(TOPIC_RATE);
 
     this._gpio.disable();
