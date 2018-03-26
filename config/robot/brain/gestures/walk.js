@@ -13,14 +13,14 @@ function enter()
 {
   return C.runSeq(
   [
-    [ 'E', 'back-left' ],
-    [ 'E', 'back-right' ],
     [ 'S', 'back-left',    0.05, 0.3 ],
     [ 'S', 'back-right',   0.05, 0.3 ],
     [ 'S', 'front-left',   0.1,  0.5 ],
     [ 'I' ],
     [ 'M', 'left',  0.17, 0 ],
     [ 'M', 'right', 0.17, 0 ],
+    [ 'K', 'back-left' ],
+    [ 'K', 'back-right' ]
   ]);
 }
 

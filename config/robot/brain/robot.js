@@ -157,15 +157,6 @@ controller.prototype =
       let p = this.robot;
       let i = 0;
       let enabled = {};
-
-      let enable = (name) =>
-      {
-        if (!(name in enabled))
-        {
-          enabled[name] = true;
-          p.servoIdle(name, false);
-        }
-      }
   
       let step = () =>
       {
@@ -176,7 +167,7 @@ controller.prototype =
           switch (next[0])
           {
             case 'S': // Move servo
-              enable(next[1]);
+              enabled[next[1]] = true;
               let func;
               switch (next[4])
               {
@@ -218,8 +209,7 @@ controller.prototype =
                 return p.servoActualWait(servo, 'idle', 0);
               })).then(step);
               return;                     
-            case 'E': // Keep enabled
-              enable(next[1]);
+            case 'K': // Keep enabled
               enabled[next[1]] = false;
               break;
             case 'Z': // Sleep

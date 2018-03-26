@@ -13,8 +13,9 @@ function enter()
 {
   return C.runSeq(
   [
-    [ 'E', 'back-left' ],
+    [ 'S', 'back-left',  0,   0 ],
     [ 'S', 'front-left', 1.6, 1 ],
+    [ 'K', 'back-left' ],
     [ 'I' ],
   ]);
 }
@@ -23,7 +24,6 @@ function tick()
 {
   return C.runSeq(
   [
-    [ 'E', 'back-left' ],
     [ 'S', 'front-left', 1.2, 0.4 ],
     [ 'I' ],
     [ 'S', 'front-left', 1.6, 0.4 ],
@@ -35,6 +35,7 @@ function exit()
 {
   return C.runSeq(
   [
+    [ 'S', 'back-left',  0, 0 ],
     [ 'S', 'front-left', 0, 1 ],
     [ 'I' ]
   ]);

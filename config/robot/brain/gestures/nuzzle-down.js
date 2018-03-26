@@ -25,13 +25,13 @@ function enter()
 {
   return C.runSeq(
   [
-    [ 'E', 'head-ver' ],
     [ 'S', 'front-left',   1.90, 1 ],
     [ 'S', 'front-right',  1.90, 1 ],
     [ 'S', 'back-left',   -0.65, 1 ],
     [ 'S', 'back-right',  -0.65, 1 ],
     [ 'S', 'head-ver',    -0.6,  1 ],
     [ 'S', 'head-hoz',     0,    1 ],
+    [ 'K', 'head-ver' ],
     [ 'I' ]
   ]);
 }

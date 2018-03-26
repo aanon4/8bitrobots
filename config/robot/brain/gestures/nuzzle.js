@@ -15,9 +15,6 @@ function up()
 {
   return C.runSeq(
   [
-    [ 'E', 'back-left' ],
-    [ 'E', 'back-right' ],
-    [ 'E', 'head-ver' ],
     [ 'S', 'head-ver', -0.2, 1 ],
     [ 'S', 'back-left',   step * 0.25, step == 1 ? 1.5 : 1 ],
     [ 'S', 'back-right',  step * 0.25, step == 1 ? 1.5 : 1 ],
@@ -27,6 +24,9 @@ function up()
     ],
     [ 'S', 'front-left',  step * -0.1, 1 ],
     [ 'S', 'front-right', step * -0.1, 1 ],
+    [ 'K', 'back-left' ],
+    [ 'K', 'back-right' ],
+    [ 'K', 'head-ver' ],
     [ 'I' ]
   ]);
 }
@@ -67,6 +67,7 @@ function exit()
     [ 'S', 'back-right',  0, 2 ],
     [ 'S', 'front-left',  0, 1.5 ],
     [ 'S', 'front-right', 0, 1.5 ],
+    [ 'S', 'head-ver',    0, 1 ],
     [ 'I' ]
   ]);
 }
