@@ -16,7 +16,7 @@ const NOHEARTBEAT = 0;
 const HEARTBEAT = 1;
 const WAITINGHEARTBEAT = 2;
 
-const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const IDLE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
 
 const TOPIC_SHUTDOWN = { topic: 'shutdown' };
 const SERVICE_MOVEMENT = { service: 'set_movement' };
