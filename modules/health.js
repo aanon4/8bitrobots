@@ -3,7 +3,7 @@
 console.info('Loading Health Monitor.');
 
 const usage = require('usage');
-const filters = require('../modules/filters');
+const filters = require('./filters');
 
 const batteryCurves =
 {
@@ -35,6 +35,21 @@ const batteryCurves =
     { hV:  1.25, lV:  1.20, hP:  12, lP:   1 },
     { hV:  1.20, lV:  1.10, hP:   1, lP:   0 },
     { hV:  1.10, lV:  0.00, hP:   0, lP:   0 }
+  ],
+  Alkaline:
+  [
+    { hV: 99.00, lV:  1.49, hP: 100, lP: 100 },
+    { hV:  1.49, lV:  1.35, hP: 100, lP:  90 },
+    { hV:  1.35, lV:  1.27, hP:  90, lP:  80 },
+    { hV:  1.27, lV:  1.20, hP:  80, lP:  70 },
+    { hV:  1.20, lV:  1.16, hP:  70, lP:  60 },
+    { hV:  1.16, lV:  1.12, hP:  60, lP:  50 },
+    { hV:  1.12, lV:  1.10, hP:  50, lP:  40 },
+    { hV:  1.10, lV:  1.08, hP:  40, lP:  30 },
+    { hV:  1.08, lV:  1.04, hP:  30, lP:  20 },
+    { hV:  1.04, lV:  0.98, hP:  20, lP:  10 },
+    { hV:  0.98, lV:  0.62, hP:  10, lP:   0 },
+    { hV:  0.62, lV:  0.00, hP:   0, lP:   0 }
   ]
 };
 
