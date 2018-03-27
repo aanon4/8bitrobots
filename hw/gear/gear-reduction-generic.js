@@ -31,6 +31,11 @@ reduction.prototype =
   isRPMChanging: function()
   {
     return this._next.isRPMChanging();
+  },
+
+  idle: function()
+  {
+    return this._next.idle();
   }
 };
 

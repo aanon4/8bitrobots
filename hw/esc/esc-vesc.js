@@ -232,6 +232,11 @@ vesc.prototype =
     return this._plans.length !== 0;
   },
 
+  idle: function()
+  {
+    // Does nothing.
+  },
+
   setKVandPoles: function(kV, poles)
   {
     this._kV = kV;
