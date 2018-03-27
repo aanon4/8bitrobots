@@ -12,12 +12,12 @@ const TOPICS_ENVIRONMENT = [ 'temperature', 'pressure', 'humidity' ];
 
 const TOPIC_SETWATER = { topic: 'set_water' };
 const TOPIC_WATER = { topic: 'water_density' };
-const TOPIC_TEMPERATURE_INTERNAL = { topic: 'internal/temperature' };
-const TOPIC_PRESSURE_INTERNAL = { topic: 'internal/pressure' };
-const TOPIC_HUMIDITY_INTERNAL = { topic: 'internal/humidity' };
-const TOPIC_TEMPERATURE_EXTERNAL = { topic: 'external/temperature' };
-const TOPIC_PRESSURE_EXTERNAL = { topic: 'external/pressure' };
-const TOPIC_HUMIDITY_EXTERNAL = { topic: 'external/humidity' };
+const TOPIC_TEMPERATURE_INTERNAL = { topic: 'internal/temperature', schema: { C: 'Number' } };
+const TOPIC_PRESSURE_INTERNAL = { topic: 'internal/pressure', schema: { Pa: 'Number' } };
+const TOPIC_HUMIDITY_INTERNAL = { topic: 'internal/humidity', schema: { '%': 'Number' } };
+const TOPIC_TEMPERATURE_EXTERNAL = { topic: 'external/temperature', schema: { C: 'Number' } };
+const TOPIC_PRESSURE_EXTERNAL = { topic: 'external/pressure', schema: { Pa: 'Number' } };
+const TOPIC_HUMIDITY_EXTERNAL = { topic: 'external/humidity', schema: { '%': 'Number' } };
 
 
 function environment(config)
