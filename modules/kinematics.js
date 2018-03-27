@@ -6,9 +6,9 @@ const THREE = require('../modules/three');
 
 const AUTOLEVEL_DELAY = 5000; // 5 seconds
 
-const SERVICE_SETLEVEL = { service: 'set_level' };
-const SERVICE_SETWATER = { service: 'set_water_density' };
-const SERVICE_SETAIR = { service: 'set_sea_level' };
+const SERVICE_SETLEVEL = { service: 'set_level', schema: {} };
+const SERVICE_SETWATER = { service: 'set_water_density', schema: { density: 'Number' } };
+const SERVICE_SETAIR = { service: 'set_sea_level', schema: { seaLevel: 'Number' } };
 
 const TOPIC_K_ANGULAR = { topic: 'angular', schema: { pitch: 'Number', roll: 'Number', heading: 'Number' } };
 const TOPIC_K_ACCELERATION = { topic: 'acceleration', schema: { x: 'Number', y: 'Number', z: 'Number' } };
