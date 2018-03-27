@@ -28,6 +28,7 @@ module.exports = function()
       {
         next: new MOTOR(
         {
+          name: '/var/drive/wheel/motor/node',
           esc: vesc,
           reverse: false
         })
@@ -42,8 +43,7 @@ module.exports = function()
       maxAngle: Math.PI / 2 + 0.50,
       defaultAngle: Math.PI / 2,
       trim: 0,
-      reverse: true,
-      api: 'topicOnly'
+      reverse: true
     }),
     maxVelocity: 5.0 // m/s
   });
