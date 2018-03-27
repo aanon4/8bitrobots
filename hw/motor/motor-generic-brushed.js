@@ -1,10 +1,16 @@
 'use strict';
 
+const ConfigManager = require('modules/config-manager');
+
 function motor(config, settings)
 {
   this._name = config.name;
+  this._node = Node.init(config.name);
+  this._config = new ConfigManager(this,
+  {
+    reverse: config.reverse || false
+  });
   this._hbridge = config.hbridge;
-  this._scale = config.reverse ? -1 : 1;
   this._last = null;
   this._enabled = false;
   this._hbridge.setKVandPoles(settings.kV, 1);
@@ -50,7 +56,9 @@ motor.prototype =
 
   enable: function()
   {
+    this._config.enable();
     this._hbridge.enable();
+    this._scale = this._config.get('reverse') ? -1 : 1;
     this._enabled = true;
     return this;
   },
@@ -59,6 +67,7 @@ motor.prototype =
   {
     this._enabled = false;
     this._hbridge.disable();
+    this._config.disable();
     return this;
   },
 

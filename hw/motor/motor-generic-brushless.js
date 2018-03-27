@@ -1,9 +1,17 @@
+'use strict';
+
+const ConfigManager = require('modules/config-manager');
+
 function motor(config, settings)
 {
   this._name = config.name;
+  this._node = Node.init(config.name);
+  this._config = new ConfigManager(this,
+  {
+    reverse: config.reverse || false
+  });
   this._esc = config.esc;
   this._esc.setKVandPoles(settings.kV, settings.poles);
-  this._scale = config.reverse ? -1 : 1;
 }
 
 motor.prototype =
@@ -11,11 +19,14 @@ motor.prototype =
   enable: function()
   {
     this._esc.enable();
+    this._config.enable();
+    this._scale = this._config.get('reverse') ? -1 : 1;
     return this;
   },
 
   disable: function()
   {
+    this._config.disable();
     this._esc.disable();
     return this;
   },
@@ -33,6 +44,11 @@ motor.prototype =
   isRPMChanging: function()
   {
     return this._esc.isRPMChanging();
+  },
+
+  idle: function()
+  {
+    return this._esc.idle();
   }
 };
 
