@@ -47,8 +47,7 @@ module.exports = function()
         maxAngle: safeMax,
         defaultAngle: safeDefault,
         trim: trim,
-        stateManager: stateManager,
-        api: 'topicOnly'
+        stateManager: stateManager
       })
     };
   }
