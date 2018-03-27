@@ -1,6 +1,6 @@
 'use strict';
 
-const APIVelocity = require('modules/8bit-api-velocity');
+const APIVelocity = require('modules/api-velocity');
 
 
 function wheel(config, settings)

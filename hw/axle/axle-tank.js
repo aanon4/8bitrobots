@@ -2,8 +2,8 @@
 
 console.info('Loading Tank Axle.');
 
-const APIAngle = require('modules/8bit-api-angle');
-const APIVelocity = require('modules/8bit-api-velocity');
+const APIAngle = require('modules/api-angle');
+const APIVelocity = require('modules/api-velocity');
 
 function axle(config)
 {

@@ -1,6 +1,6 @@
 'use strict';
 
-const APIAngle = require('modules/8bit-api-angle');
+const APIAngle = require('modules/api-angle');
 const ConfigManager = require('modules/config-manager');
 
 function servo(config, settings)
