@@ -29,8 +29,9 @@ const batteryCurves =
   Eneloop:
   [
     { hV: 99.00, lV:  1.40, hP: 100, lP: 100 },
-    { hV:  1.40, lV:  1.30, hP: 100, lP:  50 },
-    { hV:  1.30, lV:  1.25, hP:  50, lP:  12 },
+    { hV:  1.40, lV:  1.30, hP: 100, lP:  75 },
+    { hV:  1.30, lV:  1.28, hP:  75, lP:  50 },
+    { hV:  1.28, lV:  1.25, hP:  50, lP:  12 },
     { hV:  1.25, lV:  1.20, hP:  12, lP:   1 },
     { hV:  1.20, lV:  1.10, hP:   1, lP:   0 },
     { hV:  1.10, lV:  0.00, hP:   0, lP:   0 }
