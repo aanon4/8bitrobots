@@ -39,9 +39,7 @@ car.prototype =
     this._axle =
     {
       set_velocity: this._node.proxy({ service: `${this._axleRoot}/set_velocity`}),
-      set_angle: this._node.proxy({ service: `${this._axleRoot}/set_angle`}),
-      set_velocity_idle: this._node.proxy({ service: `${this._axleRoot}/set_velocity_idle`}),
-      set_angle_idle: this._node.proxy({ service: `${this._axleRoot}/set_angle_idle`})
+      set_angle: this._node.proxy({ service: `${this._axleRoot}/set_angle`})
     };
     this._startHeartbeat();
     return this;
@@ -78,8 +76,8 @@ car.prototype =
       case 'idle':
         this._forward = 0;
         this._strafe = 0;
-        this._axle.set_velocity_idle({ idle: true });
-        this._axle.set_angle_idle({ idle: true });
+        this._axle.set_velocity({ func: 'idle' });
+        this._axle.set_angle({ func: 'idle' });
         break;
 
       default:
