@@ -68,7 +68,7 @@ function Server(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
-  this._port = config.port || 8080;
+  this._port = config.port || 80;
   this._pages = {};
 }
 

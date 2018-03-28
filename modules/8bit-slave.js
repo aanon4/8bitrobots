@@ -212,7 +212,7 @@ function Slave(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
-  this._target = `ws://${config.target}:8080/8BitApiV1`
+  this._target = `ws://${config.target}:80/8BitApiV1`
 }
 
 Slave.prototype =
