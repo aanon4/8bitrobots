@@ -2,18 +2,17 @@
 
 console.info('Loading Kinematics.');
 
-const THREE = require('../modules/three');
+const THREE = require('modules/three');
+const ConfigManager = require('modules/config-manager');
 
 const AUTOLEVEL_DELAY = 5000; // 5 seconds
 
-const SERVICE_SETLEVEL = { service: 'set_level', schema: {} };
-const SERVICE_SETWATER = { service: 'set_water_density', schema: { density: 'Number' } };
-const SERVICE_SETAIR = { service: 'set_sea_level', schema: { seaLevel: 'Number' } };
+const SERVICE_RESETLEVEL = { service: 'reset_level', schema: {} };
 
 const TOPIC_K_ANGULAR = { topic: 'angular', schema: { pitch: 'Number', roll: 'Number', heading: 'Number' } };
 const TOPIC_K_ACCELERATION = { topic: 'acceleration', schema: { x: 'Number', y: 'Number', z: 'Number' } };
 const TOPIC_K_CALIBRATION = { topic: 'calibration', schema: { calibrated: 'Boolean' } };
-const TOPIC_K_POSITION = { topic: 'position', schema: { altitude: 'Number', latitude: 'Number', longitude: 'Number' } };
+const TOPIC_K_POSITION = { topic: 'position', schema: { altitude: 'Number', depth: 'Number', latitude: 'Number', longitude: 'Number' } };
 
 const TOPIC_ORIENTATION = { topic: 'orientation' };
 const TOPIC_ACCELERATION = { topic: 'acceleration' };
@@ -25,6 +24,12 @@ function kinematics(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._config = new ConfigManager(this,
+  {
+    seaLevelPressure: config.seaLevelPressure || 116690.4, // Pa
+    waterDensity: config.waterDensity || 1000.0 // kg/m^3
+  });
+
   this._monitor = config.monitor;
   this._calibrations = {};
   this._orientations = {};
@@ -35,14 +40,16 @@ function kinematics(config)
   this._altitude = 0;
   this._calibrated = null;
   this._calibrationTimeout = config.calibrationTimeout || 0;
-  this._waterDensity = Number.MAX_SAFE_INTEGER;
-  this._seaLevel = 116690.4; // Pa
 }
 
 kinematics.prototype =
 {
   enable: function()
   {
+    this._config.enable();
+    this._waterDensity = this._config.get('waterDensity');
+    this._seaLevel = this._config.get('seaLevelPressure');
+
     this._adAngular = this._node.advertise(TOPIC_K_ANGULAR);
     this._adAcceleration = this._node.advertise(TOPIC_K_ACCELERATION);
     this._adCalibration = this._node.advertise(TOPIC_K_CALIBRATION);
@@ -81,17 +88,9 @@ kinematics.prototype =
       }
     });
 
-    this._node.service(SERVICE_SETLEVEL, (request) =>
+    this._node.service(SERVICE_RESETLEVEL, (request) =>
     {
-      this._setLevel();
-    });
-    this._node.service(SERVICE_SETWATER, (request) =>
-    {
-      this._setEnvironWater(request);
-    });
-    this._node.service(SERVICE_SETAIR, (request) =>
-    {
-      this._setEnvironAir(request);
+      this._resetLevel();
     });
 
     return this;
@@ -113,14 +112,14 @@ kinematics.prototype =
       }
     });
 
-    this._node.unservice(SERVICE_SETLEVEL);
-    this._node.unservice(SERVICE_SETWATER);
-    this._node.unservice(SERVICE_SETAIR);
+    this._node.unservice(SERVICE_RESETLEVEL);
 
     this._node.unadvertise(TOPIC_K_ANGULAR);
     this._node.unadvertise(TOPIC_K_ACCELERATION);
     this._node.unadvertise(TOPIC_K_CALIBRATION);
     this._node.unadvertise(TOPIC_K_POSITION);
+
+    this._config.disable();
 
     return this;
   },
@@ -288,8 +287,7 @@ kinematics.prototype =
 
   _airPressure: function(mon, event)
   {
-    const seaLevelPa = mon.seaLevel || this._seaLevel;
-    this._altitude = 44330.0 * (1.0 - Math.pow(event.Pa / seaLevelPa, 0.1903));
+    this._altitude = 44330.0 * (1.0 - Math.pow(event.Pa / this._seaLevel, 0.1903));
     this._adPosition.publish(
     {
       altitude: parseFloat(this._altitude.toFixed(2)), latitude: this._latitude, longitude: this._longitude
@@ -298,25 +296,14 @@ kinematics.prototype =
   
   _waterPressure: function(mon, event)
   {
-    const waterDensity = mon.waterDensity || this._waterDensity;
-    this._depth = (event.Pa - 101325.0) / (waterDensity * 9.80665);
+    this._depth = (event.Pa - this._seaLevel) / (this._waterDensity * 9.80665);
     this._adPosition.publish(
     {
       depth: parseFloat(this._depth.toFixed(2)), latitude: this._latitude, longitude: this._longitude
     });
   },
-  
-  _setEnvironWater: function(request)
-  {
-    this._waterDensity = request.density;
-  },
 
-  _setEnvironAir: function(request)
-  {
-    this._seaLevel = request.seaLevel;
-  },
-
-  _setLevel: function()
+  _resetLevel: function()
   {
     function limit(angle)
     {
