@@ -6,8 +6,8 @@ const HEARTBEAT = 1;
 const WAITINGHEARTBEAT = 2;
 
 const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { reason: 'String' } };
-const SERVICE_MOVEMENT = { service: 'set_movement' };
-const SERVICE_GESTURE = { service: 'execute_gesture' };
+const SERVICE_MOVEMENT = { service: 'set_movement', schema: { action: 'String', forward: 'Number', strafe: 'Number' } };
+const SERVICE_GESTURE = { service: 'execute_gesture', schema: { action: 'String' } };
 
 
 function car(config)
