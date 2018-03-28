@@ -2,9 +2,7 @@
 
 const MotionPlanner = require('./motion-planner');
 
-const SERVICE_IDLE = { service: 'set_velocity_idle', schema: {} };
 const SERVICE_SETV = { service: 'set_velocity', schema: { velocity: 'Number', time: 'Number', func: 'String' } };
-const SERVICE_BRAKE = { service: 'set_brake', schema: {} };
 const SERVICE_WAITFOR = { service: 'wait_for_velocity', schema: { compare: 'String', velocity: 'Number' } };
 const TOPIC_CURRENT = { topic: 'current_velocity', schema: { velocity: 'Number', target_velocity: 'Number', changing: 'Boolean' } };
 
@@ -31,40 +29,35 @@ velocity.prototype =
   enable: function()
   {
     this._adPos = this._target._node.advertise(TOPIC_CURRENT);
-    if (this._type !== 'topicOnly')
+    this._target._node.service(SERVICE_SETV, (request) =>
     {
-      this._target._node.service(SERVICE_SETV, (request) =>
+      switch (request.func)
       {
-        this._target.setVelocity(request.velocity, request.time, MotionPlanner[request.func]);
-        return true;
-      });
-      this._target._node.service(SERVICE_BRAKE, (event) =>
-      {
-        this._target.brake();
-        return true;
-      });
-      this._target._node.service(SERVICE_IDLE, (event) =>
-      {
-        this._target.idle();
-        return true;
-      });
-      this._target._node.service(SERVICE_WAITFOR, (event) =>
-      {
-        return this._target.waitForVelocity(event.compare, event.velocity);
-      });
-    }
+        case 'idle':
+          this._target.idle();
+          break;
+        case 'brake':
+          this._target.brake();
+          break;
+        default:
+          this._target.setVelocity(request.velocity, request.time, MotionPlanner[request.func]);
+          break;
+      }
+      return true;
+    });
+    this._target._node.service(SERVICE_WAITFOR, (event) =>
+    {
+      return this._target.waitForVelocity(event.compare, event.velocity);
+    });
     return this;
   },
 
   disable: function()
   {
-    if (this._type !== 'topicOnly')
-    {
-      this._target._node.unservice(SERVICE_IDLE);
-      this._target._node.unservice(SERVICE_BRAKE);
-      this._target._node.unservice(SERVICE_SETV);
-      this._target._node.unservice(SERVICE_WAITFOR);
-    }
+    this._target._node.unservice(SERVICE_IDLE);
+    this._target._node.unservice(SERVICE_BRAKE);
+    this._target._node.unservice(SERVICE_SETV);
+    this._target._node.unservice(SERVICE_WAITFOR);
     this._target._node.unadvertise(TOPIC_CURRENT);
     return this;
   },
