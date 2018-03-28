@@ -2,14 +2,14 @@
 
 console.info('Loading Kinematics.');
 
-const THREE = require('modules/three');
+const THREE = require('three');
 const ConfigManager = require('modules/config-manager');
 
 const AUTOLEVEL_DELAY = 5000; // 5 seconds
 
 const SERVICE_RESETLEVEL = { service: 'reset_level', schema: {} };
 
-const TOPIC_K_ANGULAR = { topic: 'angular', schema: { pitch: 'Number', roll: 'Number', heading: 'Number' } };
+const TOPIC_K_ORIENTATION = { topic: 'orientation', schema: { x: 'Number', y: 'Number', z: 'Number', w: 'Number' } };
 const TOPIC_K_ACCELERATION = { topic: 'acceleration', schema: { x: 'Number', y: 'Number', z: 'Number' } };
 const TOPIC_K_CALIBRATION = { topic: 'calibration', schema: { calibrated: 'Boolean' } };
 const TOPIC_K_POSITION = { topic: 'position', schema: { altitude: 'Number', depth: 'Number', latitude: 'Number', longitude: 'Number' } };
@@ -50,7 +50,7 @@ kinematics.prototype =
     this._waterDensity = this._config.get('waterDensity');
     this._seaLevel = this._config.get('seaLevelPressure');
 
-    this._adAngular = this._node.advertise(TOPIC_K_ANGULAR);
+    this._adAngular = this._node.advertise(TOPIC_K_ORIENTATION);
     this._adAcceleration = this._node.advertise(TOPIC_K_ACCELERATION);
     this._adCalibration = this._node.advertise(TOPIC_K_CALIBRATION);
     this._adPosition = this._node.advertise(TOPIC_K_POSITION);
@@ -114,7 +114,7 @@ kinematics.prototype =
 
     this._node.unservice(SERVICE_RESETLEVEL);
 
-    this._node.unadvertise(TOPIC_K_ANGULAR);
+    this._node.unadvertise(TOPIC_K_ORIENTATION);
     this._node.unadvertise(TOPIC_K_ACCELERATION);
     this._node.unadvertise(TOPIC_K_CALIBRATION);
     this._node.unadvertise(TOPIC_K_POSITION);
@@ -137,27 +137,31 @@ kinematics.prototype =
     let orientation = this._orientations[imu.name];
     if (!orientation)
     {
-      orientation = { when: Date.now() + AUTOLEVEL_DELAY, levels: { pitch: 0, roll: 0, heading: imu.headingOffset } };
+      orientation = {
+        when: Date.now() + AUTOLEVEL_DELAY,
+        levels:
+        {
+          x: 0,
+          y: 0,
+          z: imu.headingOffset
+        },
+        confidence: 0,
+        x: new THREE.Vector2(),
+        y: new THREE.Vector2(),
+        z: new THREE.Vector2()
+      };
       this._orientations[imu.name] = orientation;
     }
 
     // Convert quaternion conjugate to euler
-    let q = new THREE.Quaternion(event.x, event.y, event.z, event.w);
-    let v = new THREE.Euler();
-    v.setFromQuaternion(q);
-    let euler =
-    {
-      pitch: v.x,
-      roll: v.y,
-      heading: v.z,
-    };
+    const euler = new THREE.Euler().setFromQuaternion(new THREE.Quaternion(event.x, event.y, event.z, event.w));
 
     if (orientation.when !== 0 && orientation.when < Date.now())
     {
       // Auto-level
       orientation.when = 0;
-      orientation.levels.pitch = euler.pitch;
-      orientation.levels.roll = euler.roll;
+      orientation.levels.x = euler.x;
+      orientation.levels.y = euler.y;
     }
  
     const center = new THREE.Vector2();
@@ -165,19 +169,20 @@ kinematics.prototype =
     // Store the various axes rotations as vectors. This allows us to easily average
     // multiple rotations later.
     orientation.confidence = event.confidence;
-    orientation.pitch = new THREE.Vector2(1, 0).rotateAround(center, euler.pitch - orientation.levels.pitch);
-    orientation.roll = new THREE.Vector2(1, 0).rotateAround(center, euler.roll - orientation.levels.roll);
-    orientation.heading = new THREE.Vector2(1, 0).rotateAround(center, euler.heading - orientation.levels.heading);
+    orientation.x = new THREE.Vector2(1, 0).rotateAround(center, euler.x - orientation.levels.x);
+    orientation.y = new THREE.Vector2(1, 0).rotateAround(center, euler.y - orientation.levels.y);
+    orientation.z = new THREE.Vector2(1, 0).rotateAround(center, euler.z - orientation.levels.z);
 
     // Generate current stablization information based on filtered IMU data
-    var data = this._getUnadjustedAngular();
+    let data = this._getUnadjustedAngular();
     if (data)
     {
       this._adAngular.publish(
       {
-        pitch: data.pitch,
-        roll: data.roll,
-        heading: data.heading
+        x: data.x,
+        y: data.y,
+        z: data.z,
+        w: data.w
       });
     }
   },
@@ -186,31 +191,27 @@ kinematics.prototype =
   {
     // Generate current stablization information based on filtered IMU data
     var count = 0;
-    var pitch = new THREE.Vector2();
-    var roll = new THREE.Vector2();
-    var heading = new THREE.Vector2();
+    var x = new THREE.Vector2();
+    var y = new THREE.Vector2();
+    var z = new THREE.Vector2();
     for (var name in this._orientations)
     {
       var orientation = this._orientations[name];
       if (orientation.confidence > 0)
       {
         count++;
-        pitch.addScaledVector(orientation.pitch, orientation.confidence);
-        roll.addScaledVector(orientation.roll, orientation.confidence);
-        heading.addScaledVector(orientation.heading, orientation.confidence);
+        x.addScaledVector(orientation.x, orientation.confidence);
+        y.addScaledVector(orientation.y, orientation.confidence);
+        z.addScaledVector(orientation.z, orientation.confidence);
       }
     }
     if (count)
     {
-      function limit(angle)
-      {
-        return angle <= Math.PI ? angle : angle - 2 * Math.PI;
-      }
-      return { 
-        pitch: limit(pitch.normalize().angle()),
-        roll: limit(roll.normalize().angle()),
-        heading: limit(heading.normalize().angle())
-      };
+      return new THREE.Quaternion().setFromEuler(new Euler(
+        x.normalize().angle(),
+        y.normalize().angle(),
+        z.normalize().angle()
+      ));
     }
     else
     {
@@ -312,8 +313,8 @@ kinematics.prototype =
     for (var target in this._calibrations)
     {
       var orientation = this._orientations[target];
-      orientation.levels.pitch = limit(orientation.levels.pitch + orientation.pitch.angle());
-      orientation.levels.roll = limit(orientation.levels.roll + orientation.roll.angle());
+      orientation.levels.x = limit(orientation.levels.x + orientation.x.angle());
+      orientation.levels.y = limit(orientation.levels.y + orientation.y.angle());
     }
   }
 };
