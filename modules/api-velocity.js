@@ -54,8 +54,6 @@ velocity.prototype =
 
   disable: function()
   {
-    this._target._node.unservice(SERVICE_IDLE);
-    this._target._node.unservice(SERVICE_BRAKE);
     this._target._node.unservice(SERVICE_SETV);
     this._target._node.unservice(SERVICE_WAITFOR);
     this._target._node.unadvertise(TOPIC_CURRENT);
