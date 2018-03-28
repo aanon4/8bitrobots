@@ -4,9 +4,12 @@ module.exports = function()
   return new Health(
   {
     name: '/health/node',
-    metrics:
-    [
-      { topic: '/power/status', key: 'v', low: 10, high: 100, chemistry: 'LiPo', cells: 2 }
-    ]
+    battery:
+    {
+      topic: '/power/status', 
+      chemistry: 'LiPo', 
+      cells: 2,
+      minV: 6.5
+    }
   });
 }

@@ -5,7 +5,7 @@ const NOHEARTBEAT = 0;
 const HEARTBEAT = 1;
 const WAITINGHEARTBEAT = 2;
 
-const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { shutdown: 'String' } };
+const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { reason: 'String' } };
 const SERVICE_MOVEMENT = { service: 'set_movement' };
 const SERVICE_GESTURE = { service: 'execute_gesture' };
 
@@ -34,7 +34,7 @@ car.prototype =
     this._shTopic = this._node.advertise(TOPIC_SHUTDOWN);
     process.on('exit', () =>
     {
-      this._shTopic.publish({ shutdown: 'exit' });
+      this._shTopic.publish({ reason: 'exit' });
     });
     this._axle =
     {

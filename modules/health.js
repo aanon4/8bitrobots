@@ -3,93 +3,111 @@
 console.info('Loading Health Monitor.');
 
 const usage = require('usage');
+const childProcess = require('child_process');
 const filters = require('./filters');
+const ConfigManager = require('modules/config-manager');
 
-const batteryCurves =
+const batteryChemistry =
 {
+  DC:
+  {
+    curve:
+    [
+      { hV: 99.00, lV:  0, hP: 100, lP: 100 },
+    ]
+  },
   LiFeO4:
-  [
-    { hV: 99.00, lV:  4.40, hP: 100, lP: 100 },
-    { hV:  4.40, lV:  4.10, hP: 100, lP:  95 },
-    { hV:  4.13, lV:  4.03, hP:  95, lP:  20 },
-    { hV:  4.03, lV:  3.20, hP:  20, lP:   0 } 
-  ],
+  {
+    curve:
+    [
+      { hV: 99.00, lV:  4.40, hP: 100, lP: 100 },
+      { hV:  4.40, lV:  4.10, hP: 100, lP:  95 },
+      { hV:  4.13, lV:  4.03, hP:  95, lP:  20 },
+      { hV:  4.03, lV:  3.20, hP:  20, lP:   0 } 
+    ]
+  },
   LiPo:
-  [
-    { hV: 99.00, lV:  4.20, hP: 100, lP: 100 },
-    { hV:  4.20, lV:  4.03, hP: 100, lP:  76 },
-    { hV:  4.03, lV:  3.86, hP:  76, lP:  52 },
-    { hV:  3.86, lV:  3.83, hP:  52, lP:  42 },
-    { hV:  3.83, lV:  3.79, hP:  42, lP:  30 },
-    { hV:  3.79, lV:  3.70, hP:  30, lP:  11 },
-    { hV:  3.70, lV:  3.60, hP:  11, lP:   5 },
-    { hV:  3.60, lV:  3.30, hP:   5, lP:   0 },
-    { hV:  3.30, lV:  0.00, hP:   0, lP:   0 }
-  ],
+  {
+    curve:
+    [
+      { hV: 99.00, lV:  4.20, hP: 100, lP: 100 },
+      { hV:  4.20, lV:  4.03, hP: 100, lP:  76 },
+      { hV:  4.03, lV:  3.86, hP:  76, lP:  52 },
+      { hV:  3.86, lV:  3.83, hP:  52, lP:  42 },
+      { hV:  3.83, lV:  3.79, hP:  42, lP:  30 },
+      { hV:  3.79, lV:  3.70, hP:  30, lP:  11 },
+      { hV:  3.70, lV:  3.60, hP:  11, lP:   5 },
+      { hV:  3.60, lV:  3.30, hP:   5, lP:   0 },
+      { hV:  3.30, lV:  0.00, hP:   0, lP:   0 }
+    ]
+  },
   Eneloop:
-  [
-    { hV: 99.00, lV:  1.40, hP: 100, lP: 100 },
-    { hV:  1.40, lV:  1.30, hP: 100, lP:  75 },
-    { hV:  1.30, lV:  1.28, hP:  75, lP:  50 },
-    { hV:  1.28, lV:  1.25, hP:  50, lP:  12 },
-    { hV:  1.25, lV:  1.20, hP:  12, lP:   1 },
-    { hV:  1.20, lV:  1.10, hP:   1, lP:   0 },
-    { hV:  1.10, lV:  0.00, hP:   0, lP:   0 }
-  ],
+  {
+    curve:
+    [
+      { hV: 99.00, lV:  1.40, hP: 100, lP: 100 },
+      { hV:  1.40, lV:  1.30, hP: 100, lP:  75 },
+      { hV:  1.30, lV:  1.28, hP:  75, lP:  50 },
+      { hV:  1.28, lV:  1.25, hP:  50, lP:  12 },
+      { hV:  1.25, lV:  1.20, hP:  12, lP:   1 },
+      { hV:  1.20, lV:  1.10, hP:   1, lP:   0 },
+      { hV:  1.10, lV:  0.00, hP:   0, lP:   0 }
+    ]
+  },
   Alkaline:
-  [
-    { hV: 99.00, lV:  1.49, hP: 100, lP: 100 },
-    { hV:  1.49, lV:  1.35, hP: 100, lP:  90 },
-    { hV:  1.35, lV:  1.27, hP:  90, lP:  80 },
-    { hV:  1.27, lV:  1.20, hP:  80, lP:  70 },
-    { hV:  1.20, lV:  1.16, hP:  70, lP:  60 },
-    { hV:  1.16, lV:  1.12, hP:  60, lP:  50 },
-    { hV:  1.12, lV:  1.10, hP:  50, lP:  40 },
-    { hV:  1.10, lV:  1.08, hP:  40, lP:  30 },
-    { hV:  1.08, lV:  1.04, hP:  30, lP:  20 },
-    { hV:  1.04, lV:  0.98, hP:  20, lP:  10 },
-    { hV:  0.98, lV:  0.62, hP:  10, lP:   0 },
-    { hV:  0.62, lV:  0.00, hP:   0, lP:   0 }
-  ]
+  {
+    curve:
+    [
+      { hV: 99.00, lV:  1.49, hP: 100, lP: 100 },
+      { hV:  1.49, lV:  1.35, hP: 100, lP:  90 },
+      { hV:  1.35, lV:  1.27, hP:  90, lP:  80 },
+      { hV:  1.27, lV:  1.20, hP:  80, lP:  70 },
+      { hV:  1.20, lV:  1.16, hP:  70, lP:  60 },
+      { hV:  1.16, lV:  1.12, hP:  60, lP:  50 },
+      { hV:  1.12, lV:  1.10, hP:  50, lP:  40 },
+      { hV:  1.10, lV:  1.08, hP:  40, lP:  30 },
+      { hV:  1.08, lV:  1.04, hP:  30, lP:  20 },
+      { hV:  1.04, lV:  0.98, hP:  20, lP:  10 },
+      { hV:  0.98, lV:  0.62, hP:  10, lP:   0 },
+      { hV:  0.62, lV:  0.00, hP:   0, lP:   0 }
+    ]
+  }
 };
 
-const TOPIC_HEALTH = { topic: 'status', schema: { good: 'Boolean', status: 'String', details: 'Array' } };
 const TOPIC_COMPUTE = { topic: 'compute', schema: { 'cpu%': 'Number', 'mem%': 'Number' } };
-const TOPIC_BATTERY = { topic: 'battery', schema: { '%': 'Number' } };
-const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { 'shutdown': 'String' } };
+const TOPIC_BATTERY = { topic: 'battery', schema: { '%': 'Number', v: 'Number' } };
+const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { 'reason': 'String' } };
 
 function health(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
-  this._metrics = config.metrics || [];
-  this._values = [];
-  for (var i = 0; i < this._metrics.length; i++)
+  this._config = new ConfigManager(this,
   {
-    var metric = this._metrics[i];
-    this._values[i] = filters.Median(5);
-    if (metric.chemistry)
-    {
-      this._battery = metric;
-      this._curve = batteryCurves[this._battery.chemistry];
-      this._cells = this._battery.cells;
-      this._batteryLevel = filters.Median(5);
-    }
-  }
+    chemistry: config.battery.chemistry || 'DC',
+    cells: config.battery.cells || 1
+  });
+  this._battery =
+  {
+    topic: config.battery.topic,
+    level: filters.Median(5),
+    minV: config.minV || 0,
+    critical: 5
+  };
 }
 
 health.prototype =
 {
   enable: function()
   {
-    this._metrics.forEach((metric, idx) =>
+    this._config.enable();
+    this._battery.curve = batteryChemistry[this._config.get('chemistry')].curve;
+    this._battery.cells = this._config.get('cells');
+
+    this._node.subscribe({ topic: this._battery.topic }, (event) => 
     {
-      this._node.subscribe({ topic: metric.topic }, (event) => 
-      {
-        this._processMetric(idx, event);
-      });
+      this._processBattery(event);
     });
-    this._adHealth = this._node.advertise(TOPIC_HEALTH);
     this._adCompute = this._node.advertise(TOPIC_COMPUTE);
     this._adBattery = this._node.advertise(TOPIC_BATTERY);
     this._adShutdown = this._node.advertise(TOPIC_SHUTDOWN);
@@ -105,75 +123,39 @@ health.prototype =
     this._node.unadvertise(TOPIC_COMPUTE);
     this._node.unadvertise(TOPIC_BATTERY);
     this._node.unadvertise(TOPIC_SHUTDOWN);
-    this._node.unadvertise(TOPIC_HEALTH);
-    this._metrics.forEach((metric) =>
-    {
-      this._node.unsubscribe({ topic: metric.topic });
-    });
+    this._node.unsubscribe({ topic: this._battery.topic });
+    this._config.disable();
+  
     return this;
   },
   
-  _processMetric: function(idx, event)
+  _processBattery: function(event)
   {
-    let metric = this._metrics[idx];
-    this._values[idx].update(event[metric.key]);
-    if (metric.chemistry)
+    this._battery.level.update(event.v);
+    let v = this._battery.level.value();
+    for (var i = 0; i < this._battery.curve.length; i++)
     {
-      let v = event.v;;
-      for (var i = 0; i < this._curve.length; i++)
+      var section = this._battery.curve[i];
+      var lV = section.lV * this._battery.cells;
+      var hV = section.hV * this._battery.cells;
+      if (v >= lV && v < hV)
       {
-        var section = this._curve[i];
-        var lV = section.lV * this._cells;
-        var hV = section.hV * this._cells;
-        if (v >= lV && v < hV)
+        let value = section.lP + ((v - lV) / (hV - lV) * (section.hP - section.lP));
+        this._adBattery.publish({ '%': value, v: v });
+        if (value <= this._battery.critical)
         {
-          this._batteryLevel.update((v - lV) / (hV - lV) * (section.hP - section.lP) + section.lP);
-          let value = this._batteryLevel.value();
-          if (value !== undefined)
-          {
-            this._adBattery.publish({ '%': value });
-            if (value <= 5)
-            {
-              this._adShutdown.publish({ shutdown: 'low-battery' });
-            }
-          }
-          break;
+          // Battery will fail when it get's empty
+          this._adShutdown.publish({ reason: 'battery-critical' });
+          // Shutdown to save the battery
+          childProcess.spawn('/sbin/shutdown', [ '-h', '+1' ], {});
         }
+        break;
       }
     }
-  
-    var good = true;
-    var details = [];
-    for (var i = this._metrics.length - 1; i >= 0; i--)
+    if (v < this._battery.minV)
     {
-      var value = this._values[i].value();
-      metric = this._metrics[i];
-      // For batteries, we use the calculated level rather then the absolute
-      if (metric.chemistry)
-      {
-        value = this._batteryLevel.value();
-        if (value !== undefined)
-        {
-          details[i] = { topic: this._node.resolveName(TOPIC_BATTERY.topic), value: value };
-        }
-      }
-      else
-      {
-        details[i] = { topic: metric.topic, value: value };
-      }
-      if (value > metric.high || value < metric.low)
-      {
-        good = false;
-      }
-    }
-    if (details.length > 0)
-    {
-      this._adHealth.publish(
-      {
-        good: good,
-        status: good ? 'Okay' : 'Poor',
-        details: details
-      });
+      // System power will fail when voltage gets too low
+      this._adShutdown.publish({ reason: 'voltage-critical' });
     }
   },
 
