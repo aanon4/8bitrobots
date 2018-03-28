@@ -24,7 +24,7 @@ if (argv.length !== 2)
 const NODE = new API_SLAVE({ name: '/8bit-cmd', target: target }).enable()._node;
 
 const CMD = NODE.proxy({ service: `${argv[0]}` });
-CMD(JSON.parse(argv[1])).then((result) => {
+CMD(eval(`[${argv[1]}]`)[0]).then((result) => {
   delete result.id;
   delete result.timestamp;
   delete result.__remote;
