@@ -18,9 +18,9 @@ const WAITINGHEARTBEAT = 2;
 
 const IDLE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
 
-const TOPIC_SHUTDOWN = { topic: 'shutdown' };
-const SERVICE_MOVEMENT = { service: 'set_movement' };
-const SERVICE_GESTURE = { service: 'execute_gesture' };
+const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { reason: 'String' } };
+const SERVICE_MOVEMENT = { service: 'set_movement', schema: { action: 'String', forward: 'Number', strafe: 'Number' } };
+const SERVICE_GESTURE = { service: 'execute_gesture', schema: { action: 'String' } };
 
 
 function robot(config)
@@ -56,7 +56,7 @@ robot.prototype =
     this._shTopic = this._node.advertise(TOPIC_SHUTDOWN);
     process.on('exit', () =>
     {
-      this._shTopic.publish({ shutdown: 'exit' });
+      this._shTopic.publish({ reason: 'exit' });
     });
 
     for (var id in this._wheels)
@@ -119,7 +119,7 @@ robot.prototype =
     {
       this._buttons[id].disable();
     }
-    this._shTopic.publish({ shutdown: 'terminated' });
+    this._shTopic.publish({ reason: 'terminated' });
     this._node.unadvertise(TOPIC_SHUTDOWN);    
     this._node.unservice(SERVICE_MOVEMENT);
     this._node.unservice(SERVICE_GESTURE);

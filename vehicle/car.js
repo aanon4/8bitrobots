@@ -50,7 +50,7 @@ car.prototype =
   disable: function()
   {
     this._stopHeartbeat();
-    this._shTopic.publish({ shutdown: 'terminated' });
+    this._shTopic.publish({ reason: 'terminated' });
     this._node.unadvertise(TOPIC_SHUTDOWN);    
     this._node.unservice(SERVICE_MOVEMENT);
     this._node.unservice(SERVICE_GESTURE);
