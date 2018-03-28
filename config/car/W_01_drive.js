@@ -32,8 +32,7 @@ module.exports = function()
           esc: vesc,
           reverse: false
         })
-      }),
-      api: 'topicOnly'
+      })
     }),
     steering: new SERVO(
     {

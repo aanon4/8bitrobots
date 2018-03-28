@@ -14,8 +14,7 @@ module.exports = function()
       {
         pwm: PWM.open({ channel: 0 }),
         reverse: false
-      }),
-      api: 'topicOnly'
+      })
     }),
     right: new WHEEL(
     {
@@ -24,8 +23,7 @@ module.exports = function()
       {
         pwm: PWM.open({ channel: 7 }),
         reverse: true
-      }),
-      api: 'topicOnly'
+      })
     }),
     maxVelocity: 0.4 // m/s
   });
