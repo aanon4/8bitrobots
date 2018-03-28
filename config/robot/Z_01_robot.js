@@ -25,13 +25,13 @@ module.exports = function()
     return {
       [id]: new Wheel(
       {
-        name: `/robot/${id}/wheel`,
+        name: `/robot/${id}/wheel/node`,
         motor: new Motor(
         {
+          name: `/robot/${id}/wheel/motor/node`,
           hbridge: HBRIDGES.open({ channel: dev }),
           reverse: rev == 'rev' ? true : false
-        }),
-        api: 'topicOnly'
+        })
       })
     };
   }
@@ -40,7 +40,7 @@ module.exports = function()
     return {
       [id]: new Servos[type](
       {
-        name: `/robot/${id}/servo`,
+        name: `/robot/${id}/servo/node`,
         pwm: SERVOS.open({ channel: dev }),
         reverse: rev == 'rev' ? true : false,
         minAngle: safeMin,
@@ -57,7 +57,7 @@ module.exports = function()
     return {
       [id]: new Button(
       {
-        name: `/robot/${id}/button`,
+        name: `/robot/${id}/button/node`,
         gpio: GPIO.open({ channel: dev })
       })
     }
