@@ -28,7 +28,7 @@ module.exports = function()
       {
         next: new MOTOR(
         {
-          name: '/var/drive/wheel/motor/node',
+          name: '/car/drive/wheel/motor/node',
           esc: vesc,
           reverse: false
         })
