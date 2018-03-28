@@ -12,6 +12,7 @@
     "serialport": "^4.0.7",
     "spi": "https://github.com/russtheaerialist-retired-projects/node-spi.git",
     "synaptic": "^1.0.10",
+    "three": "^0.91.0",
     "usage": "x",
     "uuid": "^3.0.1",
     "websocket": "^1.0.24"
