@@ -6,8 +6,8 @@ module.exports = function()
     name: '/kinematics/node',
     monitor:
     [
-      { name: '/imu', headingOffset: 0 },
-      { name: '/atmos', seaLevel: 0 }
+      { type: 'imu', name: '/imu' },
+      { type: 'air', name: '/atmos' }
     ],
     calibrationTimeout: 5000
   });

@@ -6,7 +6,7 @@ module.exports = function()
     name: '/kinematics/node',
     monitor:
     [
-      { name: '/imu', headingOffset: 0 }
+      { type: 'imu', name: '/imu' }
     ],
     calibrationTimeout: 5000
   });
