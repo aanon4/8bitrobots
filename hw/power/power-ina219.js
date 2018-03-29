@@ -55,15 +55,15 @@ power.prototype =
   enable: function()
   {
     // Calibration
-    this._i2c.writeBytes([ INA219.CALIBRATION, (this._calibration >> 8) & 0xFF, this._calibration & 0xFF ]);
+    this._i2c.writeBytes(Buffer.from([ INA219.CALIBRATION, (this._calibration >> 8) & 0xFF, this._calibration & 0xFF ]));
   
     // Set bus voltage (16V), gain, bus adc range, shunt adc range and
     //  continuous mode
-    this._i2c.writeBytes([ INA219.CONFIG,
+    this._i2c.writeBytes(Buffer.from([ INA219.CONFIG,
       // 16V  | 8 gain | 12-bit BADC | 12-bit 1s SADC | S&B continuous
          0x00 | 0x18   | 0x04        | 0x00           | 0x00,
          0x00 | 0x00   | 0x00        | 0x18           | 0x07
-    ]);
+    ]));
 
     this._ad = this._node.advertise(TOPIC_STATUS);
     this._clock = setInterval(() => {
@@ -87,8 +87,8 @@ power.prototype =
       var a;
       if (!SIMULATOR)
       {
-        let rawv = this._i2c.writeAndReadBytes([ INA219.BUS_VOLTAGE ], 2);
-        let rawa = this._i2c.writeAndReadBytes([ INA219.CURRENT ], 2);
+        let rawv = this._i2c.writeAndReadBytes(Buffer.from([ INA219.BUS_VOLTAGE ]), 2);
+        let rawa = this._i2c.writeAndReadBytes(Buffer.from([ INA219.CURRENT ]), 2);
         
         v = twoc((((rawv[0] << 8) + rawv[1]) >> 3) << 2) / 1000.0
         a = twoc((rawa[0] << 8) + rawa[1]) * this._currentScale;
