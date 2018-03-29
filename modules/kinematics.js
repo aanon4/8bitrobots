@@ -26,7 +26,7 @@ function kinematics(config)
   this._node = Node.init(config.name);
   this._config = new ConfigManager(this,
   {
-    seaLevelPressure: config.seaLevelPressure || 116690.4, // Pa
+    seaLevelPressure: config.seaLevelPressure || 101771, // Pa
     waterDensity: config.waterDensity || 1000.0, // kg/m^3
     headingOffset: config.headingOffset || 0
   });
