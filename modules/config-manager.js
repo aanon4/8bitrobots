@@ -5,10 +5,11 @@ console.info('Loading Config Manager');
 const StateManager = require('./state-manager');
 
 
-function ConfigManager(target, defaults)
+function ConfigManager(target, defaults, validator)
 {
   this._target = target;
   this._defaults = defaults;
+  this._validator = validator;
   this._state = new StateManager({ name: `config-${this._target._name.replace(/\//g, '_')}` });
   this._service = { service: 'config' };
   let schema = {};
@@ -38,6 +39,16 @@ ConfigManager.prototype =
   enable: function()
   {
     this._target._node.service(this._service, (request) => {
+      if (validator)
+      {
+        for (let key in request)
+        {
+          if (!validator(key, request[key]))
+          {
+            delete request[key];
+          }
+        }
+      }
       if (this._state.update(Object.keys(this._defaults), request))
       {
         this._target.disable();

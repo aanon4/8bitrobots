@@ -5,7 +5,7 @@ console.info('Loading Health Monitor.');
 const usage = require('usage');
 const childProcess = require('child_process');
 const filters = require('./filters');
-const ConfigManager = require('modules/config-manager');
+const ConfigManager = require('./config-manager');
 
 const batteryChemistry =
 {
@@ -86,6 +86,14 @@ function health(config)
   {
     chemistry: config.battery.chemistry || 'DC',
     cells: config.battery.cells || 1
+  },
+  function (key, value)
+  {
+    if (key === 'chemistry' && !(value in batteryChemistry))
+    {
+      return false;
+    }
+    return true;
   });
   this._battery =
   {
