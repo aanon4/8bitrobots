@@ -10,8 +10,18 @@ const CMD_HOSTNAME = '/bin/hostname';
 const CMD_IFUP = '/sbin/ifup';
 const CMD_IFDOWN = '/sbin/ifdown';
 
-const HOSTAPD_CONFIG = '/etc/hostapd.conf';
-const WPA_SUPPLICANT_CONFIG = '/etc/wpa_supplicant.conf';
+const HOSTAPD_CONFIGS =
+[
+  '/etc/hostapd.conf',
+  '/etc/hostapd/hostapd.conf'
+]
+const WPA_SUPPLICANT_CONFIGS =
+[
+  '/etc/wpa_supplicant.conf',
+  '/etc/wpa_supplicant/wpa_supplicant.conf'
+];
+let HOSTAPD_CONFIG = null;
+let WPA_SUPPLICANT_CONFIG = null;
 
 const SERVICE_CONFIG = { service: 'config', schema: 
 {
@@ -25,6 +35,19 @@ function networking(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+
+  WPA_SUPPLICANT_CONFIGS.forEach((file) => {
+    if (fs.existsSync(file))
+    {
+      WPA_SUPPLICANT_CONFIG = file;
+    }
+  });
+  HOSTAPD_CONFIGS.forEach((file) => {
+    if (fs.existsSync(file))
+    {
+      HOSTAPD_CONFIG = file;
+    }
+  });
 }
 
 networking.prototype =
@@ -33,8 +56,22 @@ networking.prototype =
   {
     this._node.service(SERVICE_CONFIG, (request) => {
 
-      const hostap = fs.readFileSync(HOSTAPD_CONFIG, { encoding: 'utf8' }).split('\n');
-      const wpa = fs.readFileSync(WPA_SUPPLICANT_CONFIG, { encoding: 'utf8' }).split('\n');
+      let hostap = [];
+      let wpa = [];
+      try
+      {
+        hostap = fs.readFileSync(HOSTAPD_CONFIG, { encoding: 'utf8' }).split('\n');
+      }
+      catch (_)
+      {
+      }
+      try
+      {
+        wpa = fs.readFileSync(WPA_SUPPLICANT_CONFIG, { encoding: 'utf8' }).split('\n');
+      }
+      catch (_)
+      {
+      }
 
       function findHostApIndex(key)
       {
@@ -91,6 +128,7 @@ networking.prototype =
         {
           result.apNetworkPassword = hostap[idx].split('=')[1];
         }
+        result.apNetworkPassword = result.apNetworkPassword.replace(/./g, '*');
       }
       idx = findWpaIndex('ssid=');
       if (idx !== -1)
@@ -119,6 +157,7 @@ networking.prototype =
         {
           result.networkPassword = wpa[idx].split('=')[1];
         }
+        result.networkPassword = result.networkPassword.replace(/./g, '*');
       }
 
       if (hostapChange)
