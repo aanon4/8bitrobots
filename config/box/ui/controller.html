@@ -4,6 +4,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <script src="js/8bit-webconnector.js"></script>
   <script src="js/8bit.js"></script>
+  <script src="js/three.js"></script>
   <style>
     html,body { width: 100%; height: 100%; margin: 0; color: white; background-color: black; background-size: 100%, 100%; }
     #pad { position: absolute; top: 40px; right: 20px }
@@ -163,9 +164,10 @@
     tick = setInterval(moveStick, 500); // Movement heatbeat
     document.getElementById('video').src = window.location.protocol + '//' + window.location.hostname + ':8081/video';
     
-    ros.subscribe({ topic: '/kinematics/angular' }, function(e)
+    ros.subscribe({ topic: '/kinematics/orientation' }, function(e)
     {
-      document.getElementById('compass').style.transform = 'rotate(' + (e.heading * 180 / Math.PI) + 'deg)';
+      var euler = new THREE.Euler().setFromQuaternion(new THREE.Quaternion(e.x, e.y, e.z, e.w));
+      document.getElementById('compass').style.transform = 'rotate(' + euler.z + 'rad)';
     });
   </script>
 </body>
