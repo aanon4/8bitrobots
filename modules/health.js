@@ -90,7 +90,7 @@ function health(config)
   this._battery =
   {
     topic: config.battery.topic,
-    level: filters.Median(5),
+    level: filters.Median(20),
     minV: config.minV || 0,
     critical: 5
   };
@@ -111,7 +111,9 @@ health.prototype =
     this._adCompute = this._node.advertise(TOPIC_COMPUTE);
     this._adBattery = this._node.advertise(TOPIC_BATTERY);
     this._adShutdown = this._node.advertise(TOPIC_SHUTDOWN);
+  
     this._clock = setInterval(() => {
+      this._batteryMonitor();
       this._cpuMonitor();
     }, 1000);
     return this;
@@ -132,6 +134,10 @@ health.prototype =
   _processBattery: function(event)
   {
     this._battery.level.update(event.v);
+  },
+
+  _batteryMonitor: function()
+  {
     let v = this._battery.level.value();
     for (var i = 0; i < this._battery.curve.length; i++)
     {
@@ -141,7 +147,7 @@ health.prototype =
       if (v >= lV && v < hV)
       {
         let value = section.lP + ((v - lV) / (hV - lV) * (section.hP - section.lP));
-        this._adBattery.publish({ '%': value, v: v });
+        this._adBattery.publish({ '%': parseFloat(value.toFixed(2)), v: v });
         if (value <= this._battery.critical)
         {
           // Battery will fail when it get's empty

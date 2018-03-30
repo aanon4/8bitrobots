@@ -257,15 +257,21 @@ imu.prototype =
     this._adCalibration = this._node.advertise(TOPIC_CALIBRATION);
     this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
  
-    this._clock = setInterval(() => {
-      this._processTick();
+    this._clock1 = setInterval(() => {
+      this._updateQuaternionAndLinear();
     }, 20);
+    this._clock2 = setInterval(() => {
+      this._updateCalibrationStatus();
+      this._updateTemp();
+    }, 1000);
+  
     return this;
   },
 
   disable: function()
   {
-    clearInterval(this._clock);
+    clearInterval(this._clock1);
+    clearInterval(this._clock2);
 
     this._node.unadvertise(TOPIC_ORIENTATION);
     this._node.unadvertise(TOPIC_ACCELERATION);
@@ -273,13 +279,6 @@ imu.prototype =
     this._node.unadvertise(TOPIC_TEMPERATURE);
 
     return this;
-  },
-
-  _processTick: function()
-  {
-    this._updateCalibrationStatus();
-    this._updateQuaternionAndLinear();
-    this._updateTemp();
   },
 
   _readBytesI2C: function(address, readLen)
