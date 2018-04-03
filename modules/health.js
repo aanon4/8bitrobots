@@ -3,7 +3,6 @@
 console.info('Loading Health Monitor.');
 
 const usage = require('usage');
-const childProcess = require('child_process');
 const filters = require('./filters');
 const ConfigManager = require('./config-manager');
 
@@ -75,8 +74,8 @@ const batteryChemistry =
 };
 
 const TOPIC_COMPUTE = { topic: 'compute', schema: { 'cpu%': 'Number', 'mem%': 'Number' } };
-const TOPIC_BATTERY = { topic: 'battery', schema: { '%': 'Number', v: 'Number' } };
-const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { 'reason': 'String' } };
+const TOPIC_BATTERY = { topic: 'battery', schema: { '%': 'Number', v: 'Number', status: 'String' } };
+const TOPIC_STATUS = { topic: 'status', schema: { 'status': 'String' } };
 
 function health(config)
 {
@@ -118,7 +117,10 @@ health.prototype =
     });
     this._adCompute = this._node.advertise(TOPIC_COMPUTE);
     this._adBattery = this._node.advertise(TOPIC_BATTERY);
-    this._adShutdown = this._node.advertise(TOPIC_SHUTDOWN);
+    this._adStatus = this._node.advertise(TOPIC_STATUS);
+
+    // Let's start by assuming everything is good.
+    this._adStatus.publish({ status: 'good' });
   
     this._clock = setInterval(() => {
       this._batteryMonitor();
@@ -132,7 +134,7 @@ health.prototype =
     clearInterval(this._clock);
     this._node.unadvertise(TOPIC_COMPUTE);
     this._node.unadvertise(TOPIC_BATTERY);
-    this._node.unadvertise(TOPIC_SHUTDOWN);
+    this._node.unadvertise(TOPIC_STATUS);
     this._node.unsubscribe({ topic: this._battery.topic });
     this._config.disable();
   
@@ -155,13 +157,16 @@ health.prototype =
       if (v >= lV && v < hV)
       {
         let value = section.lP + ((v - lV) / (hV - lV) * (section.hP - section.lP));
-        this._adBattery.publish({ '%': parseFloat(value.toFixed(2)), v: v });
-        if (value <= this._battery.critical)
+        let event =
         {
-          // Battery will fail when it get's empty
-          this._adShutdown.publish({ reason: 'battery-critical' });
-          // Shutdown to save the battery
-          childProcess.spawn('/sbin/shutdown', [ '-h', '+1' ], {});
+          '%': parseFloat(value.toFixed(2)),
+          v: v,
+          status: value <= this._battery.critical ? 'critical' : 'okay'
+        };
+        this._adBattery.publish(event);
+        if (event.status === 'critical')
+        {
+          this._adStatus.publish({ status: 'battery-critical' });
         }
         break;
       }
@@ -169,7 +174,7 @@ health.prototype =
     if (v < this._battery.minV)
     {
       // System power will fail when voltage gets too low
-      this._adShutdown.publish({ reason: 'voltage-critical' });
+      this._adStatus.publish({ status: 'voltage-critical' });
     }
   },
 

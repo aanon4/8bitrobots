@@ -3,9 +3,6 @@
 console.info('Loading 8-Bit Slave.');
 
 const websocket = require('websocket');
-const UUID = require('uuid/v4');
-
-const TOPIC_SHUTDOWN = { topic: '/health/shutdown' };
 
 const Root =
 {
@@ -107,8 +104,6 @@ global['8Bit'] = Root;
 
 function runSlave(target)
 {
-  const id = UUID();
-
   let connection = null;
   let pending = [];
 
@@ -220,10 +215,7 @@ Slave.prototype =
   enable: function()
   {
     runSlave(this._target);
-    this._node.subscribe(TOPIC_SHUTDOWN, (event) =>
-    {
-      process.exit();
-    });
+
     return this;
   },
 

@@ -32,3 +32,10 @@ process.on('SIGHUP', function()
   process.exit();
 });
 
+// If battery gets critical, we shut everything down to avoid over-discharging it.
+Node.init(`${hostname}/node`).subscribe({ topic: '/health/status' }, (event) => {
+  if (event.status === 'battery-critical')
+  {
+    require('child_process').spawn('/sbin/shutdown', [ '-h', '+1' ]);
+  }
+});
