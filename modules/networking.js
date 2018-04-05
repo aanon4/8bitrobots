@@ -9,6 +9,7 @@ const CMD_HOSTAPD = '/etc/init.d/hostapd';
 const CMD_HOSTNAME = '/bin/hostname';
 const CMD_IFUP = '/sbin/ifup';
 const CMD_IFDOWN = '/sbin/ifdown';
+const CMD_SOFTAP = '/etc/init.d/softap';
 
 const HOSTAPD_CONFIGS =
 [
@@ -20,6 +21,7 @@ const WPA_SUPPLICANT_CONFIGS =
   '/etc/wpa_supplicant.conf',
   '/etc/wpa_supplicant/wpa_supplicant.conf'
 ];
+const NET_INTERFACES_CONFIG = '/etc/network/interfaces';
 let HOSTAPD_CONFIG = null;
 let WPA_SUPPLICANT_CONFIG = null;
 
@@ -28,7 +30,8 @@ const SERVICE_CONFIG = { service: 'config', schema:
   networkName: 'String',
   networkPassword: 'String',
   apNetworkName: 'String',
-  apNetworkPassword: 'String'
+  apNetworkPassword: 'String',
+  apNetworkAddress: 'String'
 }};
 
 function networking(config)
@@ -58,6 +61,7 @@ networking.prototype =
 
       let hostap = [];
       let wpa = [];
+      let net = [];
       try
       {
         hostap = fs.readFileSync(HOSTAPD_CONFIG, { encoding: 'utf8' }).split('\n');
@@ -72,12 +76,19 @@ networking.prototype =
       catch (_)
       {
       }
+      try
+      {
+        net = fs.readFileSync(NET_INTERFACES_CONFIG, { encoding: 'utf8' }).split('\n');
+      }
+      catch (_)
+      {
+      }
 
       function findHostApIndex(key)
       {
         for (let i = 0; i < hostap.length; i++)
         {
-          if (hostap[i].indexOf(key) !== -1)
+          if (hostap[i].trim().indexOf(key) === 0)
           {
             return i;
           }
@@ -88,7 +99,18 @@ networking.prototype =
       {
         for (let i = 0; i < wpa.length; i++)
         {
-          if (wpa[i].indexOf(key) !== -1)
+          if (wpa[i].trim().indexOf(key) === 0)
+          {
+            return i;
+          }
+        }
+        return -1;
+      }
+      function findNetIndex(key)
+      {
+        for (let i = 0; i < net.length; i++)
+        {
+          if (net[i].trim().indexOf(key) === 0)
           {
             return i;
           }
@@ -100,6 +122,7 @@ networking.prototype =
       let idx;
       let hostapChange = false;
       let wpaChange = false;
+      let netChange = false;
       
       idx = findHostApIndex('ssid=');
       if (idx !== -1)
@@ -159,6 +182,23 @@ networking.prototype =
         }
         result.networkPassword = result.networkPassword.replace(/./g, '*');
       }
+      idx = findNetIndex('address');
+      if (idx !== -1)
+      {
+        if ('apNetworkAddress' in request)
+        {
+          const root = request.apNetworkAddress.split('.').slice(0, 3).join('.');
+          net[idx + 0] = ` address ${request.apNetworkAddress}`;
+          net[idx + 1] = ` netmask 255.255.255.0`;
+          net[idx + 2] = ` network ${root}.0`;
+          net[idx + 3] = ` broadcast ${root}.255`;
+          netChange = true;
+        }
+        else
+        {
+          result.apNetworkAddress = net[idx].trim().split(' ')[1];
+        }
+      }
 
       if (hostapChange)
       {
@@ -171,6 +211,11 @@ networking.prototype =
         fs.writeFileSync(WPA_SUPPLICANT_CONFIG, wpa.join('\n'), { encoding: 'utf8' });
         childProcess.spawn(CMD_IFDOWN, [ 'wlan0' ], {});
         childProcess.spawn(CMD_IFUP, [ 'wlan0' ], {});
+      }
+      if (netChange)
+      {
+        fs.writeFileSync(NET_INTERFACES_CONFIG, net.join('\n'), { encoding: 'utf8' });
+        childProcess.spawn(CMD_SOFTAP, [ 'restart' ], {});
       }
 
       return result;
