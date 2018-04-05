@@ -149,6 +149,11 @@ health.prototype =
   _batteryMonitor: function()
   {
     let v = this._battery.level.value();
+    if (v === null)
+    {
+      // No battery value available yet.
+      return;
+    }
     for (var i = 0; i < this._battery.curve.length; i++)
     {
       var section = this._battery.curve[i];
