@@ -1,19 +1,19 @@
 module.exports = function()
 {
-  const LED = PWM.open({ channel: 8 });
+  const LED = typeof PWM !== 'undefined' ? PWM.open({ channel: 8 }) : null;
 
   return {
     _name: '/activity/node',
 
     enable: () => {
-      LED.enable()
-      LED.setDutyCycle(0.01);
+      LED && LED.enable()
+      LED && LED.setDutyCycle(0.01);
       return this;
     },
 
     disable: () => {
-      LED.setDutyCycle(0);
-      LED.disable();
+      LED && LED.setDutyCycle(0);
+      LED && LED.disable();
       return this;
     }
   };
