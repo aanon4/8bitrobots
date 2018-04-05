@@ -51,8 +51,15 @@ ConfigManager.prototype =
       }
       if (this._state.update(Object.keys(this._defaults), request))
       {
-        this._target.disable();
-        this._target.enable();
+        if (this._target.restart)
+        {
+          this._target.restart();
+        }
+        else
+        {
+          this._target.disable();
+          this._target.enable();
+        }
       }
       let result = {};
       for (let key in this._defaults)

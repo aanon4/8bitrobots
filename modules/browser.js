@@ -3,10 +3,10 @@
 console.info('Loading Browser.');
 
 const childProcess = require('child_process');
+const http = require('http');
 const ConfigManager = require('modules/config-manager');
 
 const CMD_XSERVER = '/usr/bin/X';
-const CMD_SLEEP = '/bin/sleep';
 const CMD_BROWSER = '/usr/bin/chromium';
 
 
@@ -18,49 +18,28 @@ function browser(config)
   {
     startup: config.startup || 'about:blank'
   });
+  this._enabled = false;
 }
 
 browser.prototype =
 {
   enable: function()
   {
+    this._enabled = true;
+
     this._config.enable();
     this._startup = this._config.get('startup');
 
-    const options =
-    {
-      env:
-      {
-        DISPLAY: ':0.0'
-      },
-      stdio: [ 'ignore', 'ignore', 'ignore' ]
-    };
-
-    // Startup the X-server
-    this._xserver = childProcess.spawn(CMD_XSERVER,
-    [
-      '-dpms', '-ac', '-wr', '-nocursor', '-s', '0', '-v'
-    ], options);
-
-    
-    // Hacky way to sleep for a moment to let the server startup
-    childProcess.spawnSync(CMD_SLEEP, [ '1' ], options);
-
-    // Start the browser
-    this._browser = childProcess.spawn(CMD_BROWSER,
-    [
-      '--no-first-run',
-      '--no-sandbox',
-      '--noerrordialogs',
-      '--window-size=1920,1280',
-      `--app=${this._startup}`
-    ], options);
+    this._startX();
+    this._startBrowser();
 
     return this;
   },
   
   disable: function()
   {
+    this._enabled = false;
+  
     if (this._browser)
     {
       this._browser.kill();
@@ -75,6 +54,72 @@ browser.prototype =
     this._config.disable();
 
     return this;
+  },
+
+  restart: function()
+  {
+    // Restart the browser only (X doesn't change)
+    this._startup = this._config.get('startup');
+
+    if (this._browser)
+    {
+      this._browser.kill();
+      this._browser = null;
+    }
+    this._startBrowser();
+  },
+
+  _startX: function()
+  {
+    // Startup the X-server
+    this._xserver = childProcess.spawn(CMD_XSERVER,
+    [
+      '-dpms', '-ac', '-wr', '-nocursor', '-s', '0', '-v'
+    ], 
+    {
+      stdio: [ 'ignore', 'ignore', 'ignore' ]
+    });
+  },
+
+  _startBrowser: function()
+  {
+    // Poll the startup page until we can load it, then launch the browser.
+    const startup = () => {
+      http.get(this._startup, (result) => {
+        if (!this._enabled)
+        {
+          // Bail
+          return;
+        }
+        else if (result.statusCode !== 200)
+        {
+          // Not loading - retry
+          console.warn(`Browser page ${this._startup} retry`);
+          setTimeout(startup, 2000);
+        }
+        else
+        {
+          // Start the browser
+          this._browser = childProcess.spawn(CMD_BROWSER,
+          [
+            '--no-first-run',
+            '--no-sandbox',
+            '--noerrordialogs',
+            '--window-size=1920,1280',
+            `--app=${this._startup}`
+          ],
+          {
+            env:
+            {
+              DISPLAY: ':0.0'
+            },
+            stdio: [ 'ignore', 'ignore', 'ignore' ]
+          });
+        }
+      });
+    }
+    // Startup in a second (give the x-server time to start).
+    setTimeout(startup, 1000);
   }
 }
 

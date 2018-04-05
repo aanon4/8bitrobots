@@ -4,6 +4,6 @@ module.exports = function()
   return new Browser(
   {
     name: '/head/browser/node',
-    startup: 'http://127.0.0.1/wait.html'
+    startup: 'http://192.168.8.1/head'
   });
 }
