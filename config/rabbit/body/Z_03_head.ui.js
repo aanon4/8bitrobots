@@ -7,9 +7,9 @@ module.exports = function()
     target: '/server',
     pages:
     {
-      '/head': 'config/robot/ui/head.html',
-      '/js/8bit.js': './modules/8bit.js',
-      '/js/8bit-webconnector.js': './modules/8bit-webconnector.js',
+      '/head': 'config/rabbit/body/ui/head.html',
+      '/js/8bit.js': 'modules/8bit.js',
+      '/js/8bit-webconnector.js': 'modules/8bit-webconnector.js',
     }
   });
 }
