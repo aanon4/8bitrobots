@@ -5,7 +5,7 @@ xset s noblank
 # Disable Energy Star
 xset -dpms
 # Stream head camera
-mjpg_streamer -o "output_http.so --nocommands" -i "input_raspicam.so --width 640 --height 480 --fps 10 --quality 85 -sa -100" &
+#mjpg_streamer -o "output_http.so --nocommands" -i "input_raspicam.so --width 640 --height 480 --fps 10 --quality 85 -sa -100" &
 # Browser behind the eyes
 chromium-browser --noerrdialogs --kiosk file:///$(dirname $0)/wait.html --incognito &
 # Command server
