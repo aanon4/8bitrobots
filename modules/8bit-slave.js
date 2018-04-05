@@ -98,6 +98,11 @@ const Root =
       default:
         throw new Error(JSON.stringify(msg));
     }
+  },
+
+  sendToMaster: function(msg)
+  {
+    (this._tmpQ || (this._tmpQ = [])).push(msg);
   }
 };
 global['8Bit'] = Root;
@@ -128,6 +133,11 @@ function runSlave(target)
   Root.sendToMaster = (msg) => {
     send(msg);
   }
+
+  (Root._tmpQ || []).forEach((msg) => {
+    Root.sendToMaster(msg);
+  });
+  delete Root._tmpQ;
 
   const websocketclient = new websocket.client();
 
