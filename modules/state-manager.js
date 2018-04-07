@@ -32,7 +32,7 @@ StateManager.prototype =
   get: function(property, def)
   {
     const data = this._loadData();
-    if (!(property in data))
+    if (!(property in data) && def !== undefined)
     {
       data[property] = def;
       this._saveData();

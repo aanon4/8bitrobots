@@ -82,7 +82,7 @@ ConfigManager.prototype =
 
   get: function(property)
   {
-    return this._state.get(property, this._defaults[property]);
+    return this._state.get(property) || this._defaults[property];
   },
 
   update: function(keys, values)
