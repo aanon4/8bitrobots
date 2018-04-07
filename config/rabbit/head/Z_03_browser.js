@@ -4,6 +4,7 @@ module.exports = function()
   return new Browser(
   {
     name: '/head/browser/node',
-    startup: 'http://192.168.8.1/head'
+    size: '1824,984',
+    startup: 'http://192.168.88.1/head'
   });
 }
