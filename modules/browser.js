@@ -16,7 +16,8 @@ function browser(config)
   this._node = Node.init(config.name);
   this._config = new ConfigManager(this,
   {
-    startup: config.startup || 'about:blank'
+    startup: config.startup || 'about:blank',
+    size: config.size || '1024,768'
   });
   this._enabled = false;
 }
@@ -29,6 +30,7 @@ browser.prototype =
 
     this._config.enable();
     this._startup = this._config.get('startup');
+    this._size = this._config.get('size');
 
     this._startX();
     this._startBrowser();
@@ -60,6 +62,7 @@ browser.prototype =
   {
     // Restart the browser only (X doesn't change)
     this._startup = this._config.get('startup');
+    this._size = this._config.get('size');
 
     if (this._browser)
     {
@@ -105,7 +108,7 @@ browser.prototype =
             '--no-first-run',
             '--no-sandbox',
             '--noerrordialogs',
-            '--window-size=1920,1280',
+            `--window-size=${this._size}`,
             `--app=${this._startup}`
           ],
           {
