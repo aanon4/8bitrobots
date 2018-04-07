@@ -39,11 +39,11 @@ ConfigManager.prototype =
   enable: function()
   {
     this._target._node.service(this._service, (request) => {
-      if (validator)
+      if (this._validator)
       {
         for (let key in request)
         {
-          if (!validator(key, request[key]))
+          if (!this._validator(key, request[key]))
           {
             delete request[key];
           }
