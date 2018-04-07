@@ -256,13 +256,6 @@
         break;
     }
   });
-  ros.subscribe({ topic: '/health/shutdown' }, function(e)
-  {
-    if (e.shutdown === 'low-battery')
-    {
-      new Image().src = 'http://localhost:1500/shutdown';
-    }
-  });
 </script>
 </head>
 <body>
