@@ -8,14 +8,18 @@
     background-color: black;
     overflow: hidden;
   }
+  body
+  {
+    transform: rotate(180deg);
+  }
   .eye
   {
     position: absolute;
     top: 6px;
-    width: 124px;
-    height: 190px;
+    width: 372px;
+    height: 570px;
     background-color: white;
-    clip: rect(0px, 124px, 190px, 0px);
+    clip: rect(0px, 372px, 570px, 0px);
   }
   .asleep .eye, .asleep .lid
   {
@@ -32,22 +36,22 @@
   .pupil
   {
     position: absolute;
-    width: 50px;
-    height: 80px;
-    top: 90px;
-    left: 37px;
+    width: 150px;
+    height: 250px;
+    top: 270px;
+    left: 111px;
     background-color: black;
     transition: left 0.5s, top 0.5s;
   }
   .lid
   {
     position: relative;
-    width: 124px;
-    height: 190px;
+    width: 372px;
+    height: 570px;
     background-color: white;
-    top: -190px;
+    top: -570px;
     z-index: 1;
-    border-bottom: 4px solid black;
+    border-bottom: 12px solid black;
   }
   .sleepy .lid
   {
@@ -87,9 +91,9 @@
   }
   @keyframes blink
   {
-    0% { top: -190px }
+    0% { top: -570px }
     50% { top: 0px; }
-    100% { top: -190px }
+    100% { top: -570px }
   }
   @keyframes blink_sleepy
   {
