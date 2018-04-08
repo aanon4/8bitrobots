@@ -32,7 +32,15 @@ const Root =
       case 'subscribe-req':
       {
         this._subscribers[msg.subscriber] = handler;
-        this.sendToMaster(msg);
+        if (msg.__fromMaster)
+        {
+          const fn = this._advertisers[msg.topic];
+          fn && fn(msg);
+        }
+        else
+        {
+          this.sendToMaster(msg);
+        }
         break;
       }
       case 'unsubscribe-req':
@@ -40,7 +48,10 @@ const Root =
         const fn = this._subscribers[msg.subscriber];
         delete this._subscribers[msg.subscriber];
         fn.remove();
-        this.sendToMaster(msg);
+        if (!msg.__fromMaster)
+        {
+          this.sendToMaster(msg);
+        }
         break;
       }
       case 'subscribe-ack':
@@ -69,7 +80,15 @@ const Root =
       case 'connect-req':
       {
         this._proxies[msg.connector] = handler;
-        this.sendToMaster(msg);
+        if (msg.__fromMaster)
+        {
+          const fn = this._services[msg.service];
+          fn && fn(msg);
+        }
+        else
+        {
+          this.sendToMaster(msg);
+        }
         break;
       }
       case 'disconnect-req':
@@ -77,12 +96,23 @@ const Root =
         const fn = this._proxies[msg.connector];
         delete this._proxies[msg.connector];
         fn.remove();
-        this.sendToMaster(msg);
+        if (!this._fromMaster)
+        {
+          this.sendToMaster(msg);
+        }
         break;
       }
       case 'call':
       {
-        this.sendToMaster(msg);
+        if (this._fromMaster)
+        {
+          const fn = Root._services[msg.service];
+          fn && fn(msg);
+        }
+        else
+        {
+          this.sendToMaster(msg);
+        }
         break;
       }
       case 'connect-ack':
@@ -167,7 +197,34 @@ function runSlave(target)
         try
         {
           //console.log('<-', message.utf8Data);
-          Root.event(JSON.parse(message.utf8Data));
+          const msg = JSON.parse(message.utf8Data);
+          msg.__fromMaster = true;
+          switch (msg.op)
+          {
+            case 'connect-req':
+            {
+              const chandler = (msg) => {
+                Root.sendToMaster(msg);
+              }
+              chandler.remove = () => {
+              }
+              Root.event(msg, chandler);
+              break;
+            }
+            case 'subscribe-req':
+            {
+              const shandler = (msg) => {
+                Root.sendToMaster(msg);
+              }
+              shandler.remove = () => {
+              }
+              Root.event(msg, shandler);
+              break;
+            }
+            default:
+              Root.event(msg, null);
+              break;
+          }
         }
         catch (e)
         {
