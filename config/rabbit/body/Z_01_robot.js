@@ -76,8 +76,8 @@ module.exports = function()
       makeServo('back-left',   0, 'hs645mg',  'nor', Math.PI / 2 - 1.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.45),
       makeServo('front-left',  5, 'hs422',    'nor', Math.PI / 2 - 2.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.25),
       makeServo('front-right', 4, 'hs422',    'rev', Math.PI / 2 - 2.5,  Math.PI / 2 + 2.5,  Math.PI / 2, -0.33),
-      makeServo('head-hoz',    3, 'hs422',    'nor', Math.PI / 2 - 0.5,  Math.PI / 2 + 0.5 , Math.PI / 2, -0.25),
-      makeServo('head-ver',    2, 'hs645mg',  'nor', Math.PI / 2 - 0.6,  Math.PI / 2,        Math.PI / 2,  0.25),
+      makeServo('head-hoz',    3, 'hs422',    'nor', Math.PI / 2 - 0.5,  Math.PI / 2 + 0.5 , Math.PI / 2, -0.05),
+      makeServo('head-ver',    2, 'hs645mg',  'nor', Math.PI / 2,        Math.PI / 2 + 0.6,  Math.PI / 2, -0.10),
       makeServo('ears',        1, 'hs35hd',   'nor', Math.PI / 2 - 0.5,  Math.PI / 2 + 0.5,  Math.PI / 2, -1.05)
     ),
     buttons: Object.assign({},

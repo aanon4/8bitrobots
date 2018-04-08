@@ -112,10 +112,7 @@ browser.prototype =
             `--app=${this._startup}`
           ],
           {
-            env:
-            {
-              DISPLAY: ':0.0'
-            },
+            env: { DISPLAY: ':0.0' },
             stdio: [ 'ignore', 'ignore', 'ignore' ]
           });
         }
