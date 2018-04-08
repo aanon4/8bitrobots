@@ -16,10 +16,10 @@
   {
     position: absolute;
     top: 6px;
-    width: 372px;
-    height: 570px;
+    width: 520px;
+    height: 650px;
     background-color: white;
-    clip: rect(0px, 372px, 570px, 0px);
+    clip: rect(0px, 520px, 650px, 0px);
   }
   .asleep .eye, .asleep .lid
   {
@@ -27,11 +27,11 @@
   }
   #left
   {
-    right: 16px;
+    right: 0px;
   }
   #right
   {
-    left: 12px;
+    left: 0px;
   }
   .pupil
   {
@@ -46,10 +46,10 @@
   .lid
   {
     position: relative;
-    width: 372px;
-    height: 570px;
+    width: 520px;
+    height: 650px;
     background-color: white;
-    top: -570px;
+    top: -650px;
     z-index: 1;
     border-bottom: 12px solid black;
   }
@@ -91,9 +91,9 @@
   }
   @keyframes blink
   {
-    0% { top: -570px }
+    0% { top: -650px }
     50% { top: 0px; }
-    100% { top: -570px }
+    100% { top: -650px }
   }
   @keyframes blink_sleepy
   {
@@ -139,7 +139,7 @@
     ping();
   });
   var ros = Node.init('/headui');
-  ros.subscribe({ topic: '/robot/head-hoz/current_angle' }, function(angle)
+  ros.subscribe({ topic: '/robot/head-hoz/servo/current_angle' }, function(angle)
   {
     var l = document.querySelector('#left .pupil');
     var r = document.querySelector('#right .pupil');
@@ -163,7 +163,7 @@
       r.classList.remove('toleft', 'toright');
     }
   });
-  ros.subscribe({ topic: '/robot/head-ver/current_angle' }, function(angle)
+  ros.subscribe({ topic: '/robot/head-ver/servo/current_angle' }, function(angle)
   {
     var l = document.querySelector('#left .pupil');
     var r = document.querySelector('#right .pupil');
