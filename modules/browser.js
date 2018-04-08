@@ -119,6 +119,10 @@ browser.prototype =
             stdio: [ 'ignore', 'ignore', 'ignore' ]
           });
         }
+      }).on('error', (e) => {
+        // Not loading (network not there yet?) - retry
+        console.warn(`Browser error ${this._startup} retry`);
+        setTimeout(startup, 2000);
       });
     }
     // Startup in a second (give the x-server time to start).
