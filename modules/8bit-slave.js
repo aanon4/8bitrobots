@@ -161,8 +161,14 @@ function runSlave(target)
   }
 
   Root.sendToMaster = (msg) => {
-    delete msg.__fromMaster;
-    send(msg);
+    if (msg.__fromMaster)
+    {
+      console.error('Message loop', JSON.stringify(msg));
+    }
+    else
+    {
+      send(msg);
+    }
   }
 
   (Root._tmpQ || []).forEach((msg) => {
