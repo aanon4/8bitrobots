@@ -96,7 +96,7 @@ const Root =
         const fn = this._proxies[msg.connector];
         delete this._proxies[msg.connector];
         fn.remove();
-        if (!this.__fromMaster)
+        if (!msg.__fromMaster)
         {
           this.sendToMaster(msg);
         }
@@ -104,7 +104,7 @@ const Root =
       }
       case 'call':
       {
-        if (this.__fromMaster)
+        if (msg.__fromMaster)
         {
           const fn = Root._services[msg.service];
           fn && fn(msg);
