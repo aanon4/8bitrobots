@@ -7,7 +7,7 @@ module.exports = function()
     battery:
     {
       topic: '/battery/status',
-      chemistry: 'LiPo',
+      batteryChemistry: 'LiPo',
       cells: 2
     }
   });

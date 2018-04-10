@@ -7,7 +7,7 @@ module.exports = function()
     battery:
     {
       topic: '/car/drive/vesc/voltage', 
-      chemistry: 'LiPo',
+      batteryChemistry: 'LiPo',
       cells: 3
     }
   });

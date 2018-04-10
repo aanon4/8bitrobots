@@ -7,7 +7,7 @@ module.exports = function()
     battery:
     {
       topic: '/power/status', 
-      chemistry: 'LiPo', 
+      batteryChemistry: 'LiPo', 
       cells: 2,
       minV: 6.5
     }

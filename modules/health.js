@@ -83,12 +83,12 @@ function health(config)
   this._node = Node.init(config.name);
   this._config = new ConfigManager(this,
   {
-    chemistry: config.battery.chemistry || 'DC',
+    batteryChemistry: config.battery.batteryChemistry || 'DC',
     cells: config.battery.cells || 1
   },
   function (key, value)
   {
-    if (key === 'chemistry' && !(value in batteryChemistry))
+    if (key === 'batteryChemistry' && !(value in batteryChemistry))
     {
       return false;
     }
@@ -108,7 +108,7 @@ health.prototype =
   enable: function()
   {
     this._config.enable();
-    this._battery.curve = batteryChemistry[this._config.get('chemistry')].curve;
+    this._battery.curve = batteryChemistry[this._config.get('batteryChemistry')].curve;
     this._battery.cells = this._config.get('cells');
 
     this._node.subscribe({ topic: this._battery.topic }, (event) => 
