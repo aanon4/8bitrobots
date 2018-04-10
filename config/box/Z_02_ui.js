@@ -14,10 +14,11 @@ module.exports = function()
       '/image/compass.png': 'config/box/ui/compass.png',
 
       // Blockly
-      '/blockly/blockly_compressed.js': './modules//blockly/blockly_compressed.js',
-      '/blockly/blocks_compressed.js': '/modules//blockly/blockly_compressed.js',
-      '/blockly/msg/js/': './modules/msg/js/',
-      '/blockly/8bitblocks.js': './modules/blockly/8bitblocks.js'
+      '/program': 'config/box/ui/blockly.html',
+      '/blockly/blockly_compressed.js': 'modules/blockly/blockly_compressed.js',
+      '/blockly/blocks_compressed.js': 'modules//blockly/blocks_compressed.js',
+      '/blockly/msg/js/': 'modules/blockly/msg/js/',
+      '/blockly/8bitblocks.js': 'modules/blockly/8bitblocks.js'
     }
   });
 }

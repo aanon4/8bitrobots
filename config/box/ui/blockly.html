@@ -1,0 +1,41 @@
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <script src="js/8bit-webconnector.js"></script>
+  <script src="js/8bit.js"></script>
+  <script>
+    window.NODE = Node.init('/blockly');
+    window.TOOLBOX =
+    [
+      '<xml>',
+      '<category name="Program">', '', '</category>',
+      '<category name="General">', `
+        <block type="controls_if" />
+        <block type="controls_repeat_ext" />
+        <block type="logic_compare" />
+        <block type="math_number" />
+        <block type="math_arithmetic" />
+        <block type="text" />
+        <block type="text_print" />
+      </category>`,
+      '<category name="Configure">', '', '</category>',
+      '<category name="Events">', '', '</category>',
+      '</xml>'
+    ];
+  </script>
+  <script src="blockly/blockly_compressed.js"></script>
+  <script src="blockly/blocks_compressed.js"></script>
+  <script src="blockly/msg/js/en.js"></script>
+  <script src="blockly/8bitblocks.js"></script>
+  <style>
+    _html,_body { width: 100%; height: 100%; margin: 0; color: white; background-color: black; background-size: 100%, 100%; }
+  </style>
+</head>
+<body>
+  <div id="blocklyDiv" style="height: 480px; width: 600px;"></div>
+  <script>
+    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join() });
+  </script>
+</body>
+</html>
