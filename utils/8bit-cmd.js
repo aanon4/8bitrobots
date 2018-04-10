@@ -29,5 +29,6 @@ CMD(eval(`[${argv[1]}]`)[0]).then((result) => {
   delete result.timestamp;
   delete result.__remote;
   console.log(result);
+  NODE.unproxy({ service: `${argv[0]}` });
   process.exit(0);
 });

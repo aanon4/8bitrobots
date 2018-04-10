@@ -38,5 +38,6 @@ LIST({}).then((list) => {
   list.services.forEach((service) => {
     console.log(`  ${service.name}${sidx === -1 ? '' : ': ' + JSON.stringify(service.schema)}`);
   });
+  NODE.unproxy({ service: '/list' });
   process.exit(0);
 });
