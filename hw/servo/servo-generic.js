@@ -157,10 +157,10 @@ servo.prototype =
       {
         return reject(new Error('Bad compare: ' + compare));
       }
-      let check = () =>
+      const check = () =>
       {
-        let current = this.getCurrentAngle();
-        let changing = this.isAngleChanging();
+        const current = this.getCurrentAngle();
+        const changing = this.isAngleChanging();
         if (compare === '>=' && current >= angle)
         {
           return resolve(true);

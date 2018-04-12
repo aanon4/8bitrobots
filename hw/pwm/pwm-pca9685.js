@@ -6,7 +6,7 @@ const MotionPlanner = require('modules/motion-planner');
 
 const SERVICE_SETPULSE = { service: 'set_pulse', schema: { pulse: 'Number', time: 'Number', func: 'String' } };
 const SERVICE_WAITFOR = { service: 'wait_for_pulse', schema: { compare: 'String', pulse: 'Number' } };
-const TOPIC_CURRENT = { topic: 'current_pulse', schema: { __return: { pulse: 'Number', target_pulse: 'Number', changing: 'Boolean' } } };
+const TOPIC_CURRENT = { topic: 'current_pulse', schema: { pulse: 'Number', target_pulse: 'Number', changing: 'Boolean' } };
 
 
 function pwmChannel(pwm, subaddress, doApi)
@@ -148,6 +148,43 @@ pwmChannel.prototype =
     return this._plans.length > 0;
   },
 
+  waitForPulse: function(compare, pulse)
+  {
+    return new Promise((resolve, reject) =>
+    {
+      if (compare !== '>=' && compare !== '<=' && compare !== '==' && compare !== 'idle')
+      {
+        return reject(new Error('Bad compare: ' + compare));
+      }
+      const check = () =>
+      {
+        const current = this.getCurrentPulse();
+        const changing = this.isPulseChanging();
+        if (compare === '>=' && current >= pulse)
+        {
+          return resolve(true);
+        }
+        else if (compare === '<=' && current <= pulse)
+        {
+          return resolve(true);
+        }
+        else if (compare === '==' && current == pulse)
+        {
+          return resolve(true);
+        }
+        else if (!changing)
+        {
+          return resolve(compare === 'idle' ? true : false);
+        }
+        else
+        {
+          setTimeout(check, 20);
+        }
+      }
+      check();
+    });
+  },
+
   _enqueue: function(plan)
   {
     this._plans.push(plan);
@@ -205,7 +242,7 @@ function PWM(config)
   this._name = `${config.name || '/pwm-i2c'}/${this._i2c.id()}`;
   this._prescaleTweak = config.prescaleTweak || 0;
   this._channels = [];
-  const exclude = config.exclude || [];
+  const exclude = config.excludeApi || [];
   for (let i = 0; i < 16; i++)
   {
     this._channels.push(new pwmChannel(this, i, exclude.indexOf(i) === -1));
