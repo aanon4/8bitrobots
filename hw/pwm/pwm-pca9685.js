@@ -4,11 +4,17 @@ console.info('Loading PCA9685 controllers.');
 
 const MotionPlanner = require('modules/motion-planner');
 
+const SERVICE_SETPULSE = { service: 'set_pulse', schema: { pulse: 'Number', time: 'Number', func: 'String' } };
+const SERVICE_WAITFOR = { service: 'wait_for_pulse', schema: { compare: 'String', pulse: 'Number' } };
+const TOPIC_CURRENT = { topic: 'current_pulse', schema: { __return: { pulse: 'Number', target_pulse: 'Number', changing: 'Boolean' } } };
 
-function pwmChannel(pwm, subaddress)
+
+function pwmChannel(pwm, subaddress, doApi)
 {
   this._pwm = pwm;
   this._subaddress = subaddress;
+  this._doApi = doApi || false;
+  this._node = Node.init(`${pwm._name}/${subaddress}/node`);
   this._enabled = false;
   this._planner = new MotionPlanner();
   this._plans = [];
@@ -20,7 +26,30 @@ pwmChannel.prototype =
 {
   enable: function()
   {
-    this._enabled = true;
+    if (!this._enabled)
+    {
+      this._enabled = true;
+      if (this._doApi)
+      {
+        this._adPos = this._node.advertise(TOPIC_CURRENT);
+        this._node.service(SERVICE_SETPULSE, (request) =>
+        {
+          if (request.func === 'idle')
+          {
+            this.idle();
+          }
+          else
+          {
+            this.setPulse(request.pulse, request.time, MotionPlanner[request.func]);
+          }
+          return true;
+        });
+        this._node.service(SERVICE_WAITFOR, (event) =>
+        {
+          return this.waitForPulse(event.compare, event.pulse);
+        });
+      }
+    }
     return this;
   },
 
@@ -30,6 +59,13 @@ pwmChannel.prototype =
     if (this._plans.length === 0)
     {
       this._pwm._setPulseMs(this._subaddress, 0);
+    }
+    if (this._doApi)
+    {
+      this._adPos = null;
+      this._node.unadvertise(TOPIC_CURRENT);
+      this._node.unservice(SERVICE_SETPULSE);
+      this._node.unservice(SERVICE_WAITFOR);
     }
     return this;
   },
@@ -131,6 +167,10 @@ pwmChannel.prototype =
             {
               this._currentMs = 0;
               this._pwm._setPulseMs(this._subaddress, 0);
+              if (this._adPos)
+              {
+                this._adPos.publish({ pulse: this._currentMs, target_pulse: this._lastMs, changing: this._plans.length > 0 });
+              }
             }
             this._plans.shift();
             run();
@@ -141,6 +181,10 @@ pwmChannel.prototype =
               (value) => {
                 this._currentMs = value;
                 this._pwm._setPulseMs(this._subaddress, this._currentMs);
+                if (this._adPos)
+                {
+                  this._adPos.publish({ pulse: this._currentMs, target_pulse: this._lastMs, changing: this._plans.length > 0 });
+                }
               },
               () => {
                 this._plans.shift();
@@ -158,26 +202,14 @@ pwmChannel.prototype =
 function PWM(config)
 {
   this._i2c = config.i2c;
+  this._name = `${config.name || '/pwm-i2c'}/${this._i2c.id()}`;
   this._prescaleTweak = config.prescaleTweak || 0;
-  this._channels =
-  [
-    new pwmChannel(this, 0),
-    new pwmChannel(this, 1),
-    new pwmChannel(this, 2),
-    new pwmChannel(this, 3),
-    new pwmChannel(this, 4),
-    new pwmChannel(this, 5),
-    new pwmChannel(this, 6),
-    new pwmChannel(this, 7),
-    new pwmChannel(this, 8),
-    new pwmChannel(this, 9),
-    new pwmChannel(this, 10),
-    new pwmChannel(this, 11),
-    new pwmChannel(this, 12),
-    new pwmChannel(this, 13),
-    new pwmChannel(this, 14),
-    new pwmChannel(this, 15)
-  ];
+  this._channels = [];
+  const exclude = config.exclude || [];
+  for (let i = 0; i < 16; i++)
+  {
+    this._channels.push(new pwmChannel(this, i, exclude.indexOf(i) === -1));
+  }
 }
 
 PWM.prototype =
