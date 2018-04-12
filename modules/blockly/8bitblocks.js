@@ -66,64 +66,74 @@ function buildConfigBlocks(services)
 
     const name = service.name;
     const schema = service.schema;
-    
-    let json =
-    {
-      message0: `Configure ${name.substr(0, name.length - 7)}`,
-      previousStatement: null,
-      nextStatement: null,
-      colour: 90
-    };
-    let count = 1;
-    for (let key in schema)
-    {
-      if (key !== '__return')
-      {
-        json[`args${count}`]= [
-        {
-          type: 'input_value',
-          name: key,
-          check: schema[key],
-          align: 'RIGHT'
-        }];
-        json[`message${count}`] = `${key} %1`;
-        count++;
-      }
-    }
-    
-    Blockly.Blocks[name] =
-    {
-      init: function()
-      {
-        this.jsonInit(json);
-      }
-    }
 
     NODE.proxy({ service: name })({}).then((config) => {
       NODE.unproxy({ service: name });
-      let values = [];
-      for (let ckey in config)
+      let json =
       {
-        if (typeof config[ckey] === 'string')
+        message0: `Configure ${name.substr(0, name.length - 7)}`,
+        previousStatement: null,
+        nextStatement: null,
+        colour: 90
+      };
+      let count = 1;
+      for (let key in schema)
+      {
+        if (key !== '__return')
         {
-          values.push(`
-            <value name="${ckey}">
-              <block type="text">
-                <field name="TEXT">${config[ckey]}</field>
-              </block>
-            </value>`);
-        }
-        else if (typeof config[ckey] === 'number')
-        {
-          values.push(`
-            <value name="${ckey}">
-              <block type="math_number">
-                <field name="NUM">${config[ckey]}</field>
-              </block>
-            </value>`);
+          if (typeof schema[key] === 'object')
+          {
+            let def = schema[key].indexOf(config[key]);
+            if (def !== -1)
+            {
+              schema[key].splice(def, 1);
+              schema[key].unshift(config[key]);
+            }
+            json[`args${count}`]= [
+            {
+              type: 'field_dropdown',
+              name: key,
+              check: 'String',
+              options: schema[key].map((value) => [ value, value ])
+            }];
+          }
+          else
+          {
+            switch (schema[key])
+            {
+              case 'String':
+              default:
+                json[`args${count}`] = [
+                {
+                  type: 'field_input',
+                  name: key,
+                  text: key in config ? config[key] : ''
+                }];
+                break;
+              case 'Number':
+                json[`args${count}`] = [
+                {
+                  type: 'field_number',
+                  name: key,
+                  value: key in config ? config[key] : 0
+                }];
+                break;
+            }
+          }
+          json[`message${count}`] = `${key} %1`;
+          count++;
         }
       }
-      configureBlocks.push(`<block type="${name}">${values.join()}</block>`);
+  
+      Blockly.Blocks[name] =
+      {
+        init: function()
+        {
+          this.jsonInit(json);
+        }
+      }
+
+      configureBlocks.push(`<block type="${name}" />`);
 
       if (++blocks == services.length)
       {
@@ -142,6 +152,44 @@ function buildActionBlocks(actions)
 {
   const actionBlocks = [];
   actions.forEach((action) => {
+
+    const name = action.name;
+    const schema = action.schema;
+    
+    let json =
+    {
+      message0: `call ${name}`,
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      colour: 90
+    };
+    let count = 1;
+    for (let key in schema)
+    {
+      if (key !== '__return')
+      {
+        json[`args${count}`]= [
+        {
+          type: 'input_value',
+          name: key,
+          check: typeof schema[key] !== 'object' ? schema[key] : 'String',
+          align: 'RIGHT'
+        }];
+        json[`message${count}`] = `${count === 1 ? 'with ' : ''}${key} %1`;
+        count++;
+      }
+    }
+    
+    Blockly.Blocks[name] =
+    {
+      init: function()
+      {
+        this.jsonInit(json);
+      }
+    }
+
+    actionBlocks.push(`<block type="${name}"></block>`);
   });
   const idx = TOOLBOX.indexOf('<category name="Actions">');
   if (idx !== -1)

@@ -21,6 +21,7 @@
       </category>`,
       '<category name="Configure">', '', '</category>',
       '<category name="Events">', '', '</category>',
+      '<category name="Actions">', '', '</category>',
       '</xml>'
     ];
   </script>
@@ -33,7 +34,7 @@
   </style>
 </head>
 <body>
-  <div id="blocklyDiv" style="height: 480px; width: 600px;"></div>
+  <div id="blocklyDiv" style="height: 480px; width: 100%;"></div>
   <script>
     window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join() });
   </script>
