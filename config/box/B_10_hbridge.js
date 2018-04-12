@@ -4,6 +4,7 @@ if (typeof PWM !== 'undefined')
 {
   global.HBRIDGE = new HBridge(
   {
+    name: '/hbridge',
     v: 5.0,
     ain1: PWM.open({ channel: 15 }),
     ain2: PWM.open({ channel: 14 }),

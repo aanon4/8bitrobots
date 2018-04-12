@@ -1,6 +1,6 @@
 module.exports = function()
 {
-  const LED = typeof PWM !== 'undefined' ? PWM.open({ channel: 8 }) : null;
+  const LED = typeof PWM !== 'undefined' ? PWM.open({ channel: 10 }) : null;
 
   return {
     _name: '/activity/node',
