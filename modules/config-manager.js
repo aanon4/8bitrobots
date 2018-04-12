@@ -8,7 +8,7 @@ const StateManager = require('./state-manager');
 function ConfigManager(target, defaults, validator)
 {
   this._target = target;
-  this._defaults = defaults;
+  this._defaults = {};
   this._validator = validator;
   this._state = new StateManager({ name: `config-${this._target._name.replace(/\//g, '_')}` });
   this._service = { service: 'config' };
@@ -19,12 +19,19 @@ function ConfigManager(target, defaults, validator)
     {
       case 'number':
         schema[key] = 'Number';
+        this._defaults[key] = defaults[key];
         break;
       case 'string':
         schema[key] = 'String';
+        this._defaults[key] = defaults[key];
         break;
       case 'boolean':
         schema[key] = 'Boolean';
+        this._defaults[key] = defaults[key];
+        break;
+      case 'object': // Enum
+        schema[key] = defaults[key].options;
+        this._defaults[key] = defaults[key].value;
         break;
       default:
         break;
@@ -39,14 +46,15 @@ ConfigManager.prototype =
   enable: function()
   {
     this._target._node.service(this._service, (request) => {
-      if (this._validator)
+      for (let key in request)
       {
-        for (let key in request)
+        if (typeof this._service.schema[key] === 'object' && this._service.schema[key].indexOf(request[key]) === -1)
         {
-          if (!this._validator(key, request[key]))
-          {
-            delete request[key];
-          }
+          delete request[key];
+        }
+        else if (this._validator && !this._validator(key, request[key]))
+        {
+          delete request[key];
         }
       }
       if (this._state.update(Object.keys(this._defaults), request))

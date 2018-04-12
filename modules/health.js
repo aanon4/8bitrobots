@@ -83,16 +83,12 @@ function health(config)
   this._node = Node.init(config.name);
   this._config = new ConfigManager(this,
   {
-    batteryChemistry: config.battery.batteryChemistry || 'DC',
-    cells: config.battery.cells || 1
-  },
-  function (key, value)
-  {
-    if (key === 'batteryChemistry' && !(value in batteryChemistry))
+    batteryChemistry:
     {
-      return false;
-    }
-    return true;
+      value: config.battery.batteryChemistry || 'DC',
+      options: Object.keys(batteryChemistry)
+    },
+    cells: config.battery.cells || 1
   });
   this._battery =
   {

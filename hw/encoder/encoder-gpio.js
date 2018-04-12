@@ -12,7 +12,11 @@ function encoder(config)
   this._node = Node.init(config.name);
   this._config = new ConfigManager(this,
   {
-    edge: config.edge || 'falling',
+    edge:
+    {
+      value: config.edge || 'falling',
+      options: [ 'falling', 'rising', 'both' ]
+    },
     countsPerRevolution: config.countsPerRevolution || 0, 
     rpmAverage: config.rpmAverage || 0
   });
