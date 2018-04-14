@@ -107,8 +107,7 @@ health.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._battery.curve = batteryChemistry[this._config.get('batteryChemistry')].curve;
-      this._battery.cells = this._config.get('cells');
+      this.reconfigure();
 
       this._node.subscribe({ topic: this._battery.topic }, (event) => 
       {
@@ -140,6 +139,12 @@ health.prototype =
       this._node.unsubscribe({ topic: this._battery.topic });
     }
     return this;
+  },
+
+  reconfigure: function()
+  {
+    this._battery.curve = batteryChemistry[this._config.get('batteryChemistry')].curve;
+    this._battery.cells = this._config.get('cells');
   },
   
   _processBattery: function(event)

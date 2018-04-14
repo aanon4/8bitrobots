@@ -44,11 +44,7 @@ servo.prototype =
       this._pwmChannel.enable();
       this._pwmChannel.setCyclePeriod(this._settings.periodMs);
 
-      this._trim = this._config.get('trim');
-      this._reverse = this._config.get('reverse');
-      this._minAngle = this._config.get('minAngle');
-      this._maxAngle = this._config.get('maxAngle');
-      this._defaultAngle = this._config.get('maxAngle');
+      this.reconfigure();
 
       if (this._stateManager)
       {
@@ -71,6 +67,15 @@ servo.prototype =
       }
       this._pwmChannel.disable();
     }
+  },
+
+  reconfigure: function()
+  {
+    this._trim = this._config.get('trim');
+    this._reverse = this._config.get('reverse');
+    this._minAngle = this._config.get('minAngle');
+    this._maxAngle = this._config.get('maxAngle');
+    this._defaultAngle = this._config.get('maxAngle');
   },
 
   setAngle: function(angle, time, func)

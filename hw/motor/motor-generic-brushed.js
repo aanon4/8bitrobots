@@ -74,6 +74,11 @@ motor.prototype =
     return this;
   },
 
+  reconfigure: function()
+  {
+    this._scale = this._config.get('reverse') ? -1 : 1;
+  },
+
   _changing: function(callback)
   {
     if (!callback)

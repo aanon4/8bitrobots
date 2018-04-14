@@ -51,9 +51,7 @@ kinematics.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._waterDensity = this._config.get('waterDensity');
-      this._seaLevel = this._config.get('seaLevelPressure');
-      this._headingOffset = this._config.get('headingOffset');
+      this.reconfigure();
 
       this._adAngular = this._node.advertise(TOPIC_K_ORIENTATION);
       this._adAcceleration = this._node.advertise(TOPIC_K_ACCELERATION);
@@ -135,6 +133,13 @@ kinematics.prototype =
       this._node.unadvertise(TOPIC_K_POSITION);
     }
     return this;
+  },
+
+  reconfigure: function()
+  {
+    this._waterDensity = this._config.get('waterDensity');
+    this._seaLevel = this._config.get('seaLevelPressure');
+    this._headingOffset = this._config.get('headingOffset');
   },
 
   _topicName: function(prefix, topic)

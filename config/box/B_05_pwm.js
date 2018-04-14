@@ -12,7 +12,7 @@ if (i2c.valid())
     i2c: i2c,
     prescaleTweak: 7,
     excludeApi: [ 10, 11, 12, 13, 14, 15 ]
-  });
+  }).enable();
 }
 
 module.exports = function() {}

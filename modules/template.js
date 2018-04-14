@@ -37,6 +37,11 @@ template.prototype =
       // ...
     }
     return this;
+  },
+
+  reconfigure: function()
+  {
+    // ...
   }
 }
 

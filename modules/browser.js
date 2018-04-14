@@ -56,7 +56,7 @@ browser.prototype =
     return this;
   },
 
-  restart: function()
+  reconfigure: function()
   {
     // Restart the browser only (X doesn't change)
     this._startup = this._config.get('startup');

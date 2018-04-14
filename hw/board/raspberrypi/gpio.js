@@ -131,6 +131,18 @@ gpioChannel.prototype =
     this._callbacks.push(callback);
   },
 
+  removeListener: function(callback)
+  {
+    if (this._callbacks)
+    {
+      const idx = this._callbacks.indexOf(callback);
+      if (idx !== -1)
+      {
+        this._callbacks.splice(idx, 1);
+      }
+    }
+  },
+
   // PWM ----
 
   setPulse: function(onMs, periodMs, func)

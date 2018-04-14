@@ -3,6 +3,7 @@
 console.info('Loading PCA9685 controllers.');
 
 const MotionPlanner = require('modules/motion-planner');
+const ConfigManager = require('modules/config-manager');
 
 const SERVICE_SETPULSE = { service: 'set_pulse', schema: { pulse: 'Number', time: 'Number', func: 'String' } };
 const SERVICE_WAITFOR = { service: 'wait_for_pulse', schema: { compare: 'String', pulse: 'Number' } };
@@ -136,7 +137,6 @@ pwmChannel.prototype =
 
   setCyclePeriod: function(cycleMs)
   {
-    this._pwm._setCyclePeriod(cycleMs);
   },
   
   getCyclePeriod: function()
@@ -241,39 +241,89 @@ function PWM(config)
 {
   this._i2c = config.i2c;
   this._name = `${config.name || '/pwm-i2c'}/${this._i2c.id()}`;
-  this._prescaleTweak = config.prescaleTweak || 0;
+  this._node = Node.init(`${this._name}/node`);
+  this._enabled = 0;
+  const cenabled = {};
+  this._active = {};
   this._channels = [];
   const exclude = config.excludeApi || [];
   for (let i = 0; i < 16; i++)
   {
-    this._channels.push(new pwmChannel(this, i, exclude.indexOf(i) === -1));
+    const api = exclude.indexOf(i) === -1;
+    if (api)
+    {
+      cenabled[`channel${i}`] = false;
+      this._active[`channel${i}`] = null;
+    }
+    this._channels.push(new pwmChannel(this, i, api));
   }
+  this._config = new ConfigManager(this, Object.assign({
+    prescaleTweak: config.prescaleTweak || 0,
+    cycleMs: config.cycleMs || 0
+  }, cenabled));
+
+  this._config.enable();
 }
 
 PWM.prototype =
 {
-  _setCyclePeriod: function(cycleMs)
+  _setCyclePeriod: function()
   {
-    if (this._cycleMs === undefined)
-    {
-      this._cycleMs = cycleMs;
-      this._tick = this._cycleMs / (4096 - 1);
-      const prescale = (Math.round((25 * 1000 * 1000 * cycleMs) / (4096 * 1000)) - 1 + this._prescaleTweak) & 0xFF;                  
-      this._i2c.writeBytes(Buffer.from([ 0x00, 0x20 | 0x10 ]));
-      this._i2c.writeBytes(Buffer.from([ 0x01, 0x04 ]));
-      this._i2c.writeBytes(Buffer.from([ 0xFE, prescale ]));
-      this._i2c.writeBytes(Buffer.from([ 0x00, 0x20 ]));
-    }
-    else if (this._cycleMs !== cycleMs)
-    {
-      throw new Error('Cannot change cycle period once set: old ' + this._cycleMs + ' new ' + cycleMs);
-    }
+    this._cycleMs = this._config.get('cycleMs');
+    this._tick = this._cycleMs / (4096 - 1);
+    const prescale = (Math.round((25 * 1000 * 1000 * this._cycleMs) / (4096 * 1000)) - 1 + this._config.get('prescaleTweak')) & 0xFF;                  
+    this._i2c.writeBytes(Buffer.from([ 0x00, 0x20 | 0x10 ]));
+    this._i2c.writeBytes(Buffer.from([ 0x01, 0x04 ]));
+    this._i2c.writeBytes(Buffer.from([ 0xFE, prescale ]));
+    this._i2c.writeBytes(Buffer.from([ 0x00, 0x20 ]));
   },
 
   _setPulseMs: function(subaddress, pulseMs)
   {
     const v = pulseMs / this._tick;
     this._i2c.writeBytes(Buffer.from([ 6 + 4 * subaddress, 0, 0, v & 0xFF, (v >> 8) & 0xFF ]));
+  },
+
+  enable: function()
+  {
+    if (this._enabled++ === 0)
+    {
+      this.reconfigure();
+    }
+    return this;
+  },
+
+  disable: function()
+  {
+    if (--this._enabled === 0)
+    {
+      for (let key in this._active)
+      {
+        if (this._active[key])
+        {
+          this._active[key].disable();
+          this._active[key] = null;
+        }
+      }
+    }
+    return this;
+  },
+
+  reconfigure: function()
+  {
+    this._setCyclePeriod();
+    for (let key in this._active)
+    {
+      if (!this._active[key] && this._config.get(key))
+      {
+        this._active[key] = this._channels[key.substring(7)].enable();
+      }
+      else if (this._active[key] && !this._config.get(key))
+      {
+        this._active[key].disable();
+        this._active[key] = null;
+      }
+    }
   },
 
   open: function(config)
@@ -286,23 +336,4 @@ PWM.prototype =
   }
 };
 
-var pwmCache = {};
-
-function pwmProxy(config)
-{
-  this._pwm = pwmCache[config.i2c.id()];
-  if (!this._pwm)
-  {
-    this._pwm = pwmCache[config.i2c.id()] = new PWM(config);
-  }
-}
-
-pwmProxy.prototype =
-{
-  open: function(config)
-  {
-    return this._pwm.open(config);
-  }
-};
-
-module.exports = pwmProxy;
+module.exports = PWM;

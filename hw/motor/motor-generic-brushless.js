@@ -37,6 +37,11 @@ motor.prototype =
     return this;
   },
 
+  reconfigure: function()
+  {
+    this._scale = this._config.get('reverse') ? -1 : 1;
+  },
+
   setRPM: function(rpm, changeMs, func)
   {
     return this._esc.setRPM(rpm * this._scale, changeMs, func);
