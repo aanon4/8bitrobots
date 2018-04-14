@@ -21,8 +21,9 @@ function encoder(config)
     countsPerRevolution: config.countsPerRevolution || 0, 
     rpmAverage: config.rpmAverage || 0
   });
-
   this._gpio = config.gpio;
+
+  this._config.enable();
 }
 
 encoder.prototype =
@@ -33,7 +34,6 @@ encoder.prototype =
     {
       this._adRate = this._node.advertise(TOPIC_RATE);
 
-      this._config.enable();
       this._edge = this._config.get('edge');
       this._countsPerRevolution = this._config.get('countsPerRevolution');
       this._rpmAverage = this._config.get('rpmAverage') || this._countsPerRevolution;
@@ -66,9 +66,7 @@ encoder.prototype =
   {
     if (--this._enabled === 0)
     {
-      this._config.disable();
       this._node.unadvertise(TOPIC_RATE);
-
       this._gpio.disable();
     }
     return this;

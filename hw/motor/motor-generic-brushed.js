@@ -15,6 +15,7 @@ function motor(config, settings)
   this._enabled = 0;
   this._hbridge.setKVandPoles(settings.kV, 1);
   this._hbridge.setCyclePeriod(settings.periodMs);
+  this._config.enable();
 }
 
 motor.prototype =
@@ -58,7 +59,6 @@ motor.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._config.enable();
       this._hbridge.enable();
       this._scale = this._config.get('reverse') ? -1 : 1;
     };
@@ -70,7 +70,6 @@ motor.prototype =
     if (--this._enabled === 0)
     {
       this._hbridge.disable();
-      this._config.disable();
     }
     return this;
   },

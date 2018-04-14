@@ -14,12 +14,13 @@ function browser(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._config = new ConfigManager(this,
   {
     startup: config.startup || 'about:blank',
     size: config.size || '1024,768'
   });
-  this._enabled = 0;
+  this._config.enable();
 }
 
 browser.prototype =
@@ -28,7 +29,6 @@ browser.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._config.enable();
       this._startup = this._config.get('startup');
       this._size = this._config.get('size');
 
@@ -52,8 +52,6 @@ browser.prototype =
         this._xserver.kill();
         this._xserver = null;
       }
-
-      this._config.disable();
     }
     return this;
   },

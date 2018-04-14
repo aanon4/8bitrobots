@@ -32,6 +32,7 @@ function servo(config, settings)
   this._angle2pulse = (this._settings.maxPulseMs - this._settings.minPulseMs) / (this._settings.maxAngle - this._settings.minAngle);
   this._enabled = 0;
   this._apiAngle = new APIAngle(this, config.api);
+  this._config.enable();
 }
 
 servo.prototype =
@@ -43,7 +44,6 @@ servo.prototype =
       this._pwmChannel.enable();
       this._pwmChannel.setCyclePeriod(this._settings.periodMs);
 
-      this._config.enable();
       this._trim = this._config.get('trim');
       this._reverse = this._config.get('reverse');
       this._minAngle = this._config.get('minAngle');
@@ -70,7 +70,6 @@ servo.prototype =
         this._stateManager.set(`${this._name}-angle`, this._lastAngle);
       }
       this._pwmChannel.disable();
-      this._config.disable();
     }
   },
 

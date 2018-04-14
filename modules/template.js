@@ -14,6 +14,8 @@ function template(config)
   {
     foo: config.foo || false
   });
+  // ...
+  this._config.enable();
 }
 
 template.prototype =
@@ -22,8 +24,8 @@ template.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._config.enable();
       this._foo = this._config.get('foo');
+      // ...
     }
     return this;
   },
@@ -32,7 +34,7 @@ template.prototype =
   {
     if (--this._enabled === 0)
     {
-      this._config.disable();
+      // ...
     }
     return this;
   }

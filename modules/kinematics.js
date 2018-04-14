@@ -42,6 +42,7 @@ function kinematics(config)
   this._altitude = 0;
   this._calibrated = null;
   this._calibrationTimeout = config.calibrationTimeout || 0;
+  this._config.enable();
 }
 
 kinematics.prototype =
@@ -50,7 +51,6 @@ kinematics.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._config.enable();
       this._waterDensity = this._config.get('waterDensity');
       this._seaLevel = this._config.get('seaLevelPressure');
       this._headingOffset = this._config.get('headingOffset');
@@ -133,8 +133,6 @@ kinematics.prototype =
       this._node.unadvertise(TOPIC_K_ACCELERATION);
       this._node.unadvertise(TOPIC_K_CALIBRATION);
       this._node.unadvertise(TOPIC_K_POSITION);
-
-      this._config.disable();
     }
     return this;
   },

@@ -98,6 +98,7 @@ function health(config)
     minV: config.minV || 0,
     critical: 5
   };
+  this._config.enable();
 }
 
 health.prototype =
@@ -106,7 +107,6 @@ health.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._config.enable();
       this._battery.curve = batteryChemistry[this._config.get('batteryChemistry')].curve;
       this._battery.cells = this._config.get('cells');
 
@@ -138,7 +138,6 @@ health.prototype =
       this._node.unadvertise(TOPIC_BATTERY);
       this._node.unadvertise(TOPIC_STATUS);
       this._node.unsubscribe({ topic: this._battery.topic });
-      this._config.disable();
     }
     return this;
   },

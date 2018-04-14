@@ -13,6 +13,7 @@ function motor(config, settings)
   });
   this._esc = config.esc;
   this._esc.setKVandPoles(settings.kV, settings.poles);
+  this._config.enable();
 }
 
 motor.prototype =
@@ -22,7 +23,6 @@ motor.prototype =
     if (this._enabled++ === 0)
     {
       this._esc.enable();
-      this._config.enable();
       this._scale = this._config.get('reverse') ? -1 : 1;
     }
     return this;
@@ -32,7 +32,6 @@ motor.prototype =
   {
     if (--this._enabled === 0)
     {
-      this._config.disable();
       this._esc.disable();
     }
     return this;
