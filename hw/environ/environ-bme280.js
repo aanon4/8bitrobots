@@ -53,58 +53,65 @@ function sensor(config)
   this._name = config.name;
   this._node = Node.init(config.name);
   this._i2c = config.i2c;
+  this._enabled = 0;
 }
 
 sensor.prototype =
 {
   enable: function()
   {
-    // Read calibration
-    const c0 = this._i2c.writeAndReadBytes(Buffer.from([ BME280.DIG_T1 ]), 26);
-    const c1 = this._i2c.writeAndReadBytes(Buffer.from([ BME280.DIG_H2 ]), 16);
-    this._dig =
+    if (this._enabled++ === 0)
     {
-      T1: onec(c0[1], c0[0]),
-      T2: twoc(c0[3], c0[2]),
-      T3: twoc(c0[5], c0[4]),
+      // Read calibration
+      const c0 = this._i2c.writeAndReadBytes(Buffer.from([ BME280.DIG_T1 ]), 26);
+      const c1 = this._i2c.writeAndReadBytes(Buffer.from([ BME280.DIG_H2 ]), 16);
+      this._dig =
+      {
+        T1: onec(c0[1], c0[0]),
+        T2: twoc(c0[3], c0[2]),
+        T3: twoc(c0[5], c0[4]),
+        
+        P1: onec(c0[7], c0[6]),
+        P2: twoc(c0[9], c0[8]),
+        P3: twoc(c0[11], c0[10]),
+        P4: twoc(c0[13], c0[12]),
+        P5: twoc(c0[15], c0[14]),
+        P6: twoc(c0[17], c0[16]),
+        P7: twoc(c0[19], c0[18]),
+        P8: twoc(c0[21], c0[20]),
+        P9: twoc(c0[23], c0[22]),
+        
+        H1: c0[24],
+        H2: twoc(c1[1], c1[0]),
+        H3: c1[2],
+        H4: (c1[3] << 4) + (c1[4] & 0x0F),
+        H5: (c1[5] << 4) + (c1[4] >> 4),
+        H6: twoc(c1[6], 0) >> 8
+      };
       
-      P1: onec(c0[7], c0[6]),
-      P2: twoc(c0[9], c0[8]),
-      P3: twoc(c0[11], c0[10]),
-      P4: twoc(c0[13], c0[12]),
-      P5: twoc(c0[15], c0[14]),
-      P6: twoc(c0[17], c0[16]),
-      P7: twoc(c0[19], c0[18]),
-      P8: twoc(c0[21], c0[20]),
-      P9: twoc(c0[23], c0[22]),
-      
-      H1: c0[24],
-      H2: twoc(c1[1], c1[0]),
-      H3: c1[2],
-      H4: (c1[3] << 4) + (c1[4] & 0x0F),
-      H5: (c1[5] << 4) + (c1[4] >> 4),
-      H6: twoc(c1[6], 0) >> 8
-    };
-    
-    // Configure
-    this._i2c.writeBytes(Buffer.from([ BME280.CTRL_HUM, 0x01 ])); // 1x oversampling
-    this._i2c.writeBytes(Buffer.from([ BME280.CTRL_MEAS, 0x47 ])); // 001 001 11 - 1x oversampling, normal
+      // Configure
+      this._i2c.writeBytes(Buffer.from([ BME280.CTRL_HUM, 0x01 ])); // 1x oversampling
+      this._i2c.writeBytes(Buffer.from([ BME280.CTRL_MEAS, 0x47 ])); // 001 001 11 - 1x oversampling, normal
 
-    this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
-    this._adPressure = this._node.advertise(TOPIC_PRESSURE);
-    this._adHumidity = this._node.advertise(TOPIC_HUMIDITY);
-    this._clock = setInterval(() => {
-      this._process();
-    }, 1000);
+      this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
+      this._adPressure = this._node.advertise(TOPIC_PRESSURE);
+      this._adHumidity = this._node.advertise(TOPIC_HUMIDITY);
+      this._clock = setInterval(() => {
+        this._process();
+      }, 1000);
+    }
     return this;
   },
 
   disable: function()
   {
-    clearInterval(this._clock);
-    this._node.unadvertise(TOPIC_TEMPERATURE);
-    this._node.unadvertise(TOPIC_PRESSURE);
-    this._node.unadvertise(TOPIC_HUMIDITY);
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock);
+      this._node.unadvertise(TOPIC_TEMPERATURE);
+      this._node.unadvertise(TOPIC_PRESSURE);
+      this._node.unadvertise(TOPIC_HUMIDITY);
+    }
     return this;
   },
 

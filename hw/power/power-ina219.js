@@ -24,6 +24,7 @@ function power(config)
   this._name = config.name;
   this._i2c = config.i2c;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   
   // Setup ...
   
@@ -54,28 +55,34 @@ power.prototype =
 {
   enable: function()
   {
-    // Calibration
-    this._i2c.writeBytes(Buffer.from([ INA219.CALIBRATION, (this._calibration >> 8) & 0xFF, this._calibration & 0xFF ]));
-  
-    // Set bus voltage (16V), gain, bus adc range, shunt adc range and
-    //  continuous mode
-    this._i2c.writeBytes(Buffer.from([ INA219.CONFIG,
-      // 16V  | 8 gain | 12-bit BADC | 12-bit 1s SADC | S&B continuous
-         0x00 | 0x18   | 0x04        | 0x00           | 0x00,
-         0x00 | 0x00   | 0x00        | 0x18           | 0x07
-    ]));
+    if (this._enabled++ === 0)
+    {
+      // Calibration
+      this._i2c.writeBytes(Buffer.from([ INA219.CALIBRATION, (this._calibration >> 8) & 0xFF, this._calibration & 0xFF ]));
+    
+      // Set bus voltage (16V), gain, bus adc range, shunt adc range and
+      //  continuous mode
+      this._i2c.writeBytes(Buffer.from([ INA219.CONFIG,
+        // 16V  | 8 gain | 12-bit BADC | 12-bit 1s SADC | S&B continuous
+          0x00 | 0x18   | 0x04        | 0x00           | 0x00,
+          0x00 | 0x00   | 0x00        | 0x18           | 0x07
+      ]));
 
-    this._ad = this._node.advertise(TOPIC_STATUS);
-    this._clock = setInterval(() => {
-      this._process();
-    }, 100);
+      this._ad = this._node.advertise(TOPIC_STATUS);
+      this._clock = setInterval(() => {
+        this._process();
+      }, 100);
+    }
     return this;
   },
   
   disable: function()
   {
-    clearInterval(this._clock);
-    this._node.unadvertise(TOPIC_STATUS);
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock);
+      this._node.unadvertise(TOPIC_STATUS);
+    }
     return this;
   },
   

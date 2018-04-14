@@ -14,7 +14,7 @@ function hbridgeChannel(config)
   this._in1 = config.in1;
   this._in2 = config.in2;
   this._v = config.v;
-  this._enabled = false;
+  this._enabled = 0;
   this._targetRPM = null;
   this._kV = config.kV || 0;
 }
@@ -23,9 +23,8 @@ hbridgeChannel.prototype =
 {
   enable: function()
   {
-    if (!this._enabled)
+    if (this._enabled++ === 0)
     {
-      this._enabled = true;
       this._in1.enable();
       this._in2.enable();
       this.idle();
@@ -70,9 +69,8 @@ hbridgeChannel.prototype =
 
   disable: function()
   {
-    if (this._enabled)
+    if (--this._enabled === 0)
     {
-      this._enabled = false;
       this.idle();
       this._in1.disable();
       this._in2.disable();

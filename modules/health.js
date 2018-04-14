@@ -81,6 +81,7 @@ function health(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._config = new ConfigManager(this,
   {
     batteryChemistry:
@@ -103,37 +104,42 @@ health.prototype =
 {
   enable: function()
   {
-    this._config.enable();
-    this._battery.curve = batteryChemistry[this._config.get('batteryChemistry')].curve;
-    this._battery.cells = this._config.get('cells');
-
-    this._node.subscribe({ topic: this._battery.topic }, (event) => 
+    if (this._enabled++ === 0)
     {
-      this._processBattery(event);
-    });
-    this._adCompute = this._node.advertise(TOPIC_COMPUTE);
-    this._adBattery = this._node.advertise(TOPIC_BATTERY);
-    this._adStatus = this._node.advertise(TOPIC_STATUS);
+      this._config.enable();
+      this._battery.curve = batteryChemistry[this._config.get('batteryChemistry')].curve;
+      this._battery.cells = this._config.get('cells');
 
-    // Let's start by assuming everything is good.
-    this._adStatus.publish({ status: 'good' });
-  
-    this._clock = setInterval(() => {
-      this._batteryMonitor();
-      this._cpuMonitor();
-    }, 1000);
+      this._node.subscribe({ topic: this._battery.topic }, (event) => 
+      {
+        this._processBattery(event);
+      });
+      this._adCompute = this._node.advertise(TOPIC_COMPUTE);
+      this._adBattery = this._node.advertise(TOPIC_BATTERY);
+      this._adStatus = this._node.advertise(TOPIC_STATUS);
+
+      // Let's start by assuming everything is good.
+      this._adStatus.publish({ status: 'good' });
+    
+      this._clock = setInterval(() => {
+        this._batteryMonitor();
+        this._cpuMonitor();
+      }, 1000);
+    }
     return this;
   },
 
   disable: function()
   {
-    clearInterval(this._clock);
-    this._node.unadvertise(TOPIC_COMPUTE);
-    this._node.unadvertise(TOPIC_BATTERY);
-    this._node.unadvertise(TOPIC_STATUS);
-    this._node.unsubscribe({ topic: this._battery.topic });
-    this._config.disable();
-  
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock);
+      this._node.unadvertise(TOPIC_COMPUTE);
+      this._node.unadvertise(TOPIC_BATTERY);
+      this._node.unadvertise(TOPIC_STATUS);
+      this._node.unsubscribe({ topic: this._battery.topic });
+      this._config.disable();
+    }
     return this;
   },
   

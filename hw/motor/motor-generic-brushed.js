@@ -12,7 +12,7 @@ function motor(config, settings)
   });
   this._hbridge = config.hbridge;
   this._last = null;
-  this._enabled = false;
+  this._enabled = 0;
   this._hbridge.setKVandPoles(settings.kV, 1);
   this._hbridge.setCyclePeriod(settings.periodMs);
 }
@@ -56,18 +56,22 @@ motor.prototype =
 
   enable: function()
   {
-    this._config.enable();
-    this._hbridge.enable();
-    this._scale = this._config.get('reverse') ? -1 : 1;
-    this._enabled = true;
+    if (this._enabled++ === 0)
+    {
+      this._config.enable();
+      this._hbridge.enable();
+      this._scale = this._config.get('reverse') ? -1 : 1;
+    };
     return this;
   },
 
   disable: function()
   {
-    this._enabled = false;
-    this._hbridge.disable();
-    this._config.disable();
+    if (--this._enabled === 0)
+    {
+      this._hbridge.disable();
+      this._config.disable();
+    }
     return this;
   },
 

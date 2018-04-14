@@ -7,6 +7,7 @@ const StateManager = require('./state-manager');
 
 function ConfigManager(target, defaults, validator)
 {
+  this._enabled = 0;
   this._target = target;
   this._defaults = {};
   this._validator = validator;
@@ -45,42 +46,50 @@ ConfigManager.prototype =
 {
   enable: function()
   {
-    this._target._node.service(this._service, (request) => {
-      for (let key in request)
-      {
-        if (typeof this._service.schema[key] === 'object' && this._service.schema[key].indexOf(request[key]) === -1)
+    if (this._enabled++ === 0)
+    {
+      this._target._node.service(this._service, (request) => {
+        for (let key in request)
         {
-          delete request[key];
+          if (typeof this._service.schema[key] === 'object' && this._service.schema[key].indexOf(request[key]) === -1)
+          {
+            delete request[key];
+          }
+          else if (this._validator && !this._validator(key, request[key]))
+          {
+            delete request[key];
+          }
         }
-        else if (this._validator && !this._validator(key, request[key]))
+        if (this._state.update(Object.keys(this._defaults), request))
         {
-          delete request[key];
+          if (this._target.restart)
+          {
+            this._target.restart();
+          }
+          else
+          {
+            this._target.disable();
+            this._target.enable();
+          }
         }
-      }
-      if (this._state.update(Object.keys(this._defaults), request))
-      {
-        if (this._target.restart)
+        let result = {};
+        for (let key in this._defaults)
         {
-          this._target.restart();
+          result[key] = this._state.get(key) || this._defaults[key];
         }
-        else
-        {
-          this._target.disable();
-          this._target.enable();
-        }
-      }
-      let result = {};
-      for (let key in this._defaults)
-      {
-        result[key] = this._state.get(key) || this._defaults[key];
-      }
-      return result;
-    });
+        return result;
+      });
+    }
+    return this;
   },
 
   disable: function()
   {
-    this._target._node.unservice(this._service);
+    if (--this._enabled === 0)
+    {
+      this._target._node.unservice(this._service);
+    }
+    return this;
   },
 
   set: function(property, value)

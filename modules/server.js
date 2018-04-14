@@ -68,6 +68,7 @@ function Server(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._port = config.port || 80;
   this._pages = {};
 }
@@ -76,34 +77,38 @@ Server.prototype =
 {
   enable: function()
   {
-    let webserver = http.createServer(incoming.bind(this));
-    webserver.listen(this._port);
-    global.webserver = webserver;
-
-    this._node.service(SERVICE_ADD_PAGES, (request) =>
+    if (this._enabled++ === 0)
     {
-      for (let page in request.pages)
-      {
-        if (page in this._pages && this._pages[page] != request.pages[page])
-        {
-          throw new Error(`Page mismatch: ${page}`);
-        }
-        else
-        {
-          this._pages[page] = request.pages[page];
-        }
-      }
-      return true;
-    });
+      let webserver = http.createServer(incoming.bind(this));
+      webserver.listen(this._port);
+      global.webserver = webserver;
 
+      this._node.service(SERVICE_ADD_PAGES, (request) =>
+      {
+        for (let page in request.pages)
+        {
+          if (page in this._pages && this._pages[page] != request.pages[page])
+          {
+            throw new Error(`Page mismatch: ${page}`);
+          }
+          else
+          {
+            this._pages[page] = request.pages[page];
+          }
+        }
+        return true;
+      });
+    }
     return this;
   },
   
   disable: function()
   {
-    this._node.unservice(SERVICE_ADD_PAGES);
-    global.webserver = null;
-
+    if (--this._enabled === 0)
+    {
+      this._node.unservice(SERVICE_ADD_PAGES);
+      global.webserver = null;
+    }
     return this;
   }
 }

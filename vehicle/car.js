@@ -14,6 +14,7 @@ function car(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._axleRoot = config.axle;
   this._forward = 0;
   this._strafe = 0;
@@ -23,35 +24,41 @@ car.prototype =
 {
   enable: function()
   {
-    this._node.service(SERVICE_MOVEMENT, (movement) =>
+    if (this._enabled++ === 0)
     {
-      this._handleMovement(movement);
-    });
-    this._node.service(SERVICE_GESTURE, (gesture) =>
-    {
-      this._handleGesture(gesture);
-    });
-    this._shTopic = this._node.advertise(TOPIC_SHUTDOWN);
-    process.on('exit', () =>
-    {
-      this._shTopic.publish({ reason: 'exit' });
-    });
-    this._axle =
-    {
-      set_velocity: this._node.proxy({ service: `${this._axleRoot}/set_velocity`}),
-      set_angle: this._node.proxy({ service: `${this._axleRoot}/set_angle`})
-    };
-    this._startHeartbeat();
+      this._node.service(SERVICE_MOVEMENT, (movement) =>
+      {
+        this._handleMovement(movement);
+      });
+      this._node.service(SERVICE_GESTURE, (gesture) =>
+      {
+        this._handleGesture(gesture);
+      });
+      this._shTopic = this._node.advertise(TOPIC_SHUTDOWN);
+      process.on('exit', () =>
+      {
+        this._shTopic.publish({ reason: 'exit' });
+      });
+      this._axle =
+      {
+        set_velocity: this._node.proxy({ service: `${this._axleRoot}/set_velocity`}),
+        set_angle: this._node.proxy({ service: `${this._axleRoot}/set_angle`})
+      };
+      this._startHeartbeat();
+    }
     return this;
   },
 
   disable: function()
   {
-    this._stopHeartbeat();
-    this._shTopic.publish({ reason: 'terminated' });
-    this._node.unadvertise(TOPIC_SHUTDOWN);    
-    this._node.unservice(SERVICE_MOVEMENT);
-    this._node.unservice(SERVICE_GESTURE);
+    if (--this._enabled === 0)
+    {
+      this._stopHeartbeat();
+      this._shTopic.publish({ reason: 'terminated' });
+      this._node.unadvertise(TOPIC_SHUTDOWN);    
+      this._node.unservice(SERVICE_MOVEMENT);
+      this._node.unservice(SERVICE_GESTURE);
+    }
     return this;
   },
 

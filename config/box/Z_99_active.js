@@ -4,21 +4,28 @@ module.exports = function()
 
   return {
     _name: '/activity/node',
+    _enabled: 0,
 
     enable: () => {
-      if (LED)
+      if (this._enabled++ === 0)
       {
-        LED.enable()
-        LED.setDutyCycle(0.01);
+        if (LED)
+        {
+          LED.enable()
+          LED.setDutyCycle(0.01);
+        }
       }
       return this;
     },
 
     disable: () => {
-      if (LED)
+      if (--this._enabled === 0)
       {
-        LED.setDutyCycle(0);
-        LED.disable();
+        if (LED)
+        {
+          LED.setDutyCycle(0);
+          LED.disable();
+        }
       }
       return this;
     }

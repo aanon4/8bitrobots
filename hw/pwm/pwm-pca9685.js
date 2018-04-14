@@ -15,7 +15,7 @@ function pwmChannel(pwm, subaddress, doApi)
   this._subaddress = subaddress;
   this._doApi = doApi || false;
   this._node = Node.init(`${pwm._name}/${subaddress}/node`);
-  this._enabled = false;
+  this._enabled = 0;
   this._planner = new MotionPlanner();
   this._plans = [];
   this._currentMs = null;
@@ -26,9 +26,8 @@ pwmChannel.prototype =
 {
   enable: function()
   {
-    if (!this._enabled)
+    if (this._enabled++ === 0)
     {
-      this._enabled = true;
       if (this._doApi)
       {
         this._adPos = this._node.advertise(TOPIC_CURRENT);
@@ -55,17 +54,19 @@ pwmChannel.prototype =
 
   disable: function()
   {
-    this._enabled = false;
-    if (this._plans.length === 0)
+    if (--this._enabled === 0)
     {
-      this._pwm._setPulseMs(this._subaddress, 0);
-    }
-    if (this._doApi)
-    {
-      this._adPos = null;
-      this._node.unadvertise(TOPIC_CURRENT);
-      this._node.unservice(SERVICE_SETPULSE);
-      this._node.unservice(SERVICE_WAITFOR);
+      if (this._plans.length === 0)
+      {
+        this._pwm._setPulseMs(this._subaddress, 0);
+      }
+      if (this._doApi)
+      {
+        this._adPos = null;
+        this._node.unadvertise(TOPIC_CURRENT);
+        this._node.unservice(SERVICE_SETPULSE);
+        this._node.unservice(SERVICE_WAITFOR);
+      }
     }
     return this;
   },

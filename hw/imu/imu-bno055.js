@@ -180,6 +180,7 @@ function imu(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._uart = config.uart;
   this._axisRemap = config.remap || null;
   this._clockBit = config.extClock ? 0x80 : 0x00;
@@ -249,35 +250,39 @@ imu.prototype =
 {
   enable: function()
   {
-    // Reset the device, reloading any saved calibration data
-    this._reset(this._forcereset);
+    if (this._enabled++ === 0)
+    {
+      // Reset the device, reloading any saved calibration data
+      this._reset(this._forcereset);
 
-    this._adOrientation = this._node.advertise(TOPIC_ORIENTATION);
-    this._adAcceleration = this._node.advertise(TOPIC_ACCELERATION);
-    this._adCalibration = this._node.advertise(TOPIC_CALIBRATION);
-    this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
- 
-    this._clock1 = setInterval(() => {
-      this._updateQuaternionAndLinear();
-    }, 20);
-    this._clock2 = setInterval(() => {
-      this._updateCalibrationStatus();
-      this._updateTemp();
-    }, 1000);
+      this._adOrientation = this._node.advertise(TOPIC_ORIENTATION);
+      this._adAcceleration = this._node.advertise(TOPIC_ACCELERATION);
+      this._adCalibration = this._node.advertise(TOPIC_CALIBRATION);
+      this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
   
+      this._clock1 = setInterval(() => {
+        this._updateQuaternionAndLinear();
+      }, 20);
+      this._clock2 = setInterval(() => {
+        this._updateCalibrationStatus();
+        this._updateTemp();
+      }, 1000);
+    }
     return this;
   },
 
   disable: function()
   {
-    clearInterval(this._clock1);
-    clearInterval(this._clock2);
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock1);
+      clearInterval(this._clock2);
 
-    this._node.unadvertise(TOPIC_ORIENTATION);
-    this._node.unadvertise(TOPIC_ACCELERATION);
-    this._node.unadvertise(TOPIC_CALIBRATION);
-    this._node.unadvertise(TOPIC_TEMPERATURE);
-
+      this._node.unadvertise(TOPIC_ORIENTATION);
+      this._node.unadvertise(TOPIC_ACCELERATION);
+      this._node.unadvertise(TOPIC_CALIBRATION);
+      this._node.unadvertise(TOPIC_TEMPERATURE);
+    }
     return this;
   },
 

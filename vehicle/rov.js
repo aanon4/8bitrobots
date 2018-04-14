@@ -31,6 +31,7 @@ function pilot(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._kinematics = config.kinematics;
   this._power = config.power;
   
@@ -56,61 +57,65 @@ pilot.prototype =
 {
   enable: function()
   {
-    this._adOrientationError = this._node.advertise(TOPIC_ORIENTATION_ERROR);
-    this._adActive = this._node.advertise(TOPIC_ACTIVE);
-    this._node.service(SERVICE_CONTROL, (event) =>
+    if (this._enabled++ === 0)
     {
-      this._handleEvents(event);
-    });
-    this._node.subscribe(TOPIC_ANGULAR, (event) =>
-    {
-      this._updateAngularKinematics(event);
-    });
-    this._node.subscribe(TOPIC_SHUTDOWN, () =>
-    {
-      this._shutdownPower();
-    });
+      this._adOrientationError = this._node.advertise(TOPIC_ORIENTATION_ERROR);
+      this._adActive = this._node.advertise(TOPIC_ACTIVE);
+      this._node.service(SERVICE_CONTROL, (event) =>
+      {
+        this._handleEvents(event);
+      });
+      this._node.subscribe(TOPIC_ANGULAR, (event) =>
+      {
+        this._updateAngularKinematics(event);
+      });
+      this._node.subscribe(TOPIC_SHUTDOWN, () =>
+      {
+        this._shutdownPower();
+      });
 
-    this._clock = setInterval(() =>
-    {
-      this._updateTargets();
-    }, 100);
+      this._clock = setInterval(() =>
+      {
+        this._updateTargets();
+      }, 100);
 
-    for (var name in this._thrusters)
-    {
-      this._thrusters[name].enable();
-      this.thrusterActual(name, 0);
+      for (var name in this._thrusters)
+      {
+        this._thrusters[name].enable();
+        this.thrusterActual(name, 0);
+      }
+      for (var name in this._servos)
+      {
+        this._servos[name].enable();
+        this.servoActual(name, null);
+      }
+
+      this._adActive.publish({ active: this._mode });
     }
-    for (var name in this._servos)
-    {
-      this._servos[name].enable();
-      this.servoActual(name, null);
-    }
-
-    this._adActive.publish({ active: this._mode });
-
     return this;
   },
   
   disable: function()
   {
-    for (var name in this._servos)
+    if (--this._enabled === 0)
     {
-      this._servos[name].disable();
+      for (var name in this._servos)
+      {
+        this._servos[name].disable();
+      }
+      for (var name in this._thrusters)
+      {
+        this._thrusters[name].disable();
+      }
+
+      clearInterval(this._clock);
+
+      this._node.unsubscribe(TOPIC_SHUTDOWN);
+      this._node.unsubscribe(TOPIC_ANGULAR);
+      this._node.unservice(SERVICE_CONTROL);
+      this._node.unadvertise(TOPIC_ORIENTATION_ERROR);
+      this._node.unadvertise(TOPIC_ACTIVE);
     }
-    for (var name in this._thrusters)
-    {
-      this._thrusters[name].disable();
-    }
-
-    clearInterval(this._clock);
-
-    this._node.unsubscribe(TOPIC_SHUTDOWN);
-    this._node.unsubscribe(TOPIC_ANGULAR);
-    this._node.unservice(SERVICE_CONTROL);
-    this._node.unadvertise(TOPIC_ORIENTATION_ERROR);
-    this._node.unadvertise(TOPIC_ACTIVE);
-
     return this;
   },
 

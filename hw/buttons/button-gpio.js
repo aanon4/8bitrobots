@@ -9,7 +9,7 @@ function button(config)
   this._name = config.name;
   this._node = Node.init(config.name);
   this._gpio = config.gpio;
-  this._enabled = false;
+  this._enabled = 0;
 }
 
 button.prototype =
@@ -21,9 +21,8 @@ button.prototype =
 
   enable: function()
   {
-    if (!this._enabled)
+    if (this._enabled++ === 0)
     {
-      this._enabled = true;
       this._gpio.enable();
       this._gpio.dir('input');
       this._adVal = this._node.advertise(TOPIC_CURVAL);
@@ -34,9 +33,8 @@ button.prototype =
 
   disable: function()
   {
-    if (this._enabled)
+    if (--this._enabled === 0)
     {
-      this._enabled = false;
       this._node.unadvertise(TOPIC_CURVAL);
       this._gpio.disable();
     }

@@ -14,6 +14,7 @@ function controller(robot)
   this._transition = null;
   this._pending = null;
   this._pendingTick = false;
+  this._enabled = 0;
   this._store = new StateManager(
   {
     name: 'robot'
@@ -24,30 +25,35 @@ controller.prototype =
 {
   enable: function()
   {
-    const files = require('fs').readdirSync(`${__dirname}/gestures`);
-    files.sort();
-    files.forEach((file) =>
+    if (this._enabled++ === 0)
     {
-      if (/.*\.js$/.test(file))
+      const files = require('fs').readdirSync(`${__dirname}/gestures`);
+      files.sort();
+      files.forEach((file) =>
       {
-        this.load(require(`./gestures/${file}`));
-      }
-    });
+        if (/.*\.js$/.test(file))
+        {
+          this.load(require(`./gestures/${file}`));
+        }
+      });
 
-    this._adState = this.robot._node.advertise(TOPIC_STATE);
-    this._adState.publish({ state: this.getState() });
+      this._adState = this.robot._node.advertise(TOPIC_STATE);
+      this._adState.publish({ state: this.getState() });
 
-    setInterval(() =>
-    {
-      this.tick();
-    }, 100);
-
+      setInterval(() =>
+      {
+        this.tick();
+      }, 100);
+    }
     return this;
   },
 
   disable: function()
   {
-    this.robot._node.unadvertise(TOPIC_STATE);
+    if (--this._enabled === 0)
+    {
+      this.robot._node.unadvertise(TOPIC_STATE);
+    }
     return this;
   },
 

@@ -9,7 +9,7 @@ function servoChannel(servos, config)
 {
   this._servos = servos;
   this._subaddress = config.channel;
-  this._enabled = false;
+  this._enabled = 0;
   this._planner = new MotionPlanner();
   this._plans = [];
   this._lastMs = null;
@@ -107,9 +107,8 @@ servoChannel.prototype =
 
   enable: function()
   {
-    if (!this._enabled)
+    if (this._enabled++ === 0)
     {
-      this._enabled = true;
       this._servos._enabled++;
       if (this._servos._enabled === 1)
       {
@@ -123,9 +122,8 @@ servoChannel.prototype =
 
   disable: function()
   {
-    if (this._enabled)
+    if (--this._enabled === 0)
     {
-      this._enabled = false;
       this._servos._enabled--;
       this._idled = true;
       native.bbb_servos2_disable(this._servos._handle, this._subaddress);

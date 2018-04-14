@@ -38,6 +38,7 @@ function networking(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
 
   WPA_SUPPLICANT_CONFIGS.forEach((file) => {
     if (fs.existsSync(file))
@@ -57,177 +58,181 @@ networking.prototype =
 {
   enable: function()
   {
-    this._node.service(SERVICE_CONFIG, (request) => {
+    if (this._enabled++ === 0)
+    {
+      this._node.service(SERVICE_CONFIG, (request) => {
 
-      let hostap = [];
-      let wpa = [];
-      let net = [];
-      try
-      {
-        hostap = fs.readFileSync(HOSTAPD_CONFIG, { encoding: 'utf8' }).split('\n');
-      }
-      catch (_)
-      {
-      }
-      try
-      {
-        wpa = fs.readFileSync(WPA_SUPPLICANT_CONFIG, { encoding: 'utf8' }).split('\n');
-      }
-      catch (_)
-      {
-      }
-      try
-      {
-        net = fs.readFileSync(NET_INTERFACES_CONFIG, { encoding: 'utf8' }).split('\n');
-      }
-      catch (_)
-      {
-      }
-
-      function findHostApIndex(key)
-      {
-        for (let i = 0; i < hostap.length; i++)
+        let hostap = [];
+        let wpa = [];
+        let net = [];
+        try
         {
-          if (hostap[i].trim().indexOf(key) === 0)
+          hostap = fs.readFileSync(HOSTAPD_CONFIG, { encoding: 'utf8' }).split('\n');
+        }
+        catch (_)
+        {
+        }
+        try
+        {
+          wpa = fs.readFileSync(WPA_SUPPLICANT_CONFIG, { encoding: 'utf8' }).split('\n');
+        }
+        catch (_)
+        {
+        }
+        try
+        {
+          net = fs.readFileSync(NET_INTERFACES_CONFIG, { encoding: 'utf8' }).split('\n');
+        }
+        catch (_)
+        {
+        }
+
+        function findHostApIndex(key)
+        {
+          for (let i = 0; i < hostap.length; i++)
           {
-            return i;
+            if (hostap[i].trim().indexOf(key) === 0)
+            {
+              return i;
+            }
+          }
+          return -1;
+        }
+        function findWpaIndex(key)
+        {
+          for (let i = 0; i < wpa.length; i++)
+          {
+            if (wpa[i].trim().indexOf(key) === 0)
+            {
+              return i;
+            }
+          }
+          return -1;
+        }
+        function findNetIndex(key)
+        {
+          for (let i = 0; i < net.length; i++)
+          {
+            if (net[i].trim().indexOf(key) === 0)
+            {
+              return i;
+            }
+          }
+          return -1;
+        }
+
+        let result = {};
+        let idx;
+        let hostapChange = false;
+        let wpaChange = false;
+        let netChange = false;
+        
+        idx = findHostApIndex('ssid=');
+        if (idx !== -1)
+        {
+          if ('apNetworkName' in request)
+          {
+            hostap[idx] = `ssid=${request.apNetworkName}`;
+            result.apNetworkName = request.apNetworkName;
+            hostapChange = true;
+          }
+          else
+          {
+            result.apNetworkName = hostap[idx].split('=')[1];
           }
         }
-        return -1;
-      }
-      function findWpaIndex(key)
-      {
-        for (let i = 0; i < wpa.length; i++)
+        idx = findHostApIndex('wpa_passphrase=');
+        if (idx !== -1)
         {
-          if (wpa[i].trim().indexOf(key) === 0)
+          if ('apNetworkPassword' in request)
           {
-            return i;
+            hostap[idx] = `wpa_passphrase=${request.apNetworkPassword}`;
+            result.apNetworkPassword = request.apNetworkPassword;
+            hostapChange = true;
+          }
+          else
+          {
+            result.apNetworkPassword = hostap[idx].split('=')[1];
+          }
+          result.apNetworkPassword = result.apNetworkPassword.replace(/./g, '*');
+        }
+        idx = findWpaIndex('ssid=');
+        if (idx !== -1)
+        {
+          if ('networkName' in request)
+          {
+            wpa[idx] = `ssid=${request.networkName}`;
+            result.networkName = request.networkName;
+            wpaChange = true;
+          }
+          else
+          {
+            result.networkName = wpa[idx].split('=')[1];
           }
         }
-        return -1;
-      }
-      function findNetIndex(key)
-      {
-        for (let i = 0; i < net.length; i++)
+        idx = findWpaIndex('psk=');
+        if (idx !== -1)
         {
-          if (net[i].trim().indexOf(key) === 0)
+          if ('networkPassword' in request)
           {
-            return i;
+            wpa[idx] = `psk=${request.networkPassword}`;
+            result.networkPassword = request.networkPassword;
+            wpaChange = true;
+          }
+          else
+          {
+            result.networkPassword = wpa[idx].split('=')[1];
+          }
+          result.networkPassword = result.networkPassword.replace(/./g, '*');
+        }
+        idx = findNetIndex('address');
+        if (idx !== -1)
+        {
+          if ('apNetworkAddress' in request)
+          {
+            const root = request.apNetworkAddress.split('.').slice(0, 3).join('.');
+            net[idx + 0] = ` address ${request.apNetworkAddress}`;
+            net[idx + 1] = ` netmask 255.255.255.0`;
+            net[idx + 2] = ` network ${root}.0`;
+            net[idx + 3] = ` broadcast ${root}.255`;
+            netChange = true;
+          }
+          else
+          {
+            result.apNetworkAddress = net[idx].trim().split(' ')[1];
           }
         }
-        return -1;
-      }
 
-      let result = {};
-      let idx;
-      let hostapChange = false;
-      let wpaChange = false;
-      let netChange = false;
-      
-      idx = findHostApIndex('ssid=');
-      if (idx !== -1)
-      {
-        if ('apNetworkName' in request)
+        if (hostapChange)
         {
-          hostap[idx] = `ssid=${request.apNetworkName}`;
-          result.apNetworkName = request.apNetworkName;
-          hostapChange = true;
+          fs.writeFileSync(HOSTAPD_CONFIG, hostap.join('\n'), { encoding: 'utf8' });
+          childProcess.spawn(CMD_HOSTAPD, [ 'restart' ], {});
+          childProcess.spawn(CMD_HOSTNAME, [ result.apNetworkName ], {});
         }
-        else
+        if (wpaChange)
         {
-          result.apNetworkName = hostap[idx].split('=')[1];
+          fs.writeFileSync(WPA_SUPPLICANT_CONFIG, wpa.join('\n'), { encoding: 'utf8' });
+          childProcess.spawn(CMD_IFDOWN, [ 'wlan0' ], {});
+          childProcess.spawn(CMD_IFUP, [ 'wlan0' ], {});
         }
-      }
-      idx = findHostApIndex('wpa_passphrase=');
-      if (idx !== -1)
-      {
-        if ('apNetworkPassword' in request)
+        if (netChange)
         {
-          hostap[idx] = `wpa_passphrase=${request.apNetworkPassword}`;
-          result.apNetworkPassword = request.apNetworkPassword;
-          hostapChange = true;
+          fs.writeFileSync(NET_INTERFACES_CONFIG, net.join('\n'), { encoding: 'utf8' });
+          childProcess.spawn(CMD_SOFTAP, [ 'restart' ], {});
         }
-        else
-        {
-          result.apNetworkPassword = hostap[idx].split('=')[1];
-        }
-        result.apNetworkPassword = result.apNetworkPassword.replace(/./g, '*');
-      }
-      idx = findWpaIndex('ssid=');
-      if (idx !== -1)
-      {
-        if ('networkName' in request)
-        {
-          wpa[idx] = `ssid=${request.networkName}`;
-          result.networkName = request.networkName;
-          wpaChange = true;
-        }
-        else
-        {
-          result.networkName = wpa[idx].split('=')[1];
-        }
-      }
-      idx = findWpaIndex('psk=');
-      if (idx !== -1)
-      {
-        if ('networkPassword' in request)
-        {
-          wpa[idx] = `psk=${request.networkPassword}`;
-          result.networkPassword = request.networkPassword;
-          wpaChange = true;
-        }
-        else
-        {
-          result.networkPassword = wpa[idx].split('=')[1];
-        }
-        result.networkPassword = result.networkPassword.replace(/./g, '*');
-      }
-      idx = findNetIndex('address');
-      if (idx !== -1)
-      {
-        if ('apNetworkAddress' in request)
-        {
-          const root = request.apNetworkAddress.split('.').slice(0, 3).join('.');
-          net[idx + 0] = ` address ${request.apNetworkAddress}`;
-          net[idx + 1] = ` netmask 255.255.255.0`;
-          net[idx + 2] = ` network ${root}.0`;
-          net[idx + 3] = ` broadcast ${root}.255`;
-          netChange = true;
-        }
-        else
-        {
-          result.apNetworkAddress = net[idx].trim().split(' ')[1];
-        }
-      }
 
-      if (hostapChange)
-      {
-        fs.writeFileSync(HOSTAPD_CONFIG, hostap.join('\n'), { encoding: 'utf8' });
-        childProcess.spawn(CMD_HOSTAPD, [ 'restart' ], {});
-        childProcess.spawn(CMD_HOSTNAME, [ result.apNetworkName ], {});
-      }
-      if (wpaChange)
-      {
-        fs.writeFileSync(WPA_SUPPLICANT_CONFIG, wpa.join('\n'), { encoding: 'utf8' });
-        childProcess.spawn(CMD_IFDOWN, [ 'wlan0' ], {});
-        childProcess.spawn(CMD_IFUP, [ 'wlan0' ], {});
-      }
-      if (netChange)
-      {
-        fs.writeFileSync(NET_INTERFACES_CONFIG, net.join('\n'), { encoding: 'utf8' });
-        childProcess.spawn(CMD_SOFTAP, [ 'restart' ], {});
-      }
-
-      return result;
-    });
-
+        return result;
+      });
+    }
     return this;
   },
   
   disable: function()
   {
-    this._node.unservice(SERVICE_CONFIG);
-
+    if (--this._enabled === 0)
+    {
+      this._node.unservice(SERVICE_CONFIG);
+    }
     return this;
   }
 }

@@ -98,6 +98,7 @@ function proximity(config)
     throw new Error('Unsupported address');
   }
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._i2c = config.i2c;
   this._clock = null;
 
@@ -111,27 +112,32 @@ proximity.prototype =
 {
   enable: function()
   {
-    this._adProximity = this._node.advertise(TOPIC_PROXIMITY);
+    if (this._enabled++ === 0)
+    {
+      this._adProximity = this._node.advertise(TOPIC_PROXIMITY);
 
-    this._clock = setInterval(() => {
-      this._processTick();
-    }, 100);
+      this._clock = setInterval(() => {
+        this._processTick();
+      }, 100);
 
-    this._staticInit();
-    this._setReferenceSpadManagement();
-    this._setRefCalibration();
-    this._setOffsetCalibration();
-    this._setXTalkValue();
-    this._setDeviceMode();
-    this._setGPIO();
-
+      this._staticInit();
+      this._setReferenceSpadManagement();
+      this._setRefCalibration();
+      this._setOffsetCalibration();
+      this._setXTalkValue();
+      this._setDeviceMode();
+      this._setGPIO();
+    }
     return this;
   },
 
   disable: function()
   {
-    clearInterval(this._clock);
-    this._node.unadvertise(TOPIC_PROXIMITY);
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock);
+      this._node.unadvertise(TOPIC_PROXIMITY);
+    }
     return this;
   },
 

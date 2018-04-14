@@ -278,30 +278,37 @@ function Master(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
 }
 
 Master.prototype =
 {
   enable: function()
   {
-    runMaster(global.webserver);
-    this._node.service(SERVICE_LIST, (request) =>
+    if (this._enabled++ === 0)
     {
-      return {
-        topics: Object.keys(Root._advertisers).map((name) => {
-          return { name: name, schema: Root._advertisers[name].schema };
-        }),
-        services: Object.keys(Root._services).map((name) => {
-          return { name: name, schema: Root._services[name].schema };
-        })
-      };
-    });
+      runMaster(global.webserver);
+      this._node.service(SERVICE_LIST, (request) =>
+      {
+        return {
+          topics: Object.keys(Root._advertisers).map((name) => {
+            return { name: name, schema: Root._advertisers[name].schema };
+          }),
+          services: Object.keys(Root._services).map((name) => {
+            return { name: name, schema: Root._services[name].schema };
+          })
+        };
+      });
+    }
     return this;
   },
 
   disable: function()
   {
-    this._node.unservice(SERVICE_LIST);
+    if (--this._enabled === 0)
+    {
+      this._node.unservice(SERVICE_LIST);
+    }
     return this;
   },
 };

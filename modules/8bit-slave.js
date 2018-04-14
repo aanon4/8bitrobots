@@ -281,6 +281,7 @@ function Slave(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._target = `ws://${config.target}:80/8BitApiV1`
 }
 
@@ -288,13 +289,16 @@ Slave.prototype =
 {
   enable: function()
   {
-    runSlave(this._target);
-
+    if (this._enabled++ === 0)
+    {
+      runSlave(this._target);
+    }
     return this;
   },
 
   disable: function()
   {
+    this._enabled--;
     return this;
   }
 };

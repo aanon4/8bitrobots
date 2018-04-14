@@ -120,6 +120,7 @@ function ring(config)
   this._name = config.name;
   this._node = Node.init(config.name);
   this._isMaster = config.master;
+  this._enabled = 0;
 
   this._uart = new SerialPort(config.uart.port,
   {
@@ -150,26 +151,32 @@ ring.prototype =
 {
   enable: function()
   {
-    this._this._state = STATE.SYNC;
-    this._uart.on('data', _incomingUart);
-    if (this._isMaster)
+    if (this._enabled++ === 0)
     {
-      this.reset(() => {
+      this._this._state = STATE.SYNC;
+      this._uart.on('data', _incomingUart);
+      if (this._isMaster)
+      {
+        this.reset(() => {
+          this._keepaliveTimer = setInterval(this._keepalive, KEEPALIVE_TIMER);
+        });
+      }
+      else
+      {
         this._keepaliveTimer = setInterval(this._keepalive, KEEPALIVE_TIMER);
-      });
-    }
-    else
-    {
-      this._keepaliveTimer = setInterval(this._keepalive, KEEPALIVE_TIMER);
+      }
     }
     return this;
   },
   
   disable: function()
   {
-    clearInterval(this._keepaliveTimer);
-    this._keepaliveTimer = null;
-    this._uart.removeListener('data', _incomingUart);
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._keepaliveTimer);
+      this._keepaliveTimer = null;
+      this._uart.removeListener('data', _incomingUart);
+    }
     return this;
   },
 

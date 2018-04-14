@@ -5,7 +5,9 @@ const APIVelocity = require('modules/api-velocity');
 
 function wheel(config, settings)
 {
+  this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._config = config;
   // Diameter is in mm, rpm is in revolutions / minutues, velocity is in meters / second
   this._track = Math.PI * settings.diameter / 1000 / 60; // m
@@ -17,15 +19,21 @@ wheel.prototype =
 {
   enable: function()
   {
-    this._motor.enable();
-    this._apiVelocity.enable();
+    if (this._enabled++ === 0)
+    {
+      this._motor.enable();
+      this._apiVelocity.enable();
+    }
     return this;
   },
 
   disable: function()
   {
-    this._apiVelocity.disable();
-    this._motor.disable();
+    if (--this._enabled === 0)
+    {
+      this._apiVelocity.disable();
+      this._motor.disable();
+    }
     return this;
   },
 

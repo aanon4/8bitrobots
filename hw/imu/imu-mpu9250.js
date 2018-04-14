@@ -52,6 +52,7 @@ function imu(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._i2cMPU9250 = config.i2c.MPU9250;
   this._i2cAK8963 = config.i2c.AK8963;
   this._clock = null;
@@ -73,23 +74,28 @@ imu.prototype =
 {
   enable: function()
   {
-    this._adOrientation = this._node.advertise(TOPIC_ORIENTATION);
+    if (this._enabled++ === 0)
+    {
+      this._adOrientation = this._node.advertise(TOPIC_ORIENTATION);
 
-    this._configure();
-    this._lastUpdate = Date.now();
-    this._clock = setInterval(() => {
-      this._processTick();
-    }, 10);
+      this._configure();
+      this._lastUpdate = Date.now();
+      this._clock = setInterval(() => {
+        this._processTick();
+      }, 10);
+    }
     return this;
   },
 
   disable: function()
   {
-    clearInterval(this._clock);
-    this._clock = null;
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock);
+      this._clock = null;
 
-    this._node.unadvertise(TOPIC_ORIENTATION);
-
+      this._node.unadvertise(TOPIC_ORIENTATION);
+    }
     return this;
   },
 

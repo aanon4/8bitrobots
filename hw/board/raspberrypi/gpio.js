@@ -31,7 +31,7 @@ function gpioChannel(gpios, subaddress)
 {
   this._gpios = gpios;
   this._subaddress = subaddress;
-  this._enabled = false;
+  this._enabled = 0;
   this._lastValue = null;
   this._lastDir = null;
   this._targetValue = null;
@@ -45,14 +45,16 @@ gpioChannel.prototype =
 {
   enable: function()
   {
-    this._gpio = new PIGPIO.Gpio(this._subaddress, {});
-    this._enabled = true;
+    if (this._enabled++ === 0)
+    {
+      this._gpio = new PIGPIO.Gpio(this._subaddress, {});
+    }
     return this;
   },
 
   disable: function()
   {
-    this._enabled = false;
+    --this._enabled;
     return this;
   },
 

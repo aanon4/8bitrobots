@@ -26,7 +26,7 @@ function manipulator(config)
   {
     this._servos[servo._name] = servo;
   }, this);
-  this._enabled = false;
+  this._enabled = 0;
   this._status = 'stowed';
 }
 
@@ -34,25 +34,28 @@ manipulator.prototype =
 {
   enable: function()
   {
-    this._node.subscribe(TOPIC_CONTROL, (event) =>
+    if (this._enabled++ === 0)
     {
-      this._handleActionEvents(event);
-    });
-    for (var name in this._servos)
-    {
-      this._servos[name].enable();
+      this._node.subscribe(TOPIC_CONTROL, (event) =>
+      {
+        this._handleActionEvents(event);
+      });
+      for (var name in this._servos)
+      {
+        this._servos[name].enable();
+      }
     }
-    this._enabled = true;
-
     return this;
   },
   
   disable: function()
   {
-    this._enabled = false;
-    for (var name in this._servos)
+    if (--this._enabled === 0)
     {
-      this._servos[name].disable();
+      for (var name in this._servos)
+      {
+        this._servos[name].disable();
+      }
     }
     this._node.unsubscribe(TOPIC_CONTROL);
   },

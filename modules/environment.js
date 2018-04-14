@@ -24,6 +24,7 @@ function environment(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
 
   this._internals = config.internal || [];
   this._externals = config.external || [];
@@ -46,94 +47,98 @@ environment.prototype =
 {
   enable: function()
   {
-    this._internals.forEach((internal) =>
+    if (this._enabled++ === 0)
     {
-      TOPICS_ENVIRONMENT.forEach((topic) =>
+      this._internals.forEach((internal) =>
       {
-        this._node.subscribe({ topic: `${internal}/${topic}` }, (event) =>
+        TOPICS_ENVIRONMENT.forEach((topic) =>
         {
-          this._process(this._internal, internal, topic, event);
+          this._node.subscribe({ topic: `${internal}/${topic}` }, (event) =>
+          {
+            this._process(this._internal, internal, topic, event);
+          });
         });
       });
-    });
-    this._externals.forEach((external) =>
-    {
-      TOPICS_ENVIRONMENT.forEach((topic) =>
+      this._externals.forEach((external) =>
       {
-        this._node.subscribe({ topic: `${external}/${topic}` }, (event) =>
+        TOPICS_ENVIRONMENT.forEach((topic) =>
         {
-          this._process(this._external, external, topic, event);
+          this._node.subscribe({ topic: `${external}/${topic}` }, (event) =>
+          {
+            this._process(this._external, external, topic, event);
+          });
         });
       });
-    });
 
-    this._node.subscribe(TOPIC_SETWATER, (event) =>
-    {
-      if (event.water in WATER)
+      this._node.subscribe(TOPIC_SETWATER, (event) =>
       {
-        if (!this._adWater)
+        if (event.water in WATER)
         {
-          this._adWater = this._node.advertise(TOPIC_WATER);
+          if (!this._adWater)
+          {
+            this._adWater = this._node.advertise(TOPIC_WATER);
+          }
+          this._adWater.publish(
+          {
+            water: event.water,
+            density: WATER_DENSITY[event.water]
+          });
         }
-        this._adWater.publish(
-        {
-          water: event.water,
-          density: WATER_DENSITY[event.water]
-        });
+      });
+
+      if (this._internals.length)
+      {
+        this._internal.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_INTERNAL);
+        this._internal.pressure._ad = this._node.advertise(TOPIC_PRESSURE_INTERNAL);
+        this._internal.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_INTERNAL);
       }
-    });
-
-    if (this._internals.length)
-    {
-      this._internal.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_INTERNAL);
-      this._internal.pressure._ad = this._node.advertise(TOPIC_PRESSURE_INTERNAL);
-      this._internal.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_INTERNAL);
+      if (this._externals.length)
+      {
+        this._external.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_EXTERNAL);
+        this._external.pressure._ad = this._node.advertise(TOPIC_PRESSURE_EXTERNAL);
+        this._external.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_EXTERNAL);
+      }
     }
-    if (this._externals.length)
-    {
-      this._external.temperature._ad = this._node.advertise(TOPIC_TEMPERATURE_EXTERNAL);
-      this._external.pressure._ad = this._node.advertise(TOPIC_PRESSURE_EXTERNAL);
-      this._external.humidity._ad = this._node.advertise(TOPIC_HUMIDITY_EXTERNAL);
-    }
-
     return this;
   },
 
   disable: function()
   {
-    if (this._internals.length)
+    if (--this._enabled === 0)
     {
-      this._node.unadvertise(TOPIC_TEMPERATURE_INTERNAL);
-      this._node.unadvertise(TOPIC_PRESSURE_INTERNAL);
-      this._node.unadvertise(TOPIC_HUMIDITY_INTERNAL);
-    }
-    if (this._externals.length)
-    {
-      this._node.unadvertise(TOPIC_TEMPERATURE_EXTERNAL);
-      this._node.unadvertise(TOPIC_PRESSURE_EXTERNAL);
-      this._node.unadvertise(TOPIC_HUMIDITY_EXTERNAL);
-    }
-    if (this._adWater)
-    {
-      this._node.unadvertise(TOPIC_WATER);
-    }
-    this._node.unsubscribe(TOPIC_SETWATER);
+      if (this._internals.length)
+      {
+        this._node.unadvertise(TOPIC_TEMPERATURE_INTERNAL);
+        this._node.unadvertise(TOPIC_PRESSURE_INTERNAL);
+        this._node.unadvertise(TOPIC_HUMIDITY_INTERNAL);
+      }
+      if (this._externals.length)
+      {
+        this._node.unadvertise(TOPIC_TEMPERATURE_EXTERNAL);
+        this._node.unadvertise(TOPIC_PRESSURE_EXTERNAL);
+        this._node.unadvertise(TOPIC_HUMIDITY_EXTERNAL);
+      }
+      if (this._adWater)
+      {
+        this._node.unadvertise(TOPIC_WATER);
+      }
+      this._node.unsubscribe(TOPIC_SETWATER);
 
-    this._internals.forEach((internal) =>
-    {
-      TOPICS_ENVIRONMENT.forEach((topic) =>
+      this._internals.forEach((internal) =>
       {
-        this._node.unsubscribe({ topic: `${internal}/${topic}` });
+        TOPICS_ENVIRONMENT.forEach((topic) =>
+        {
+          this._node.unsubscribe({ topic: `${internal}/${topic}` });
+        });
       });
-    });
-    this._externals.forEach((external) =>
-    {
-      TOPICS_ENVIRONMENT.forEach((topic) =>
+      this._externals.forEach((external) =>
       {
-        this._node.unsubscribe({ topic: `${external}/${topic}` });
+        TOPICS_ENVIRONMENT.forEach((topic) =>
+        {
+          this._node.unsubscribe({ topic: `${external}/${topic}` });
+        });
       });
-    });
-  
+    }
     return this;
   },
   

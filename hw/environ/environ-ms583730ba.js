@@ -16,36 +16,43 @@ function sensor(config)
   this._name = config.name;
   this._node = Node.init(config.name);
   this._i2c = config.i2c;
+  this._enabled = 0;
 }
 
 sensor.prototype =
 {
   enable: function()
   {
-    this._i2c.writeBytes(Buffer.from([ 0x1E ])); // Reset
-    this._delay(10);
-
-    // Read calibration
-    this._c = [];
-    for (var i = 0; i < 7; i++)
+    if (this._enabled++ === 0)
     {
-      var data = this._i2c.writeAndReadBytes(Buffer.from([ 0xA0 + i * 2 ]), 2);
-      this._c[i] = (data[0] << 8) | data[1];
+      this._i2c.writeBytes(Buffer.from([ 0x1E ])); // Reset
+      this._delay(10);
+
+      // Read calibration
+      this._c = [];
+      for (var i = 0; i < 7; i++)
+      {
+        var data = this._i2c.writeAndReadBytes(Buffer.from([ 0xA0 + i * 2 ]), 2);
+        this._c[i] = (data[0] << 8) | data[1];
+      }
+    
+      this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
+      this._adPressure = this._node.advertise(TOPIC_PRESSURE);
+      this._clock = setInterval(() => {
+        this._process();
+      }, 1000);
     }
-  
-    this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
-    this._adPressure = this._node.advertise(TOPIC_PRESSURE);
-    this._clock = setInterval(() => {
-      this._process();
-    }, 1000);
     return this;
   },
 
   disable: function()
   {
-    clearInterval(this._clock);
-    this._node.unadvertise(TOPIC_TEMPERATURE);
-    this._node.unadvertise(TOPIC_PRESSURE);
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock);
+      this._node.unadvertise(TOPIC_TEMPERATURE);
+      this._node.unadvertise(TOPIC_PRESSURE);
+    }
     return this;
   },
 

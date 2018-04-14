@@ -12,23 +12,30 @@ function power(config)
   this._name = config.name;
   this._node = Node.init(config.name);
   this._input = config.input;
+  this._enabled = 0;
 }
 
 power.prototype =
 {
   enable: function()
   {
-    this._ad = this._node.advertise(TOPIC_STATUS);
-    this._clock = setInterval(() => {
-      this._process();
-    }, 1000);
+    if (this._enabled++ === 0)
+    {
+      this._ad = this._node.advertise(TOPIC_STATUS);
+      this._clock = setInterval(() => {
+        this._process();
+      }, 1000);
+    }
     return this;
   },
   
   disable: function()
   {
-    clearInterval(this._clock);
-    this._node.unadvertise(TOPIC_STATUS);
+    if (--this._enabled === 0)
+    {
+      clearInterval(this._clock);
+      this._node.unadvertise(TOPIC_STATUS);
+    }
     return this;
   },
   

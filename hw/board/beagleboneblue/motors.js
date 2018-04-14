@@ -10,7 +10,7 @@ function motorChannel(motors, config)
   this._motors = motors;
   this._motor = config.motor;
   this._subaddress = config.channel;
-  this._enabled = false;
+  this._enabled = 0;
   this._planner = new MotionPlanner();
   this._busy = false;
   this._plans = [];
@@ -109,9 +109,8 @@ motorChannel.prototype =
 
   enable: function()
   {
-    if (!this._enabled)
+    if (this._enabled++ === 0)
     {
-      this._enabled = true;
       this._busy = false;
       this._motors._enabled++;
       if (this._motors._enabled === 1)
@@ -126,9 +125,8 @@ motorChannel.prototype =
 
   disable: function()
   {
-    if (this._enabled)
+    if (--this._enabled === 0)
     {
-      this._enabled = false;
       this._busy = false;
       this._motors._enabled--;
       native.bbb_motors2_disable(this._motors._handle, this._subaddress);

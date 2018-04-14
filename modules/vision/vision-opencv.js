@@ -8,25 +8,32 @@ function vision(config)
 {
   this._name = config.name;
   this._running = null;
+  this._enabled = 0;
 }
 
 vision.prototype =
 {  
   enable: function()
   {
-    if (!SIMULATOR)
+    if (this._enabled++ === 0)
     {
-      process.on('exit', () => {
-        this._stop();
-      });
+      if (!SIMULATOR)
+      {
+        process.on('exit', () => {
+          this._stop();
+        });
+      }
+      this._start();
     }
-    this._start();
     return this;
   },
   
   disable: function()
   {
-    this._stop();
+    if (--this._enabled === 0)
+    {
+      this._stop();
+    }
     return this;
   },
   

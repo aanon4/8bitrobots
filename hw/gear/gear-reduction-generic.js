@@ -2,19 +2,26 @@ function reduction(config, settings)
 {
   this._next = config.next;
   this._scale = settings.scale;
+  this._enabled = 0;
 }
 
 reduction.prototype =
 {
   enable: function()
   {
-    this._next.enable();
+    if (this._enabled++ === 0)
+    {
+      this._next.enable();
+    }
     return this;
   },
 
   disable: function()
   {
-    this._next.disable();
+    if (--this._enabled === 0)
+    {
+      this._next.disable();
+    }
     return this;
   },
 

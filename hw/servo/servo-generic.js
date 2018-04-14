@@ -30,7 +30,7 @@ function servo(config, settings)
 
   this._defaultRate = (config.defaultRateMs || 0) / (maxAngle - minAngle);
   this._angle2pulse = (this._settings.maxPulseMs - this._settings.minPulseMs) / (this._settings.maxAngle - this._settings.minAngle);
-  this._enabled = false;
+  this._enabled = 0;
   this._apiAngle = new APIAngle(this, config.api);
 }
 
@@ -38,45 +38,40 @@ servo.prototype =
 {
   enable: function()
   {
-    if (this._enabled)
+    if (this._enabled++ === 0)
     {
-      return;
-    }
-    this._enabled = true;
-  
-    this._pwmChannel.enable();
-    this._pwmChannel.setCyclePeriod(this._settings.periodMs);
+      this._pwmChannel.enable();
+      this._pwmChannel.setCyclePeriod(this._settings.periodMs);
 
-    this._config.enable();
-    this._trim = this._config.get('trim');
-    this._reverse = this._config.get('reverse');
-    this._minAngle = this._config.get('minAngle');
-    this._maxAngle = this._config.get('maxAngle');
-    this._defaultAngle = this._config.get('maxAngle');
+      this._config.enable();
+      this._trim = this._config.get('trim');
+      this._reverse = this._config.get('reverse');
+      this._minAngle = this._config.get('minAngle');
+      this._maxAngle = this._config.get('maxAngle');
+      this._defaultAngle = this._config.get('maxAngle');
 
-    if (this._stateManager)
-    {
-      this._lastAngle = this._stateManager.get(`${this._name}-angle`);
+      if (this._stateManager)
+      {
+        this._lastAngle = this._stateManager.get(`${this._name}-angle`);
+      }
+      this.setAngle(this._lastAngle);
+      this._apiAngle.enable();
     }
-    this.setAngle(this._lastAngle);
-    this._apiAngle.enable();
   },
 
   disable: function()
   {
-    if (!this._enabled)
+    if (--this._enabled === 0)
     {
-      return;
+      this._apiAngle.disable();
+      this._lastAngle = this.getCurrentAngle();
+      if (this._stateManager)
+      {
+        this._stateManager.set(`${this._name}-angle`, this._lastAngle);
+      }
+      this._pwmChannel.disable();
+      this._config.disable();
     }
-    this._enabled = false;
-    this._apiAngle.disable();
-    this._lastAngle = this.getCurrentAngle();
-    if (this._stateManager)
-    {
-      this._stateManager.set(`${this._name}-angle`, this._lastAngle);
-    }
-    this._pwmChannel.disable();
-    this._config.disable();
   },
 
   setAngle: function(angle, time, func)

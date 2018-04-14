@@ -11,6 +11,7 @@ function gimbal(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
 
   function dummy(){}
   this._pan = config.pan || dummy;
@@ -26,16 +27,22 @@ gimbal.prototype =
 {
   enable: function()
   {
-    this._node.subscribe(TOPIC_ORIENTATION_ERROR, (event) =>
+    if (this._enabled++ === 0)
     {
-      this._process(event);
-    });
+      this._node.subscribe(TOPIC_ORIENTATION_ERROR, (event) =>
+      {
+        this._process(event);
+      });
+    }
     return this;
   },
 
   disable: function()
   {
-    this._node.unsubscribe(TOPIC_ORIENTATION_ERROR);
+    if (--this._enabled === 0)
+    {
+      this._node.unsubscribe(TOPIC_ORIENTATION_ERROR);
+    }
     return this;
   },
 

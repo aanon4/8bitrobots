@@ -10,6 +10,7 @@ function velocity(target, type)
 {
   this._target = target;
   this._type = type;
+  this._enabled = 0;
 
   const targetSetVelocity = this._target.setVelocity;
   this._target.setVelocity = (velocity, changeMs, func) => {
@@ -28,35 +29,41 @@ velocity.prototype =
 {
   enable: function()
   {
-    this._adPos = this._target._node.advertise(TOPIC_CURRENT);
-    this._target._node.service(SERVICE_SETV, (request) =>
+    if (this._enabled++ === 0)
     {
-      switch (request.func)
+      this._adPos = this._target._node.advertise(TOPIC_CURRENT);
+      this._target._node.service(SERVICE_SETV, (request) =>
       {
-        case 'idle':
-          this._target.idle();
-          break;
-        case 'brake':
-          this._target.brake();
-          break;
-        default:
-          this._target.setVelocity(request.velocity, request.time, MotionPlanner[request.func]);
-          break;
-      }
-      return true;
-    });
-    this._target._node.service(SERVICE_WAITFOR, (event) =>
-    {
-      return this._target.waitForVelocity(event.compare, event.velocity);
-    });
+        switch (request.func)
+        {
+          case 'idle':
+            this._target.idle();
+            break;
+          case 'brake':
+            this._target.brake();
+            break;
+          default:
+            this._target.setVelocity(request.velocity, request.time, MotionPlanner[request.func]);
+            break;
+        }
+        return true;
+      });
+      this._target._node.service(SERVICE_WAITFOR, (event) =>
+      {
+        return this._target.waitForVelocity(event.compare, event.velocity);
+      });
+    }
     return this;
   },
 
   disable: function()
   {
-    this._target._node.unservice(SERVICE_SETV);
-    this._target._node.unservice(SERVICE_WAITFOR);
-    this._target._node.unadvertise(TOPIC_CURRENT);
+    if (--this._enabled === 0)
+    {
+      this._target._node.unservice(SERVICE_SETV);
+      this._target._node.unservice(SERVICE_WAITFOR);
+      this._target._node.unadvertise(TOPIC_CURRENT);
+    }
     return this;
   },
 

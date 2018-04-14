@@ -19,42 +19,42 @@ function browser(config)
     startup: config.startup || 'about:blank',
     size: config.size || '1024,768'
   });
-  this._enabled = false;
+  this._enabled = 0;
 }
 
 browser.prototype =
 {
   enable: function()
   {
-    this._enabled = true;
+    if (this._enabled++ === 0)
+    {
+      this._config.enable();
+      this._startup = this._config.get('startup');
+      this._size = this._config.get('size');
 
-    this._config.enable();
-    this._startup = this._config.get('startup');
-    this._size = this._config.get('size');
-
-    this._startX();
-    this._startBrowser();
-
+      this._startX();
+      this._startBrowser();
+    }
     return this;
   },
   
   disable: function()
   {
-    this._enabled = false;
-  
-    if (this._browser)
+    if (--this._enabled === 0)
     {
-      this._browser.kill();
-      this._browser = null;
-    }
-    if (this._xserver)
-    {
-      this._xserver.kill();
-      this._xserver = null;
-    }
+      if (this._browser)
+      {
+        this._browser.kill();
+        this._browser = null;
+      }
+      if (this._xserver)
+      {
+        this._xserver.kill();
+        this._xserver = null;
+      }
 
-    this._config.disable();
-
+      this._config.disable();
+    }
     return this;
   },
 

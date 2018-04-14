@@ -11,6 +11,7 @@ function camera(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._calibration = config.calibration;
   (config.servos || []).forEach(function(servo)
   {
@@ -77,39 +78,44 @@ camera.prototype =
 {
   enable: function()
   {
-    if (this._tilt)
+    if (this._enabled++ === 0)
     {
-      this._tilt.enable();
-      this.setTilt(0, 0);
-    }
-    if (this._pan)
-    {
-      this._pan.enable();
-      this.setPan(0, 0);
-    }
-    if (this._lights)
-    {
-      this._lights.setOn(0);
-    }
+      if (this._tilt)
+      {
+        this._tilt.enable();
+        this.setTilt(0, 0);
+      }
+      if (this._pan)
+      {
+        this._pan.enable();
+        this.setPan(0, 0);
+      }
+      if (this._lights)
+      {
+        this._lights.setOn(0);
+      }
 
-    this._node.subscribe(TOPIC_CONTROL, (event) =>
-    {
-      this._handleActionEvents(event);
-    })
-
+      this._node.subscribe(TOPIC_CONTROL, (event) =>
+      {
+        this._handleActionEvents(event);
+      });
+    }
     return this;
   },
   
   disable: function()
   {
-    this._node.unsubscribe(TOPIC_CONTROL);
-    if (this._tilt)
+    if (--this._enabled === 0)
     {
-      this._tilt.disable();
-    }
-    if (this._pan)
-    {
-      this._pan.disable();
+      this._node.unsubscribe(TOPIC_CONTROL);
+      if (this._tilt)
+      {
+        this._tilt.disable();
+      }
+      if (this._pan)
+      {
+        this._pan.disable();
+      }
     }
   },
   

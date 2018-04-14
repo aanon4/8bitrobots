@@ -1,6 +1,7 @@
 function cservo(config, settings)
 {
   this._name = config.name;
+  this._enabled = 0;
   this._pwmChannel = config.pwm;
   this._settings = settings;
   this._direction = config.reverse ? -1 : 1;
@@ -14,13 +15,19 @@ cservo.prototype =
 {
   enable: function()
   {
-    this._pwmChannel.enable();
+    if (this._enabled++ === 0)
+    {
+      this._pwmChannel.enable();
+    }
     return this;
   },
 
   disable: function()
   {
-    this._pwmChannel.disable();
+    if (--this._enabled === 0)
+    {
+      this._pwmChannel.disable();
+    }
     return this;
   },
 

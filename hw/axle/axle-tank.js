@@ -14,6 +14,7 @@ function axle(config)
   this._maxVelocity = config.maxVelocity;
   this._lastVelocity = 0;
   this._lastAngle = 0;
+  this._enabled = 0;
   this._apiAngle = new APIAngle(this, config.api);
   this._apiVelocity = new APIVelocity(this, config.api);
 }
@@ -22,19 +23,25 @@ axle.prototype =
 {
   enable: function()
   {
-    this._left && this._left.enable();
-    this._right && this._right.enable();
-    this._apiAngle.enable();
-    this._apiVelocity.enable();
+    if (this._enabled++ === 0)
+    {
+      this._left && this._left.enable();
+      this._right && this._right.enable();
+      this._apiAngle.enable();
+      this._apiVelocity.enable();
+    }
     return this;
   },
   
   disable: function()
   {
-    this._apiVelocity.disable();
-    this._apiAngle.disable();
-    this._right && this._right.disable();
-    this._left && this._left.disable();
+    if (--this._enabled === 0)
+    {
+      this._apiVelocity.disable();
+      this._apiAngle.disable();
+      this._right && this._right.disable();
+      this._left && this._left.disable();
+    }
     return this;
   },
   

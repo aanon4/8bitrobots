@@ -23,7 +23,7 @@ function gpioChannel(gpios, subaddress)
 {
   this._gpios = gpios;
   this._subaddress = subaddress;
-  this._enabled = false;
+  this._enabled = 0;
   this._lastValue = null;
   this._lastDir = null;
   this._callbacks = null;
@@ -104,13 +104,13 @@ gpioChannel.prototype =
 
   enable: function()
   {
-    this._enabled = true;
+    this._enabled++;
     return this;
   },
 
   disable: function()
   {
-    this._enabled = false;
+    --this._enabled;
     return this;
   }
 };

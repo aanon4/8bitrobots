@@ -24,6 +24,7 @@ function kinematics(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   this._config = new ConfigManager(this,
   {
     seaLevelPressure: config.seaLevelPressure || 101771, // Pa
@@ -47,90 +48,94 @@ kinematics.prototype =
 {
   enable: function()
   {
-    this._config.enable();
-    this._waterDensity = this._config.get('waterDensity');
-    this._seaLevel = this._config.get('seaLevelPressure');
-    this._headingOffset = this._config.get('headingOffset');
-
-    this._adAngular = this._node.advertise(TOPIC_K_ORIENTATION);
-    this._adAcceleration = this._node.advertise(TOPIC_K_ACCELERATION);
-    this._adCalibration = this._node.advertise(TOPIC_K_CALIBRATION);
-    this._adPosition = this._node.advertise(TOPIC_K_POSITION);
-
-    this._calibrations = {};
-    this._orientations = {};
-    this._accelerations = {};
-
-    this._monitor.forEach((mon) =>
+    if (this._enabled++ === 0)
     {
-      switch (mon.type)
+      this._config.enable();
+      this._waterDensity = this._config.get('waterDensity');
+      this._seaLevel = this._config.get('seaLevelPressure');
+      this._headingOffset = this._config.get('headingOffset');
+
+      this._adAngular = this._node.advertise(TOPIC_K_ORIENTATION);
+      this._adAcceleration = this._node.advertise(TOPIC_K_ACCELERATION);
+      this._adCalibration = this._node.advertise(TOPIC_K_CALIBRATION);
+      this._adPosition = this._node.advertise(TOPIC_K_POSITION);
+
+      this._calibrations = {};
+      this._orientations = {};
+      this._accelerations = {};
+
+      this._monitor.forEach((mon) =>
       {
-        case 'imu':
-          this._node.subscribe(this._topicName(mon.name, TOPIC_ORIENTATION), (event) =>
-          {
-            this._imuOrientation(mon, event);
-          })
-          this._node.subscribe(this._topicName(mon.name, TOPIC_ACCELERATION), (event) =>
-          {
-            this._imuAcceleration(mon, event);
-          });
-          this._node.subscribe(this._topicName(mon.name, TOPIC_CALIBRATION), (event) =>
-          {
-            this._imuCalibration(mon, event);
-          });
-          break;
-        case 'air':
-          this._node.subscribe(this._topicName(mon.name, TOPIC_PRESSURE), (event) =>
-          {
-            this._airPressure(mon, event);
-          });
-          break;
-        case 'water':
-          this._node.subscribe(this._topicName(mon.name, TOPIC_PRESSURE), (event) =>
-          {
-            this._waterPressure(mon, event);
-          });
-          break;
-        default:
-          break;
-      }
-    });
+        switch (mon.type)
+        {
+          case 'imu':
+            this._node.subscribe(this._topicName(mon.name, TOPIC_ORIENTATION), (event) =>
+            {
+              this._imuOrientation(mon, event);
+            })
+            this._node.subscribe(this._topicName(mon.name, TOPIC_ACCELERATION), (event) =>
+            {
+              this._imuAcceleration(mon, event);
+            });
+            this._node.subscribe(this._topicName(mon.name, TOPIC_CALIBRATION), (event) =>
+            {
+              this._imuCalibration(mon, event);
+            });
+            break;
+          case 'air':
+            this._node.subscribe(this._topicName(mon.name, TOPIC_PRESSURE), (event) =>
+            {
+              this._airPressure(mon, event);
+            });
+            break;
+          case 'water':
+            this._node.subscribe(this._topicName(mon.name, TOPIC_PRESSURE), (event) =>
+            {
+              this._waterPressure(mon, event);
+            });
+            break;
+          default:
+            break;
+        }
+      });
 
-    this._node.service(SERVICE_RESETLEVEL, (request) =>
-    {
-      this._resetLevel();
-    });
-
+      this._node.service(SERVICE_RESETLEVEL, (request) =>
+      {
+        this._resetLevel();
+      });
+    }
     return this;
   },
   
   disable: function()
   {
-    this._monitor.forEach((mon) =>
+    if (--this._enabled === 0)
     {
-      switch (mon.type)
+      this._monitor.forEach((mon) =>
       {
-        case 'imu':
-          this._node.unsubscribe(this._topicName(mon.name, TOPIC_ORIENTATION));
-          this._node.unsubscribe(this._topicName(mon.name, TOPIC_ACCELERATION));
-          this._node.unsubscribe(this._topicName(mon.name, TOPIC_CALIBRATION));
-          break;
-        case 'air':
-        case 'water':
-          this._node.unsubscribe(this._topicName(mon.name, TOPIC_PRESSURE));
-          break;
-      }
-    });
+        switch (mon.type)
+        {
+          case 'imu':
+            this._node.unsubscribe(this._topicName(mon.name, TOPIC_ORIENTATION));
+            this._node.unsubscribe(this._topicName(mon.name, TOPIC_ACCELERATION));
+            this._node.unsubscribe(this._topicName(mon.name, TOPIC_CALIBRATION));
+            break;
+          case 'air':
+          case 'water':
+            this._node.unsubscribe(this._topicName(mon.name, TOPIC_PRESSURE));
+            break;
+        }
+      });
 
-    this._node.unservice(SERVICE_RESETLEVEL);
+      this._node.unservice(SERVICE_RESETLEVEL);
 
-    this._node.unadvertise(TOPIC_K_ORIENTATION);
-    this._node.unadvertise(TOPIC_K_ACCELERATION);
-    this._node.unadvertise(TOPIC_K_CALIBRATION);
-    this._node.unadvertise(TOPIC_K_POSITION);
+      this._node.unadvertise(TOPIC_K_ORIENTATION);
+      this._node.unadvertise(TOPIC_K_ACCELERATION);
+      this._node.unadvertise(TOPIC_K_CALIBRATION);
+      this._node.unadvertise(TOPIC_K_POSITION);
 
-    this._config.disable();
-
+      this._config.disable();
+    }
     return this;
   },
 

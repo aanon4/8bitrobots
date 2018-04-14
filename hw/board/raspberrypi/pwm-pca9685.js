@@ -10,7 +10,7 @@ function pwmChannel(pwm, subaddress)
 {
   this._pwm = pwm;
   this._subaddress = subaddress;
-  this._enabled = false;
+  this._enabled = 0;
   this._planner = new MotionPlanner();
   this._plans = [];
   this._lastMs = null;
@@ -108,9 +108,8 @@ pwmChannel.prototype =
 
   enable: function()
   {
-    if (!this._enabled)
+    if (this._enabled++ === 0)
     {
-      this._enabled = true;
       this._pwm._enabled++;
       if (this._pwm._enabled === 1)
       {
@@ -123,9 +122,8 @@ pwmChannel.prototype =
 
   disable: function()
   {
-    if (this._enabled)
+    if (--this._enabled === 0)
     {
-      this._enabled = false;
       this._pwm._enabled--;
       native.pca9685_disable(this._pwm._handle, this._subaddress);
       if (this._pwm._enabled === 0)

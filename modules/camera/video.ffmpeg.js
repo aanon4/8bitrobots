@@ -34,26 +34,33 @@ function video(config)
   this._right = config.right;
   this._flip = config.flip || false;
   this._running = null;
+  this._enabled = 0;
 }
 
 video.prototype =
 {  
   enable: function()
   {
-    if (!SIMULATOR)
+    if (this._enabled++ === 0)
     {
-      const self = this;
-      process.on('exit', function()
+      if (!SIMULATOR)
       {
-        self.httpStop();
-      });
+        const self = this;
+        process.on('exit', function()
+        {
+          self.httpStop();
+        });
+      }
     }
     return this;
   },
   
   disable: function()
   {
-    this.httpStop();
+    if (--this._enabled === 0)
+    {
+      this.httpStop();
+    }
     return this;
   },
   

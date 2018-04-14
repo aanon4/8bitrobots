@@ -17,26 +17,31 @@ function esc(config)
   this._maxRPM = 0;
   this._powerTopic = config.power;
   this._pwmChannel.setCyclePeriod(settings.periodMs);
+  this._enabled = 0;
 }
 
 esc.prototype =
 {
   enable: function()
   {
-    this._node.subscribe(this._powerTopic, (event) =>
+    if (this._enabled++ === 0)
     {
-      this._maxRPM = event.v * this._kV;
-    });
-    this._pwmChannel.enable();
-    this._enabled = true;
+      this._node.subscribe(this._powerTopic, (event) =>
+      {
+        this._maxRPM = event.v * this._kV;
+      });
+      this._pwmChannel.enable();
+    }
     return this;
   },
 
   disable: function()
   {
-    this._enabled = false;
-    this._pwmChannel.disable();
-    this._node.unsubscribe(this._powerTopic);
+    if (--this._enabled === 0)
+    {
+      this._pwmChannel.disable();
+      this._node.unsubscribe(this._powerTopic);
+    }
     return this;
   },
 

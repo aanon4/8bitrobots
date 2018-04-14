@@ -27,6 +27,7 @@ function robot(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
 
   this._wheels = config.wheels || {};
   this._servos = config.servos || {};
@@ -45,87 +46,91 @@ robot.prototype =
 {
   enable: function()
   {
-    this._node.service(SERVICE_MOVEMENT, (movement) =>
+    if (this._enabled++ === 0)
     {
-      this._handleMovement(movement);
-    });
-    this._node.service(SERVICE_GESTURE, (gesture) =>
-    {
-      this._handleGesture(gesture);
-    });
-    this._shTopic = this._node.advertise(TOPIC_SHUTDOWN);
-    process.on('exit', () =>
-    {
-      this._shTopic.publish({ reason: 'exit' });
-    });
-
-    for (var id in this._wheels)
-    {
-      this._wheels[id].enable();
-    }
-    for (var id in this._servos)
-    {
-      this._servos[id].enable();
-      this._servos[id].idle(true);
-    }
-    for (var id in this._buttons)
-    {
-      this._buttons[id].enable();
-    }
-    this._heartbeatTimer = setInterval(() =>
-    {
-      if (Date.now() - this._lastInteraction > IDLE_TIMEOUT)
+      this._node.service(SERVICE_MOVEMENT, (movement) =>
       {
-        this._brain.gesture('Sleep');
-      }
-      else switch (this._heartbeat)
+        this._handleMovement(movement);
+      });
+      this._node.service(SERVICE_GESTURE, (gesture) =>
       {
-        case NOHEARTBEAT:
-          break;
+        this._handleGesture(gesture);
+      });
+      this._shTopic = this._node.advertise(TOPIC_SHUTDOWN);
+      process.on('exit', () =>
+      {
+        this._shTopic.publish({ reason: 'exit' });
+      });
 
-        case HEARTBEAT:
-          this._heartbeat = WAITINGHEARTBEAT;
-          break;
-
-        case WAITINGHEARTBEAT:
-        default:
-          this._heartbeat = NOHEARTBEAT;
-          this._velocity.forward = 0;
-          this._velocity.strafe = 0;
-          this._velocity.changed = true;
-          this._brain.gesture('Idle');
-          break;
+      for (var id in this._wheels)
+      {
+        this._wheels[id].enable();
       }
-    }, 1000);
+      for (var id in this._servos)
+      {
+        this._servos[id].enable();
+        this._servos[id].idle(true);
+      }
+      for (var id in this._buttons)
+      {
+        this._buttons[id].enable();
+      }
+      this._heartbeatTimer = setInterval(() =>
+      {
+        if (Date.now() - this._lastInteraction > IDLE_TIMEOUT)
+        {
+          this._brain.gesture('Sleep');
+        }
+        else switch (this._heartbeat)
+        {
+          case NOHEARTBEAT:
+            break;
 
-    this._brain.enable();
+          case HEARTBEAT:
+            this._heartbeat = WAITINGHEARTBEAT;
+            break;
 
+          case WAITINGHEARTBEAT:
+          default:
+            this._heartbeat = NOHEARTBEAT;
+            this._velocity.forward = 0;
+            this._velocity.strafe = 0;
+            this._velocity.changed = true;
+            this._brain.gesture('Idle');
+            break;
+        }
+      }, 1000);
+
+      this._brain.enable();
+    }
     return this;
   },
   
   disable: function()
   {
-    this._brain.disable();
-  
-    for (var id in this._wheels)
+    if (--this._enabled === 0)
     {
-      this._wheels[id].disable();
-    }
-    for (var id in this._servos)
-    {
-      this._servos[id].disable();
-    }
-    for (var id in this._buttons)
-    {
-      this._buttons[id].disable();
-    }
-    this._shTopic.publish({ reason: 'terminated' });
-    this._node.unadvertise(TOPIC_SHUTDOWN);    
-    this._node.unservice(SERVICE_MOVEMENT);
-    this._node.unservice(SERVICE_GESTURE);
+      this._brain.disable();
+    
+      for (var id in this._wheels)
+      {
+        this._wheels[id].disable();
+      }
+      for (var id in this._servos)
+      {
+        this._servos[id].disable();
+      }
+      for (var id in this._buttons)
+      {
+        this._buttons[id].disable();
+      }
+      this._shTopic.publish({ reason: 'terminated' });
+      this._node.unadvertise(TOPIC_SHUTDOWN);    
+      this._node.unservice(SERVICE_MOVEMENT);
+      this._node.unservice(SERVICE_GESTURE);
 
-    clearInterval(this._heartbeatTimer);
-
+      clearInterval(this._heartbeatTimer);
+    }
     return this;
   },
 

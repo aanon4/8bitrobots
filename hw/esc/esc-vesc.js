@@ -87,6 +87,7 @@ function vesc(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._enabled = 0;
   if (config.uart)
   {
     this._sendDutyMsg = this._sendDutyMsgUART;
@@ -134,23 +135,29 @@ vesc.prototype =
 {
   enable: function()
   {
-    this._adRpm = this._node.advertise(TOPIC_RPM);
-    this._adThrottle = this._node.advertise(TOPIC_THROTTLE);
-    this._adTacho = this._node.advertise(TOPIC_TACHOMETER);
-    this._adVolt = this._node.advertise(TOPIC_VOLTAGE);
-    this._uart && this._startUart();
-    this._can && this._startCan();
+    if (this._enabled++ === 0)
+    {
+      this._adRpm = this._node.advertise(TOPIC_RPM);
+      this._adThrottle = this._node.advertise(TOPIC_THROTTLE);
+      this._adTacho = this._node.advertise(TOPIC_TACHOMETER);
+      this._adVolt = this._node.advertise(TOPIC_VOLTAGE);
+      this._uart && this._startUart();
+      this._can && this._startCan();
+    }
     return this;
   },
 
   disable: function()
   {
-    this._uart && this._stopUart();
-    this._can && this._stopCan();
-    this._node.unadvertise(TOPIC_RPM);
-    this._node.unadvertise(TOPIC_THROTTLE);
-    this._node.unadvertise(TOPIC_TACHOMETER);
-    this._node.unadvertise(TOPIC_VOLTAGE);
+    if (--this._enabled === 0)
+    {
+      this._uart && this._stopUart();
+      this._can && this._stopCan();
+      this._node.unadvertise(TOPIC_RPM);
+      this._node.unadvertise(TOPIC_THROTTLE);
+      this._node.unadvertise(TOPIC_TACHOMETER);
+      this._node.unadvertise(TOPIC_VOLTAGE);
+    }
     return this;
   },
 

@@ -49,20 +49,27 @@ function comm(config)
 {
   this._name = '/console/node';
   this._node = Node.init(this._name);
+  this._enabled = 0;
 }
 
 comm.prototype =
 {
   enable: function()
   {
-    adLog = this._node.advertise(TOPIC_LOG);
+    if (this._enabled++ === 0)
+    {
+      adLog = this._node.advertise(TOPIC_LOG);
+    }
     return this;
   },
   
   disable: function()
   {
-    adLog = null;
-    this._node.unadvertise(TOPIC_LOG);
+    if (--this._enabled === 0)
+    {
+      adLog = null;
+      this._node.unadvertise(TOPIC_LOG);
+    }
     return this;
   }
 }
