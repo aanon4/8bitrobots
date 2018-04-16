@@ -127,6 +127,11 @@ const Root =
       }
       case 'call':
       {
+        if (!this._proxies[msg.connector])
+        {
+          console.warn('Attempted call without proxy', JSON.stringify(msg));
+          break;
+        }
         const fn = this._services[msg.service];
         fn && fn.handler(msg);
         break;
