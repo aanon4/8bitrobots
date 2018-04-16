@@ -61,7 +61,7 @@ encoder.prototype =
     this._avgIdx = 0;
     this._count = 0;
     this._lastEdge = 0;
-    this._gpio.removeLister(this._onEdge);
+    this._gpio.removeListener(this._onEdge);
     this._gpio.onEdge(this._edge, this._onEdge);
   },
 
