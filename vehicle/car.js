@@ -16,6 +16,7 @@ function car(config)
   this._node = Node.init(config.name);
   this._enabled = 0;
   this._axleRoot = config.axle;
+  this._joystick = config.joystick;
   this._forward = 0;
   this._strafe = 0;
 }
@@ -39,6 +40,21 @@ car.prototype =
       {
         this._shTopic.publish({ reason: 'exit' });
       });
+      if (this._joystick)
+      {
+        console.log('subscribe', this._joystick);
+        this._node.subscribe({ topic: this._joystick }, (event) => {
+          console.log(event);
+          if (event.x === 0 && event.y === 0)
+          {
+            this._handleMovement({ action: 'idle' });
+          }
+          else
+          {
+            this._handleMovement({ action: 'movement', forward: event.y, strafe: event.x });
+          }
+        });
+      }
       this._axle =
       {
         set_velocity: this._node.proxy({ service: `${this._axleRoot}/set_velocity`}),
@@ -54,6 +70,10 @@ car.prototype =
     if (--this._enabled === 0)
     {
       this._stopHeartbeat();
+      if (this._joystick)
+      {
+        this._node.unsubscribe({ topic: this._joystick });
+      }
       this._shTopic.publish({ reason: 'terminated' });
       this._node.unadvertise(TOPIC_SHUTDOWN);    
       this._node.unservice(SERVICE_MOVEMENT);

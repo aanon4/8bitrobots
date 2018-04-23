@@ -6,6 +6,7 @@ module.exports = function()
   return new Car(
   {
     name: '/car/node',
-    axle: '/car/drive'
+    axle: '/car/drive',
+    joystick: '/controller/joystick'
   });
 };
