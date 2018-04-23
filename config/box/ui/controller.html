@@ -2,7 +2,7 @@
 <head>
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <script src="js/8bit-webconnector.js"></script>
+  <script src="js/8bit-slave.js"></script>
   <script src="js/8bit.js"></script>
   <script src="js/three.js"></script>
   <style>
@@ -25,9 +25,10 @@
     const STICK_RADIUS = 45;
     const PAD_RADIUS = 135;
 
-    var ros = Node.init('/controller');
-    var setMovement = ros.proxy({ service: '/car/set_movement' });
+    var ros = Node.init('/controller/node');
+    //var setMovement = ros.proxy({ service: '/car/set_movement' });
     var executeGesture = ros.proxy({ service: '/car/execute_gesture' });
+    var joystick = ros.advertise({ topic: 'joystick', schema: { x: 'Number', y: 'Number' } });
   
     document.addEventListener('gesturestart', function (e)
     {
@@ -96,12 +97,14 @@
       }
       if (x == 0 && y == 0)
       {
-        setMovement({ action: 'idle' });
+        //setMovement({ action: 'idle' });
       }
       else
       {
-        setMovement({ action: 'movement', forward: y, strafe: x });
+        //setMovement({ action: 'movement', forward: y, strafe: x });
       }
+      console.log('joy', x, y);
+      joystick.publish({ x: x, y: y });
     }
     stick.addEventListener('touchstart', function(e)
     {
@@ -152,11 +155,8 @@
     });
     document.addEventListener('visibilitychange', function(e)
     {
-      if (document.hidden)
-      {
-        clearInterval(tick);
-      }
-      else
+      clearInterval(tick);
+      if (!document.hidden)
       {
         tick = setInterval(moveStick, 500);
       }
