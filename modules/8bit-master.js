@@ -251,7 +251,7 @@ function runMaster(webserver)
                       delete advertisers[msg.topic];
                       break;
                     case 'unadvertise-force':
-                      for (var subscriber in ahandler.subscribers)
+                      for (let subscriber in ahandler.subscribers)
                       {
                         Root.event({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
                       }
@@ -280,11 +280,26 @@ function runMaster(webserver)
                     case 'unservice':
                       delete services[msg.service];
                       break;
+                    case 'unservice-force':
+                      for (let proxy in vhandler.proxies)
+                      {
+                        Root.event({ timestamp: Date.now(), op: 'disconnect-force', connector: proxy });
+                      }
+                      break;
+                    case 'connect-req':
+                      vhandler.proxies[msg.connector] = true;
+                      send(msg);
+                      break;
+                    case 'disconnect-req':
+                      delete vhandler.proxies[msg.connector];
+                      send(msg);
+                      break;
                     default:
                       send(msg);
                       break;
                   }
                 }
+                vhandler.proxies = {};
                 services[msg.service] = true;
                 Root.event(msg, vhandler);
                 break;
