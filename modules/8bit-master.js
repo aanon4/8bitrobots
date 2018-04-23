@@ -29,12 +29,13 @@ const Root =
         break;
       }
       case 'unadvertise':
+      case 'unadvertise-force':
       {
         const fn = this._advertisers[msg.topic];
         if (fn)
         {
           delete this._advertisers[msg.topic];
-          fn.handler.remove();
+          fn.handler(msg);
         }
         break;
       }
@@ -48,7 +49,7 @@ const Root =
         }
         else
         {
-          const pending = this._pending[msg.subscriber] || (this._pending[msg.subscriber] = []);
+          const pending = this._pending[msg.topic] || (this._pending[msg.topic] = []);
           pending.push(() => {
             this.event(msg, handler);
           });
@@ -61,7 +62,7 @@ const Root =
         if (fn)
         {
           delete this._subscribers[msg.subscriber];
-          fn.remove();
+          fn(msg);
         }
         else
         {
@@ -75,7 +76,10 @@ const Root =
       case 'topic':
       {
         const fn = this._subscribers[msg.subscriber];
-        fn && fn(msg);
+        if (fn)
+        {
+          fn(msg);
+        }
         break;
       }
       case 'service':
@@ -92,12 +96,13 @@ const Root =
         break;
       }
       case 'unservice':
+      case 'unservice-force':
       {
         const fn = this._services[msg.service];
         if (fn)
         {
           delete this._services[msg.service];
-          fn.handler.remove();
+          fn.handler(msg);
         }
         break;
       }
@@ -121,8 +126,11 @@ const Root =
       case 'disconnect-req':
       {
         const fn = this._proxies[msg.connector];
-        delete this._proxies[msg.connector];
-        fn.remove();
+        if (fn)
+        {
+          delete this._proxies[msg.connector];
+          fn(msg);
+        }
         break;
       }
       case 'call':
@@ -133,7 +141,10 @@ const Root =
           break;
         }
         const fn = this._services[msg.service];
-        fn && fn.handler(msg);
+        if (fn)
+        {
+          fn.handler(msg);
+        }
         break;
       }
       case 'connect-ack':
@@ -196,27 +207,37 @@ function runMaster(webserver)
         {
           try
           {
-            let msg = JSON.parse(message.utf8Data);
+            const msg = JSON.parse(message.utf8Data);
             //console.log('<-', message.utf8Data);
             switch (msg.op)
             {
               case 'subscribe-req':
                 const shandler = (msg) => {
-                  send(msg);
+                  switch (msg.op)
+                  {
+                    case 'unsubscribe-req':
+                      delete subscribers[msg.subscriber];
+                      break;
+                    default:
+                      send(msg);
+                      break;
+                  }
                 };
-                shandler.remove = () => {
-                  delete subscribers[msg.subscriber];
-                }
                 subscribers[msg.subscriber] = true;
                 Root.event(msg, shandler);
                 break;
 
               case 'connect-req':
                 const chandler = (msg) => {
-                  send(msg);
-                }
-                chandler.remove = () => {
-                  delete proxies[msg.connection];
+                  switch (msg.op)
+                  {
+                    case 'disconnect-req':
+                      delete proxies[msg.connection];
+                      break;
+                    default:
+                      send(msg);
+                      break;
+                  }
                 }
                 proxies[msg.connector] = true;
                 Root.event(msg, chandler);
@@ -224,21 +245,45 @@ function runMaster(webserver)
 
               case 'advertise':
                 const ahandler = (msg) => {
-                  send(msg);
+                  switch (msg.op)
+                  {
+                    case 'unadvertise':
+                      delete advertisers[msg.topic];
+                      break;
+                    case 'unadvertise-force':
+                      for (var subscriber in ahandler.subscribers)
+                      {
+                        Root.event({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
+                      }
+                      break;
+                    case 'subscribe-req':
+                      ahandler.subscribers[msg.subscriber] = true;
+                      send(msg);
+                      break;
+                    case 'unsubscribe-req':
+                      delete ahandler.subscribers[msg.subscriber];
+                      break;
+                    default:
+                      send(msg);
+                      break;
+                  }
                 }
-                ahandler.remove = () => {
-                  delete advertisers[msg.topic];
-                }
+                ahandler.subscribers = {};
                 advertisers[msg.topic] = true;
                 Root.event(msg, ahandler);
                 break;
 
               case 'service':
                 const vhandler = (msg) => {
-                  send(msg);
-                }
-                vhandler.remote = () => {
-                  delete services[msg.service];
+                  switch (msg.op)
+                  {
+                    case 'unservice':
+                      delete services[msg.service];
+                      break;
+                    default:
+                      send(msg);
+                      break;
+                  }
                 }
                 services[msg.service] = true;
                 Root.event(msg, vhandler);
@@ -257,6 +302,14 @@ function runMaster(webserver)
       });
       connection.on('close', function()
       {
+        for (let topic in advertisers)
+        {
+          Root.event({ timestamp: Date.now(), op: 'unadvertise-force', topic: topic });
+        }
+        for (let service in services)
+        {
+          Root.event({ timestamp: Date.now(), op: 'unservice-force', service: service });
+        }
         for (let uuid in subscribers)
         {
           Root.event({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: uuid });
@@ -264,14 +317,6 @@ function runMaster(webserver)
         for (let uuid in proxies)
         {
           Root.event({ timestamp: Date.now(), op: 'disconnect-force', connector: uuid });
-        }
-        for (let topic in advertisers)
-        {
-          Root.event({ timestamp: Date.now(), op: 'unadvertise', topic: topic });
-        }
-        for (let service in services)
-        {
-          Root.event({ timestamp: Date.now(), op: 'unservice', service: service });
         }
         delete connections[id];
       });

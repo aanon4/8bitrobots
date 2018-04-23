@@ -46,6 +46,10 @@ nodeInternal.prototype =
     const listener = (msg) => {
       switch (msg.op)
       {
+        case 'unsubscribe-req':
+          delete this._subscribers[topic];
+          break;
+
         case 'unsubscribe-force':
           nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
           break;
@@ -58,9 +62,7 @@ nodeInternal.prototype =
           break;
       }
     }
-    listener.remove = () => {
-      delete this._subscribers[topic];
-    }
+
     this._subscribers[topic] = uuid;
   
     nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
@@ -102,15 +104,21 @@ nodeInternal.prototype =
           nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-ack', subscriber: msg.subscriber });
           break;
 
+        case 'unadvertise':
+          subscribers.forEach((subscriber) => {
+            nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
+          });
+          break;
+
+        case 'unadvertise-force':
+          nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic, schema: options.schema }, advertiser);
+          break;
+
         default:
           break;
       }
     }
-    advertiser.remove = () => {
-      subscribers.forEach((subscriber) => {
-        nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-force', subscriber: subscriber });
-      });
-    }
+
     nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic, schema: options.schema }, advertiser);
 
     let latching = ('latching' in options) ? options.latching : true;
@@ -170,15 +178,21 @@ nodeInternal.prototype =
           nodeEvent({ timestamp: Date.now(), op: 'disconnect-ack', connector: msg.connector });
           break;
 
+        case 'unservice':
+          proxies.forEach((proxy) => {
+            nodeEvent({ timestamp: Date.now(), op: 'disconnect-force', connector: proxy });
+          });
+          break;
+
+        case 'unservice-force':
+          nodeEvent({ timestamp: Date.now(), op: 'service', service: service, schema: options.schema }, serviceHandler);
+          break;
+
         default:
           break;
       }
     }
-    serviceHandler.remove = () => {
-      proxies.forEach((proxy) => {
-        nodeEvent({ timestamp: Date.now(), op: 'disconnect-force', connector: proxy });
-      });
-    }
+
     nodeEvent({ timestamp: Date.now(), op: 'service', service: service, schema: options.schema }, serviceHandler);
   },
 
@@ -221,6 +235,10 @@ nodeInternal.prototype =
           });
           break;
 
+        case 'disconnect-req':
+          delete this._proxies[service];
+          break;
+
         case 'disconnect-force':
           waiting = [];
           nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
@@ -237,10 +255,6 @@ nodeInternal.prototype =
         default:
           break;
       }
-    }
-    
-    replyHandler.remove = () => {
-      delete this._proxies[service];
     }
 
     this._proxies[service] = uuid;
