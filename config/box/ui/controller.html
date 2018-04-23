@@ -26,7 +26,6 @@
     const PAD_RADIUS = 135;
 
     var ros = Node.init('/controller/node');
-    //var setMovement = ros.proxy({ service: '/car/set_movement' });
     var executeGesture = ros.proxy({ service: '/car/execute_gesture' });
     var joystick = ros.advertise({ topic: 'joystick', schema: { x: 'Number', y: 'Number' } });
   
@@ -95,15 +94,6 @@
       {
         y = 0;
       }
-      if (x == 0 && y == 0)
-      {
-        //setMovement({ action: 'idle' });
-      }
-      else
-      {
-        //setMovement({ action: 'movement', forward: y, strafe: x });
-      }
-      console.log('joy', x, y);
       joystick.publish({ x: x, y: y });
     }
     stick.addEventListener('touchstart', function(e)

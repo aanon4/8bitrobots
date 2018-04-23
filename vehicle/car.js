@@ -6,7 +6,6 @@ const HEARTBEAT = 1;
 const WAITINGHEARTBEAT = 2;
 
 const TOPIC_SHUTDOWN = { topic: 'shutdown', schema: { reason: 'String' } };
-const SERVICE_MOVEMENT = { service: 'set_movement', schema: { action: 'String', forward: 'Number', strafe: 'Number' } };
 const SERVICE_GESTURE = { service: 'execute_gesture', schema: { action: 'String' } };
 
 
@@ -27,34 +26,18 @@ car.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._node.service(SERVICE_MOVEMENT, (movement) =>
-      {
-        this._handleMovement(movement);
-      });
-      this._node.service(SERVICE_GESTURE, (gesture) =>
-      {
+      this._node.service(SERVICE_GESTURE, (gesture) => {
+        this._heartbeat();
         this._handleGesture(gesture);
       });
+      this._node.subscribe({ topic: this._joystick }, (event) => {
+        this._heartbeat();
+        this._handleMovement(event.x, event.y);
+      });
       this._shTopic = this._node.advertise(TOPIC_SHUTDOWN);
-      process.on('exit', () =>
-      {
+      process.on('exit', () => {
         this._shTopic.publish({ reason: 'exit' });
       });
-      if (this._joystick)
-      {
-        console.log('subscribe', this._joystick);
-        this._node.subscribe({ topic: this._joystick }, (event) => {
-          console.log(event);
-          if (event.x === 0 && event.y === 0)
-          {
-            this._handleMovement({ action: 'idle' });
-          }
-          else
-          {
-            this._handleMovement({ action: 'movement', forward: event.y, strafe: event.x });
-          }
-        });
-      }
       this._axle =
       {
         set_velocity: this._node.proxy({ service: `${this._axleRoot}/set_velocity`}),
@@ -70,52 +53,39 @@ car.prototype =
     if (--this._enabled === 0)
     {
       this._stopHeartbeat();
-      if (this._joystick)
-      {
-        this._node.unsubscribe({ topic: this._joystick });
-      }
       this._shTopic.publish({ reason: 'terminated' });
-      this._node.unadvertise(TOPIC_SHUTDOWN);    
-      this._node.unservice(SERVICE_MOVEMENT);
+      this._node.unadvertise(TOPIC_SHUTDOWN);
+      this._node.unsubscribe({ topic: this._joystick });
       this._node.unservice(SERVICE_GESTURE);
     }
     return this;
   },
 
-  _handleMovement: function(movement)
+  _handleMovement: function(x, y)
   {
-    this._heartbeat();
-  
-    switch (movement.action)
+    this._forward = Math.min(Math.max(y, -1), 1);
+    this._strafe = Math.min(Math.max(x, -1), 1);
+    if (this._forward === 0 && this._strafe === 0)
     {
-      case 'movement':
-        if ('forward' in movement)
-        {
-          this._forward = Math.min(Math.max(movement.forward, -1), 1);
-        }
-        if ('strafe' in movement)
-        {
-          this._strafe = Math.min(Math.max(movement.strafe, -1), 1);;
-        }
-        this._setMotion();
-        break;
+      this._axle.set_velocity({ func: 'idle' });
+      this._axle.set_angle({ func: 'idle' });
+    }
+    else
+    {
+      // Velocity is the hypotenuse
+      // let velocity = Math.sqrt(forward * forward + strate * strafe);
+      // Scale so velocity ramps up slowly
+      // velocity = Math.sign(forward) * velocity * velocity; 
+      const velocity = (this._forward < 0 ? -1 : 1) * (this._forward * this._forward + this._strafe * this._strafe);
+      const angle = Math.atan2(this._forward, this._strafe);
 
-      case 'idle':
-        this._forward = 0;
-        this._strafe = 0;
-        this._axle.set_velocity({ func: 'idle' });
-        this._axle.set_angle({ func: 'idle' });
-        break;
-
-      default:
-        break;
+      this._axle.set_velocity({ velocity: velocity });
+      this._axle.set_angle({ angle: angle });
     }
   },
 
-  _handleGuesture: function(gesture)
+  _handleGesture: function(gesture)
   {
-    this._heartbeat();
-
     switch (gesture.action)
     {
       case 'manual':
@@ -131,6 +101,7 @@ car.prototype =
 
   _startHeartbeat: function()
   {
+    clearInterval(this._heartbeatTimer);
     this._heartbeatTimer = setInterval(() =>
     {
       switch (this._heartbeatStatus)
@@ -167,23 +138,7 @@ car.prototype =
   _heartbeatLost: function()
   {
     //console.log('heartbeat lost');
-    this._handleMovement({ action: 'idle' });
-  },
-
-  _setMotion: function()
-  {
-    const forward = this._forward;
-    const strafe = this._strafe;
-
-    // Velocity is the hypotenuse
-    // let velocity = Math.sqrt(forward * forward + strate * strafe);
-    // Scale so velocity ramps up slowly
-    // velocity = Math.sign(forward) * velocity * velocity; 
-    const velocity = (forward < 0 ? -1 : 1) * (forward * forward + strafe * strafe);
-    const angle = Math.atan2(forward, strafe);
-
-    this._axle.set_velocity({ velocity: velocity });
-    this._axle.set_angle({ angle: angle });
+    this._handleMovement(0, 0);
   }
 }
 
