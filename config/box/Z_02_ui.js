@@ -9,7 +9,7 @@ module.exports = function()
     {
       '/': 'config/box/ui/controller.html',
       '/js/8bit.js': './modules/8bit.js',
-      '/js/8bit-webconnector.js': './modules/8bit-webconnector.js',
+      '/js/8bit-slave.js': './modules/8bit-slave.js',
       '/js/three.js': './node_modules/three/build/three.min.js',
       '/image/compass.png': 'config/box/ui/compass.png',
 
