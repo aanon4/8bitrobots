@@ -3,6 +3,7 @@ console.info('Loading BNO055 I2C/UART IMU sensors.');
 const fs = require('fs');
 const Deasync = require('deasync');
 const SerialPort = require('serialport');
+const ConfigManager = require('modules/config-manager');
 
 const BNO055 =
 {
@@ -185,6 +186,13 @@ function imu(config)
   this._axisRemap = config.remap || null;
   this._clockBit = config.extClock ? 0x80 : 0x00;
   this._forcereset = config.reset || false;
+  this._config = new ConfigManager(this,
+  {
+    axisRemapX: config.remap ? config.remap.x : 0,
+    axisRemapY: config.remap ? config.remap.y : 0,
+    axisRemapZ: config.remap ? config.remap.z : 0
+  });
+  this._config.enable();
 
   if (SIMULATOR)
   {
@@ -284,6 +292,15 @@ imu.prototype =
       this._node.unadvertise(TOPIC_TEMPERATURE);
     }
     return this;
+  },
+
+  reconfigure: function(changes)
+  {
+    if (this._enabled)
+    {
+      // Reset the device, reloading any saved calibration data
+      this._reset(this._forcereset);
+    }
   },
 
   _readBytesI2C: function(address, readLen)
@@ -646,40 +663,41 @@ imu.prototype =
     this._writeBytes(BNO055.UNIT_SEL, [ 0x04 ]);
   
     // Remap any axes we need to
-    if (this._axisRemap)
+    let axisRemapX = this._config.get('axisRemapX');
+    let axisRemapY = this._config.get('axisRemapY');
+    let axisRemapZ = this._config.get('axisRemapZ');
+    
+    let map = 0;
+    let sign = 0;
+    if (axisRemapX > 0)
     {
-      var map = 0;
-      var sign = 0;
-      if (this._axisRemap.x > 0)
-      {
-        map |= (this._axisRemap.x - imu.X_AXIS);
-      }
-      else if (this._axisRemap.x < 0)
-      {
-        map |= (-this._axisRemap.x - imu.X_AXIS);
-        sign |= 4;
-      }
-      if (this._axisRemap.y > 0)
-      {
-        map |= (this._axisRemap.y - imu.X_AXIS) << 2;
-      }
-      else if (this._axisRemap.y < 0)
-      {
-        map |= (-this._axisRemap.y - imu.X_AXIS) << 2;
-        sign |= 2;
-      }
-      if (this._axisRemap.z > 0)
-      {
-        map |= (this._axisRemap.z - imu.X_AXIS) << 4;
-      }
-      else if (this._axisRemap.z < 0)
-      {
-        map |= (-this._axisRemap.z - imu.X_AXIS) << 4;
-        sign |= 1;
-      }
-      this._writeBytes(BNO055.AXIS_MAP_CONFIG, [ map ]);
-      this._writeBytes(BNO055.AXIS_MAP_SIGN, [ sign ]);
+      map |= (axisRemapX - imu.X_AXIS);
     }
+    else if (axisRemapX < 0)
+    {
+      map |= (-axisRemapX - imu.X_AXIS);
+      sign |= 4;
+    }
+    if (axisRemapY > 0)
+    {
+      map |= (axisRemapY - imu.X_AXIS) << 2;
+    }
+    else if (axisRemapY < 0)
+    {
+      map |= (-axisRemapY - imu.X_AXIS) << 2;
+      sign |= 2;
+    }
+    if (axisRemapZ > 0)
+    {
+      map |= (axisRemapZ - imu.X_AXIS) << 4;
+    }
+    else if (axisRemapZ < 0)
+    {
+      map |= (-axisRemapZ - imu.X_AXIS) << 4;
+      sign |= 1;
+    }
+    this._writeBytes(BNO055.AXIS_MAP_CONFIG, [ map ]);
+    this._writeBytes(BNO055.AXIS_MAP_SIGN, [ sign ]);
   
     // Apply any saved calibration data we may have
     // This will also put the IMU into the correct mode at the end regardless of whether
