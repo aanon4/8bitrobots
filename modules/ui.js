@@ -22,7 +22,7 @@ UI.prototype =
       {
         addpage({ from: from, to: this._pages[from] });
       }
-      this._node.unproxy({ service: `${this._server}/add_page`e });
+      this._node.unproxy({ service: `${this._server}/add_page` });
     }
     return this;
   },
