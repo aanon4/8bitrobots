@@ -5,7 +5,7 @@ console.info('Loading Server.');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const URL = require('url').URL;
+const url = require('url');
 
 const SERVICE_ADD_PAGE = { service: 'add_page', schema: { pages: 'Hash' } };
 
@@ -108,9 +108,13 @@ Server.prototype =
         }
         catch (_)
         {
-          if (new URL(to).protocol === 'http')
+          if (url.parse(to).protocol === 'http:')
           {
             this._pages[from] = { type: 'redirect', to: to };
+          }
+          else
+          {
+            console.warn(`Unknown page ${from} to ${to}.`);
           }
         }
         return true;
