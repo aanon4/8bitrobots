@@ -262,6 +262,10 @@ nodeInternal.prototype =
     nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
 
     return (request) => {
+      if (!(service in this._proxies))
+      {
+        throw new Error(`Not connected: ${service}`);
+      }
       const rid = ++replyid;
       return new Promise((resolve, reject) => {
         pending[rid] = (reply, exception) => {
