@@ -230,7 +230,7 @@
         {
           this.jsonInit(
           {
-            message0: `%1 of ${event.name}`,
+            message0: `value %1 of ${event.name}`,
             args0:
             [
               {
