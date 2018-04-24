@@ -60,9 +60,10 @@ ConfigManager.prototype =
             delete request[key];
           }
         }
-        if (this._state.update(Object.keys(this._defaults), request))
+        let changes = this._state.update(Object.keys(this._defaults), request);
+        if (changes)
         {
-          this._target.reconfigure();
+          this._target.reconfigure(changes);
         }
         let result = {};
         for (let key in this._defaults)

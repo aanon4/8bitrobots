@@ -44,9 +44,11 @@ StateManager.prototype =
   {
     const data = this._loadData();
     let change = false;
+    let changes = {};
     properties.forEach((property) => {
       if (property in values && values[property] !== data[property])
       {
+        changes[property] = { old: data[property], new: values[property] };
         data[property] = values[property];
         change = true;
       }
@@ -55,7 +57,7 @@ StateManager.prototype =
     {
       this._saveData();
     }
-    return change;
+    return change ? changes : null;
   },
 
   _loadData: function()

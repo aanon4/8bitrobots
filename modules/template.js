@@ -39,7 +39,7 @@ template.prototype =
     return this;
   },
 
-  reconfigure: function()
+  reconfigure: function(changes)
   {
     // ...
   }
