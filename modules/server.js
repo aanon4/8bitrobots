@@ -5,8 +5,9 @@ console.info('Loading Server.');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const URL = require('url').URL;
 
-const SERVICE_ADD_PAGES = { service: 'add_pages', schema: { pages: 'Hash' } };
+const SERVICE_ADD_PAGE = { service: 'add_page', schema: { pages: 'Hash' } };
 
 
 function incoming(request, response)
@@ -23,44 +24,53 @@ function incoming(request, response)
   {
     for (let key in this._pages)
     {
-      if (url.indexOf(key) === 0 && fs.lstatSync(this._pages[key]).isDirectory())
+      const info = this._pages[key];
+      if (url.indexOf(key) === 0 && info.type === 'file' && fs.lstatSync(info.to).isDirectory())
       {
-        page = this._pages[key] + url.substring(key.length);
+        page = { type: 'file', to: info.to + url.substring(key.length) };
         break;
       }
     }
   }
-  if (page)
+  switch (page ? page.type : 'unknown')
   {
-    const text = fs.readFileSync(page);
-    const headers =
-    {
-      'Content-Length': text.length,
-      'Access-Control-Allow-Origin': '*'
-    };
-    switch (path.extname(page))
-    {
-      case '.html':
-        headers['Content-Type'] = 'text/html';
-        break;
-      case '.js':
-        headers['Content-Type'] = 'application/x-javascript';
-        break;
-      case '.png':
-        headers['Content-Type'] = 'image/png';
-        break;
+    case 'file':
+      const text = fs.readFileSync(page.to);
+      const headers =
+      {
+        'Content-Length': text.length,
+        'Access-Control-Allow-Origin': '*'
+      };
+      switch (path.extname(page.to))
+      {
+        case '.html':
+          headers['Content-Type'] = 'text/html';
+          break;
+        case '.js':
+          headers['Content-Type'] = 'application/x-javascript';
+          break;
+        case '.png':
+          headers['Content-Type'] = 'image/png';
+          break;
 
-      default:
-        break;
-    }
-    response.writeHead(200, headers);
-    response.write(text);
-    response.end();
-  }
-  else
-  {
-    response.writeHead(404);
-    response.end();
+        default:
+          break;
+      }
+      response.writeHead(200, headers);
+      response.write(text);
+      response.end();
+      break;
+
+    case 'redirect':
+      response.writeHead(302, { Location: page.to });
+      response.end();
+      break;
+
+    case 'unknown':
+    default:
+      response.writeHead(404);
+      response.end();
+      break;
   }
 }
 
@@ -83,17 +93,24 @@ Server.prototype =
       webserver.listen(this._port);
       global.webserver = webserver;
 
-      this._node.service(SERVICE_ADD_PAGES, (request) =>
+      this._node.service(SERVICE_ADD_PAGE, (request) =>
       {
-        for (let page in request.pages)
+        const from = request.from;
+        const to = request.to;
+        if (from in this._pages && this._pages[from] != to)
         {
-          if (page in this._pages && this._pages[page] != request.pages[page])
+          throw new Error(`Page mismatch: ${from}`);
+        }
+        try
+        {
+          fs.accessSync(to);
+          this._pages[from] = { type: 'file', to: to };
+        }
+        catch (_)
+        {
+          if (new URL(to).protocol === 'http')
           {
-            throw new Error(`Page mismatch: ${page}`);
-          }
-          else
-          {
-            this._pages[page] = request.pages[page];
+            this._pages[from] = { type: 'redirect', to: to };
           }
         }
         return true;
@@ -106,7 +123,7 @@ Server.prototype =
   {
     if (--this._enabled === 0)
     {
-      this._node.unservice(SERVICE_ADD_PAGES);
+      this._node.unservice(SERVICE_ADD_PAGE);
       global.webserver = null;
     }
     return this;

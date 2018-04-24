@@ -4,7 +4,7 @@ module.exports = function()
   return new UI(
   {
     name: '/ui/node',
-    target: '/server',
+    server: '/server',
     pages:
     {
       '/': 'config/box/ui/controller.html',

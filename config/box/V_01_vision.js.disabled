@@ -5,6 +5,7 @@ module.exports = function()
 
   return new Vision(
   {
-    name: '/car/vision/node'
+    name: '/car/vision/node',
+    server: '/server'
   });
 };

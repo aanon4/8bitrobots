@@ -7,6 +7,9 @@ const path = require('path');
 function vision(config)
 {
   this._name = config.name;
+  this._node = Node.init(this._name);
+  this._target = config.server;
+  this._ip = config.ip;
   this._running = null;
   this._enabled = 0;
 }
@@ -23,6 +26,8 @@ vision.prototype =
           this._stop();
         });
       }
+      this._node.proxy({ service: `${this._target}/add_page` })({ from: '/video', to: `http://${this._ip}:8081/video` });
+      this._node.unproxy({ service: `${this._target}/add_page` });
       this._start();
     }
     return this;

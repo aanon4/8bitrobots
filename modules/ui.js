@@ -6,8 +6,8 @@ function UI(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
+  this._server = config.server;
   this._enabled = 0;
-  this._addpages = `${config.target}/add_pages`;
   this._pages = config.pages;
 }
 
@@ -17,9 +17,12 @@ UI.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._node.proxy({ service: this._addpages })({ pages: this._pages }).then(() => {
-        this._node.unproxy({ service: this._addpages });
-      });
+      const addpage = this._node.proxy({ service: `${this._server}/add_page` });
+      for (let from in this._pages)
+      {
+        addpage({ from: from, to: this._pages[from] });
+      }
+      this._node.unproxy({ service: `${this._server}/add_page`e });
     }
     return this;
   },
