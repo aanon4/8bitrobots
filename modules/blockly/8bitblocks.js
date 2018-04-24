@@ -172,20 +172,17 @@
   {
     const actionBlocks = [];
     actions.forEach((action) => {
-
-      const name = action.name;
-      const schema = action.schema;
       
       let json =
       {
-        message0: `call ${name}`,
+        message0: `call ${action.friendlyName ? action.friendlyName : action.name}`,
         previousStatement: null,
         nextStatement: null,
         inputsInline: true,
         colour: 90
       };
       let count = 1;
-      for (let key in schema)
+      for (let key in action.schema)
       {
         if (key !== '__return')
         {
@@ -193,7 +190,7 @@
           {
             type: 'input_value',
             name: key,
-            check: typeof schema[key] !== 'object' ? schema[key] : 'String',
+            check: typeof action.schema[key] !== 'object' ? action.schema[key] : 'String',
             align: 'RIGHT'
           }];
           json[`message${count}`] = `${count === 1 ? 'with ' : ''}${key} %1`;
@@ -201,7 +198,7 @@
         }
       }
       
-      Blockly.Blocks[name] =
+      Blockly.Blocks[action.name] =
       {
         init: function()
         {
@@ -209,7 +206,7 @@
         }
       }
 
-      actionBlocks.push(`<block type="${name}"></block>`);
+      actionBlocks.push(`<block type="${action.name}"></block>`);
     });
     const idx = TOOLBOX.indexOf('<category name="Actions">');
     if (idx !== -1)

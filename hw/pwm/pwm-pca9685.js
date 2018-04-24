@@ -21,6 +21,7 @@ function pwmChannel(pwm, subaddress, doApi)
   this._plans = [];
   this._currentMs = null;
   this._lastMs = null;
+  this._friendlyName = null;
 }
 
 pwmChannel.prototype =
@@ -31,8 +32,8 @@ pwmChannel.prototype =
     {
       if (this._doApi)
       {
-        this._adPos = this._node.advertise(TOPIC_CURRENT);
-        this._node.service(SERVICE_SETPULSE, (request) =>
+        this._adPos = this._node.advertise(Object.assign({ friendlyName: this._friendlyName} , TOPIC_CURRENT));
+        this._node.service(Object.assign({ friendlyName: this._friendlyName }, SERVICE_SETPULSE), (request) =>
         {
           if (request.func === 'idle')
           {
@@ -44,7 +45,7 @@ pwmChannel.prototype =
           }
           return true;
         });
-        this._node.service(SERVICE_WAITFOR, (event) =>
+        this._node.service(Object.assign({ friendlyName: this._friendlyName }, SERVICE_WAITFOR ), (event) =>
         {
           return this.waitForPulse(event.compare, event.pulse);
         });
@@ -70,6 +71,11 @@ pwmChannel.prototype =
       }
     }
     return this;
+  },
+
+  setFriendlyName: function(name)
+  {
+    this._friendlyName = name;
   },
 
   setPulse: function(onMs, periodMs, func)
@@ -244,7 +250,6 @@ function PWM(config)
   this._node = Node.init(`${this._name}/node`);
   this._enabled = 0;
   const cenabled = {};
-  this._active = {};
   this._channels = [];
   const exclude = config.excludeApi || [];
   for (let i = 0; i < 16; i++)
@@ -252,8 +257,8 @@ function PWM(config)
     const api = exclude.indexOf(i) === -1;
     if (api)
     {
-      cenabled[`channel${i}`] = false;
-      this._active[`channel${i}`] = null;
+      //cenabled[`channel${i}`] = false;
+      cenabled[`name${i}`] = '';
     }
     this._channels.push(new pwmChannel(this, i, api));
   }
@@ -288,7 +293,15 @@ PWM.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this.reconfigure();
+      for (let i = 0; i < 16; i++)
+      {
+        const name = this._config.get(`name${i}`);
+        if (name && name.trim())
+        {
+          this._channels[i].setFriendlyName(name);
+          this._channels[i].enable();
+        }
+      }
     }
     return this;
   },
@@ -297,31 +310,37 @@ PWM.prototype =
   {
     if (--this._enabled === 0)
     {
-      for (let key in this._active)
+      for (let i = 0; i < 16; i++)
       {
-        if (this._active[key])
+        const name = this._config.get(`name${i}`);
+        if (name && name.trim())
         {
-          this._active[key].disable();
-          this._active[key] = null;
+          this._channels[i].disable();
         }
       }
     }
     return this;
   },
 
-  reconfigure: function()
+  reconfigure: function(changes)
   {
     this._setCyclePeriod();
-    for (let key in this._active)
+    for (let key in changes)
     {
-      if (!this._active[key] && this._config.get(key))
+      if (key.substring(0, 4) === 'name')
       {
-        this._active[key] = this._channels[key.substring(7)].enable();
-      }
-      else if (this._active[key] && !this._config.get(key))
-      {
-        this._active[key].disable();
-        this._active[key] = null;
+        const channel = this._channels[key.substring(4)];
+        const name = changes[key].new;
+        const old = changes[key].old;
+        if (old && old.trim())
+        {
+          channel.disable();
+        }
+        if (name && name.trim())
+        {
+          channel.setFriendlyName(name);
+          channel.enable();
+        }
       }
     }
   },
