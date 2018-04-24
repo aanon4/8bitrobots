@@ -180,23 +180,23 @@ if (typeof WebSocket === 'undefined')
   const websocket = require('websocket');
   global.WebSocket = function(url)
   {
-    const client = websocket.client();
-    client.on('connect', () => {
+    const client = new websocket.client();
+    client.on('connect', (connection) => {
+      connection.on('message', (message) => {
+        this.onmessage({ data: message.utf8Data });
+      });
+      connection.on('close', () => {
+        this.onclose();
+      });
+      connection.on('connectFailed', () => {
+        this.onclose();
+      });
+      this.send = (data) => {
+        connection.sendUTF(data);
+      }
       this.onopen();
     });
-    client.on('message', (message) => {
-      this.onmessage({ data: message.utf8Data });
-    });
-    client.on('close', () => {
-      this.onclose();
-    });
-    client.on('connectFailed', () => {
-      this.onclose();
-    });
-    this.send = (data) => {
-      this.sendUTF(data);
-    }
-    client.target(url);
+    client.connect(url);
   }
 }
 
