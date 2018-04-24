@@ -165,7 +165,6 @@ const Root =
 global['8Bit'] = Root;
 
 const websocket = require('websocket');
-const UUID = require('uuid/v4');
 
 const SERVICE_LIST = { service: '/list', schema: {} };
 
@@ -176,8 +175,6 @@ function runMaster(webserver)
     httpServer: webserver
   });
 
-  const connections = {};
-
   websocketserver.on('request', function(request)
   {
     if (request.resource !== '/8BitApiV1')
@@ -186,9 +183,7 @@ function runMaster(webserver)
     }
     else
     {
-      const id = UUID();
       const connection = request.accept(null, request.origin);
-      connections[id] = connection;
 
       function send(msg)
       {
@@ -333,7 +328,6 @@ function runMaster(webserver)
         {
           Root.event({ timestamp: Date.now(), op: 'disconnect-force', connector: uuid });
         }
-        delete connections[id];
       });
     }
   });
