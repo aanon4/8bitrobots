@@ -161,22 +161,16 @@ const Root =
     {
       console.error('Message loop', JSON.stringify(msg));
     }
+    else if (this._opened)
+    {
+      //console.log('->', JSON.stringify(msg));
+      this._connection.send(JSON.stringify(msg));
+    }
     else
     {
-      msg = JSON.stringify(msg);
-      const doSend = () =>
-      {
-        if (this._opened)
-        {
-          console.log('->', msg);
-          this._connection.send(msg);
-        }
-        else
-        {
-          this._pending.push(doSend);
-        }
-      }
-      doSend();
+      this._pending.push(() => {
+        this.sendToMaster(msg);
+      });
     }
   }
 };
