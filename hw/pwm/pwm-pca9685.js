@@ -259,7 +259,7 @@ function PWM(config)
   }
   this._config = new ConfigManager(this, Object.assign({
     prescaleTweak: config.prescaleTweak || 0,
-    cycleMs: config.cycleMs || 0
+    cycleMs: config.cycleMs || 20
   }, cenabled));
 
   this._config.enable();
