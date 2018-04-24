@@ -7,14 +7,14 @@ module.exports = function()
     server: '/server',
     pages:
     {
-      '/': 'config/box/ui/controller.html',
+      '/': 'config/bot/ui/controller.html',
       '/js/8bit.js': './modules/8bit.js',
       '/js/8bit-slave.js': './modules/8bit-slave.js',
       '/js/three.js': './node_modules/three/build/three.min.js',
-      '/image/compass.png': 'config/box/ui/compass.png',
+      '/image/compass.png': 'config/bot/ui/compass.png',
 
       // Blockly
-      '/program': 'config/box/ui/blockly.html',
+      '/program': 'config/bot/ui/blockly.html',
       '/blockly/blockly_compressed.js': 'modules/blockly/blockly_compressed.js',
       '/blockly/blocks_compressed.js': 'modules//blockly/blocks_compressed.js',
       '/blockly/msg/js/': 'modules/blockly/msg/js/',
