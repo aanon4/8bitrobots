@@ -4,7 +4,7 @@ console.info('Loading Console.');
 
 const util = require('util');
 
-const TOPIC_LOG = { topic: 'log', schema: { message: 'String' } };
+const TOPIC_LOG = { topic: 'log', schema: { message: 'String' }, friendlyName: 'Console' };
 
 let adLog = null;
 

@@ -17,7 +17,7 @@ const Root =
     {
       case 'advertise':
       {
-        this._advertisers[msg.topic] = { handler: handler, schema: msg.schema };
+        this._advertisers[msg.topic] = { handler: handler, schema: msg.schema, friendlyName: msg.friendlyName };
         const targets = this._pending[msg.topic];
         if (targets)
         {
@@ -84,7 +84,7 @@ const Root =
       }
       case 'service':
       {
-        this._services[msg.service] = { handler: handler, schema: msg.schema };
+        this._services[msg.service] = { handler: handler, schema: msg.schema, friendlyName: msg.friendlyName };
         const targets = this._pending[msg.service];
         if (targets)
         {
@@ -351,10 +351,10 @@ Master.prototype =
       {
         return {
           topics: Object.keys(Root._advertisers).map((name) => {
-            return { name: name, schema: Root._advertisers[name].schema };
+            return { name: name, schema: Root._advertisers[name].schema, friendlyName: Root._advertisers[name].friendlyName };
           }),
           services: Object.keys(Root._services).map((name) => {
-            return { name: name, schema: Root._services[name].schema };
+            return { name: name, schema: Root._services[name].schema, friendlyName: Root._services[name].friendlyName };
           })
         };
       });

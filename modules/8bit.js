@@ -111,7 +111,7 @@ nodeInternal.prototype =
           break;
 
         case 'unadvertise-force':
-          nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic, schema: options.schema }, advertiser);
+          nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic, schema: options.schema, friendlyName: options.friendlyName }, advertiser);
           break;
 
         default:
@@ -119,7 +119,7 @@ nodeInternal.prototype =
       }
     }
 
-    nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic, schema: options.schema }, advertiser);
+    nodeEvent({ timestamp: Date.now(), op: 'advertise', topic: topic, schema: options.schema, friendlyName: options.friendlyName }, advertiser);
 
     let latching = ('latching' in options) ? options.latching : true;
     return {
@@ -185,7 +185,7 @@ nodeInternal.prototype =
           break;
 
         case 'unservice-force':
-          nodeEvent({ timestamp: Date.now(), op: 'service', service: service, schema: options.schema }, serviceHandler);
+          nodeEvent({ timestamp: Date.now(), op: 'service', service: service, schema: options.schema, friendlyName: options.friendlyName }, serviceHandler);
           break;
 
         default:
@@ -193,7 +193,7 @@ nodeInternal.prototype =
       }
     }
 
-    nodeEvent({ timestamp: Date.now(), op: 'service', service: service, schema: options.schema }, serviceHandler);
+    nodeEvent({ timestamp: Date.now(), op: 'service', service: service, schema: options.schema, friendlyName: options.friendlyName }, serviceHandler);
   },
 
   unservice: function(options)

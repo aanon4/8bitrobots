@@ -32,11 +32,11 @@ const LIST = NODE.proxy({ service: '/list' });
 LIST({}).then((list) => {
   console.log('Topics:');
   list.topics.forEach((topic) => {
-    console.log(`  ${topic.name}${sidx === -1 ? '' : ': ' + JSON.stringify(topic.schema)}`);
+    console.log(`  ${topic.name}${topic.friendlyName ? ' [' + topic.friendlyName + ']' : ''}${sidx === -1 ? '' : ': ' + JSON.stringify(topic.schema)}`);
   });
   console.log('Services:');
   list.services.forEach((service) => {
-    console.log(`  ${service.name}${sidx === -1 ? '' : ': ' + JSON.stringify(service.schema)}`);
+    console.log(`  ${service.name}${service.friendlyName ? ' [' + service.friendlyName + ']' : ''}${sidx === -1 ? '' : ': ' + JSON.stringify(service.schema)}`);
   });
   NODE.unproxy({ service: '/list' });
   process.exit(0);

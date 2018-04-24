@@ -36,7 +36,7 @@
 
     var node = Node.init('/controller/node');
     var executeGesture = node.proxy({ service: '/car/execute_gesture' });
-    var joystick = node.advertise({ topic: 'joystick', schema: { x: 'Number', y: 'Number' } });
+    var joystick = node.advertise({ topic: 'joystick', schema: { x: 'Number', y: 'Number' }, friendlyName: 'Right Joystick' });
     
     function gesture(g)
     {
