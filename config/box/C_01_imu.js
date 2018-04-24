@@ -11,7 +11,7 @@ module.exports = function()
     {
       name: '/imu/node',
       reset: true,
-      extClock: true,
+      extClock: false,
       i2c: i2c,
       remap: { x: -Imu.X_AXIS, y: -Imu.Y_AXIS, z: Imu.Z_AXIS }
     });
