@@ -7,36 +7,37 @@
   <script src="js/three.js"></script>
   <style>
     html,body { width: 100%; height: 100%; margin: 0; color: white; background-color: black; background-size: 100%, 100%; }
+    #app { width: 100%; height: 100% }
     #pad { position: absolute; top: 40px; right: 20px }
     #joystick { position: absolute; top: 130px; right: 110px }
-    #buttons { -webkit-user-select: none; margin-left: 10px }
+    #buttons { --webkit-user-select: none; margin-left: 10px }
     #buttons > span { font-size: 18px; border: 1px solid white; border-radius: 5px; padding: 5px; margin: 5px; line-height: 44px; }
     #buttons > span:active { color: black; background-color: white }
   </style>
 </head>
 <body>
-  <canvas id='pad' width="280" height="280"></canvas>
-  <canvas id='joystick' width="100" height="100"></canvas>
-  <img id="video">
-  <img id="compass" src="image/compass.png">
+  <div id='app'>
+    <canvas id='pad' width="280" height="280"></canvas>
+    <canvas id='joystick' width="100" height="100"></canvas>
+    <img id="video" src="/video">
+    <img id="compass" src="image/compass.png">
+  </div>
   <script>
+  
+    document.getElementById('app').addEventListener('touchstart', function(e)
+    {
+      e.preventDefault();
+    });
+
     const SCREEN_WIDTH = screen.height;
     const SCREEN_HEIGHT = screen.width;
     const STICK_RADIUS = 45;
     const PAD_RADIUS = 135;
 
-    var ros = Node.init('/controller/node');
-    var executeGesture = ros.proxy({ service: '/car/execute_gesture' });
-    var joystick = ros.advertise({ topic: 'joystick', schema: { x: 'Number', y: 'Number' } });
-  
-    document.addEventListener('gesturestart', function (e)
-    {
-      e.preventDefault();
-    });
-    document.addEventListener('touchmove', function(e)
-    {
-      e.preventDefault();
-    });
+    var node = Node.init('/controller/node');
+    var executeGesture = node.proxy({ service: '/car/execute_gesture' });
+    var joystick = node.advertise({ topic: 'joystick', schema: { x: 'Number', y: 'Number' } });
+    
     function gesture(g)
     {
       executeGesture({ action: g });
@@ -152,9 +153,8 @@
       }
     });
     tick = setInterval(moveStick, 500); // Movement heatbeat
-    document.getElementById('video').src = window.location.protocol + '//' + window.location.hostname + ':8081/video';
     
-    ros.subscribe({ topic: '/kinematics/orientation' }, function(e)
+    node.subscribe({ topic: '/kinematics/orientation' }, function(e)
     {
       var euler = new THREE.Euler().setFromQuaternion(new THREE.Quaternion(e.x, e.y, e.z, e.w));
       document.getElementById('compass').style.transform = 'rotate(' + euler.z + 'rad)';
