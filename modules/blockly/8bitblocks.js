@@ -119,11 +119,12 @@
                   break;
               }
             }
-            json[`message${count}`] = `${key} %1`;
+            json[`message${count}`] = `${key == 'friendlyName' ? 'name' : key} %1`;
             count++;
           }
         }
     
+        let changes = {};
         Blockly.Blocks[name] =
         {
           init: function()
@@ -133,19 +134,27 @@
 
           onchange: function(e)
           {
+            console.log(e);
             switch (e.type)
             {
-              case 'create':
-                break;
-
-              case 'change':
+              case Blockly.Events.BLOCK_CHANGE:
                 if (this.id !== e.blockId)
                 {
                   break;
                 }
-                CONFIG({ [e.name]: e.newValue }).then(() => {
-                  rebuildEventAndActionBlocks();
-                });
+                changes[e.name] = e.newValue;
+                break;
+              case Blockly.Events.UI:
+                if (e.element === 'selected' && e.oldValue === this.id)
+                {
+                  if (Object.keys(changes).length)
+                  {
+                    CONFIG(changes).then(() => {
+                      changes = {};
+                      rebuildEventAndActionBlocks();
+                    });
+                  }
+                }
                 break;
               default:
                 break;
