@@ -176,7 +176,6 @@ function twoc(a, b)
   return v < 0x8000 ? v : -(1 + (v ^ 0xFFFF));
 }
 
-
 function imu(config)
 {
   this._name = config.name;
@@ -188,6 +187,7 @@ function imu(config)
   this._forcereset = config.reset || false;
   this._config = new ConfigManager(this,
   {
+    friendlyName: '',
     axisRemapX: config.remap ? config.remap.x : 0,
     axisRemapY: config.remap ? config.remap.y : 0,
     axisRemapZ: config.remap ? config.remap.z : 0
@@ -260,46 +260,62 @@ imu.prototype =
   {
     if (this._enabled++ === 0)
     {
-      // Reset the device, reloading any saved calibration data
-      this._reset(this._forcereset);
-
-      this._adOrientation = this._node.advertise(TOPIC_ORIENTATION);
-      this._adAcceleration = this._node.advertise(TOPIC_ACCELERATION);
-      this._adCalibration = this._node.advertise(TOPIC_CALIBRATION);
-      this._adTemperature = this._node.advertise(TOPIC_TEMPERATURE);
-  
-      this._clock1 = setInterval(() => {
-        this._updateQuaternionAndLinear();
-      }, 20);
-      this._clock2 = setInterval(() => {
-        this._updateCalibrationStatus();
-        this._updateTemp();
-      }, 1000);
+      this._enable();
     }
     return this;
+  },
+
+  _enable: function()
+  {
+    // Reset the device, reloading any saved calibration data
+    this._reset(this._forcereset);
+
+    const friendlyName = this._config.get('friendlyName');
+    function friendlyTopic(topic)
+    {
+      return friendlyName ? Object.assign({ friendlyName: `${friendlyName} ${topic.topic}` }, topic) : topic;
+    }
+
+    this._adOrientation = this._node.advertise(friendlyTopic(TOPIC_ORIENTATION));
+    this._adAcceleration = this._node.advertise(friendlyTopic(TOPIC_ACCELERATION));
+    this._adCalibration = this._node.advertise(friendlyTopic(TOPIC_CALIBRATION));
+    this._adTemperature = this._node.advertise(friendlyTopic(TOPIC_TEMPERATURE));
+
+    this._clock1 = setInterval(() => {
+      this._updateQuaternionAndLinear();
+    }, 20);
+    this._clock2 = setInterval(() => {
+      this._updateCalibrationStatus();
+      this._updateTemp();
+    }, 1000);
   },
 
   disable: function()
   {
     if (--this._enabled === 0)
     {
-      clearInterval(this._clock1);
-      clearInterval(this._clock2);
-
-      this._node.unadvertise(TOPIC_ORIENTATION);
-      this._node.unadvertise(TOPIC_ACCELERATION);
-      this._node.unadvertise(TOPIC_CALIBRATION);
-      this._node.unadvertise(TOPIC_TEMPERATURE);
+      this._disable();
     }
     return this;
+  },
+
+  _disable: function()
+  {
+    clearInterval(this._clock1);
+    clearInterval(this._clock2);
+
+    this._node.unadvertise(TOPIC_ORIENTATION);
+    this._node.unadvertise(TOPIC_ACCELERATION);
+    this._node.unadvertise(TOPIC_CALIBRATION);
+    this._node.unadvertise(TOPIC_TEMPERATURE);
   },
 
   reconfigure: function(changes)
   {
     if (this._enabled)
     {
-      // Reset the device, reloading any saved calibration data
-      this._reset(this._forcereset);
+      this._disable();
+      this._enable();
     }
   },
 

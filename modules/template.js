@@ -24,24 +24,38 @@ template.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._foo = this._config.get('foo');
-      // ...
+      this._enable();
     }
     return this;
+  },
+
+  _enable: function()
+  {
+    this._foo = this._config.get('foo');
+    // ...
   },
   
   disable: function()
   {
     if (--this._enabled === 0)
     {
-      // ...
+      this._disable();
     }
     return this;
   },
 
-  reconfigure: function(changes)
+  _disable: function()
   {
     // ...
+  },
+
+  reconfigure: function(changes)
+  {
+    if (this._enabled)
+    {
+      this._disable();
+      this._enable();
+    }
   }
 }
 
