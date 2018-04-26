@@ -13,13 +13,14 @@
     #buttons { --webkit-user-select: none; margin-left: 10px }
     #buttons > span { font-size: 18px; border: 1px solid white; border-radius: 5px; padding: 5px; margin: 5px; line-height: 44px; }
     #buttons > span:active { color: black; background-color: white }
+    #compass { position: absolute; top: 80px; left: 80px }
   </style>
 </head>
 <body>
   <div id='app'>
     <canvas id='pad' width="280" height="280"></canvas>
     <canvas id='joystick' width="100" height="100"></canvas>
-    <img id="video" src="/video">
+    <!-- <img id="video" src="/video"> -->
     <img id="compass" src="image/compass.png">
   </div>
   <script>
