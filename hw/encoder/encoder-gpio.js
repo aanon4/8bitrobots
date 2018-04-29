@@ -6,6 +6,7 @@ const ConfigManager = require('modules/config-manager');
 
 const TOPIC_RATE = { topic: 'rate', schema: { count: 'Number', instantRpm: 'Number', averageRpm: 'Number'} };
 
+
 function encoder(config)
 {
   this._name = config.name;
@@ -13,6 +14,7 @@ function encoder(config)
   this._enabled = 0;
   this._config = new ConfigManager(this,
   {
+    friendlyName: '',
     edge:
     {
       value: config.edge || 'falling',
@@ -34,8 +36,6 @@ encoder.prototype =
   {
     if (this._enabled++ === 0)
     {
-      this._adRate = this._node.advertise(TOPIC_RATE);
-
       this._gpio.enable();
       this.reconfigure();
     }
@@ -46,7 +46,9 @@ encoder.prototype =
   {
     if (--this._enabled === 0)
     {
+      this._gpio.removeListener(this._onEdge);
       this._node.unadvertise(TOPIC_RATE);
+      this._adRate = null;
       this._gpio.disable();
     }
     return this;
@@ -63,6 +65,11 @@ encoder.prototype =
     this._lastEdge = 0;
     this._gpio.removeListener(this._onEdge);
     this._gpio.onEdge(this._edge, this._onEdge);
+    if (this._adRate)
+    {
+      this._node.unadvertise(TOPIC_RATE);
+    }
+    this._adRate = this._node.advertise(this._friendlyTopic(TOPIC_RATE));
   },
 
   _onEdge: function()
@@ -80,6 +87,12 @@ encoder.prototype =
       rate.averageRpm = this._average.length * 60 / ((now - oldEdge) / 1000 * this._countsPerRevolution);
     }
     this._adRate.publish(rate);
+  },
+
+  _friendlyTopic: function(topic)
+  {
+    const friendlyName = this._config.get('friendlyName');
+    return friendlyName ? Object.assign({ friendlyName: `${friendlyName} ${topic.topic}` }, topic) : topic;
   }
 }
 
