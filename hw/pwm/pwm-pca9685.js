@@ -110,7 +110,7 @@ pwmChannel.prototype =
     }
   },
 
-  setDutyCycle: function(fraction)
+  setDutyCycle: function(fraction, periodMs, func)
   {
     if (fraction < 0)
     {
@@ -120,7 +120,7 @@ pwmChannel.prototype =
     {
       fraction = 1;
     }
-    this.setPulse(fraction * this.getCyclePeriod());
+    this.setPulse(fraction * this.getCyclePeriod(), periodMs, func);
   },
   
   getCurrentPulse: function()

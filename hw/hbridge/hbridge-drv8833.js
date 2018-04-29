@@ -85,20 +85,20 @@ hbridgeChannel.prototype =
     if (rpm === 0 || maxRPM === 0)
     {
       duty = 0;
-      this._in1.setPulse(0, changeMs, func);
-      this._in2.setPulse(0, changeMs, func);
+      this._in1.setDutyCycle(0, changeMs, func);
+      this._in2.setDutyCycle(0, changeMs, func);
     }
     else if (rpm > 0)
     {
       duty = Math.min(1.0, rpm / maxRPM);
-      this._in1.setPulse(duty, changeMs, func);
-      this._in2.setPulse(0, changeMs, func);
+      this._in1.setDutyCycle(duty, changeMs, func);
+      this._in2.setDutyCycle(0, changeMs, func);
     }
     else
     {
       duty = Math.max(-1.0, rpm / maxRPM);
-      this._in1.setPulse(0, changeMs, func);
-      this._in2.setPulse(-duty, changeMs, func);
+      this._in1.setDutyCycle(0, changeMs, func);
+      this._in2.setDutyCycle(-duty, changeMs, func);
     }
     this._targetRPM = maxRPM * duty;
   },
@@ -135,8 +135,8 @@ hbridgeChannel.prototype =
 
   brake: function()
   {
-    this._in1.setPulse(1, changeMs, func);
-    this._in2.setPulse(1, changeMs, func);
+    this._in1.setDutyCycle(1, changeMs, func);
+    this._in2.setDutyCycle(1, changeMs, func);
   },
 
   setKVandPoles: function(kV, poles)
