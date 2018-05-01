@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function()
     const jscode = Blockly.JavaScript.workspaceToCode(workspace);
   
     const CONFIG = NODE.proxy({ service: '/app/config' });
-    CONFIG({ workspace: workspaceText, code: jscode }).then(() => {
+    CONFIG({ source: workspaceText, code: jscode }).then(() => {
       NODE.unproxy({ service: '/app/config' });
     });
   }
