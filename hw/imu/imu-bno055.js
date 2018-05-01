@@ -310,7 +310,7 @@ imu.prototype =
     this._node.unadvertise(TOPIC_TEMPERATURE);
   },
 
-  reconfigure: function(changes)
+  reconfigure: function()
   {
     if (this._enabled)
     {
