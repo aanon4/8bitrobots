@@ -1,5 +1,7 @@
- (function()
+ document.addEventListener('DOMContentLoaded', function()
  {
+  Blockly.Field.prototype.maxDisplayLength = 100;
+
   function buildProgramBlocks()
   {
     const json0 =
@@ -134,7 +136,6 @@
 
           onchange: function(e)
           {
-            console.log(e);
             switch (e.type)
             {
               case Blockly.Events.BLOCK_CHANGE:
@@ -184,13 +185,13 @@
       
       let json =
       {
-        message0: `call ${action.friendlyName ? action.friendlyName : action.name}`,
+        message0: `Set ${action.friendlyName ? action.friendlyName : action.name}`,
         previousStatement: null,
         nextStatement: null,
         inputsInline: true,
         colour: 90
       };
-      let count = 1;
+      let count = 0;
       for (let key in action.schema)
       {
         if (key !== '__return')
@@ -202,7 +203,7 @@
             check: typeof action.schema[key] !== 'object' ? action.schema[key] : 'String',
             align: 'RIGHT'
           }];
-          json[`message${count}`] = `${count === 1 ? 'with ' : ''}${key} %1`;
+          json[`message${count}`] = (json[`message${count}`] || '') + `${count === 0 ? ' with ' : ''}${key} %1`;
           count++;
         }
       }
@@ -285,4 +286,5 @@
     buildEventBlocks(sort(list.topics.filter((topic) => topic.schema )));
     buildActionBlocks(sort(list.services.filter((service) => !service.name.endsWith('/config') && service.schema )));
   });
- })();
+ });
+ 
