@@ -8,17 +8,12 @@ document.addEventListener('DOMContentLoaded', function()
     {
       this.jsonInit(
       {
-        message0: `constrain angle %1 with deadband %2 trim %3 clockwise %4 and counter-clockwise %5`,
+        message0: `constrain angle %1 with trim %2 clockwise %3 and counter-clockwise %4`,
         args0:
         [
           {
             type: 'input_value',
             name: 'angle'
-          },
-          {
-            type: 'field_number',
-            name: 'deadband',
-            value: '0'
           },
           {
             type: 'field_number',
@@ -63,6 +58,32 @@ document.addEventListener('DOMContentLoaded', function()
     }
   };
   parts.push(`<block type="Servo"></block>`);
+
+  Blockly.Blocks['Motor'] =
+  {
+    init: function()
+    {
+      this.jsonInit(
+      {
+        message0: `convert RPM %1 to pulse with %2 max RPM`,
+        args0:
+        [
+          {
+            type: 'input_value',
+            name: 'rpm'
+          },
+          {
+            type: 'field_number',
+            name: 'maxRpm',
+            value: 100
+          }
+        ],
+        output: null,
+        inputsInline: true,
+      });
+    }
+  };
+  parts.push(`<block type="Motor"></block>`);
 
   Blockly.Blocks['Tank'] =
   {
