@@ -1,8 +1,8 @@
 'use strict';
 
-console.info('Loading UI.');
+console.info('Loading Server Configure.');
 
-function UI(config)
+function ServerConfig(config)
 {
   this._name = config.name;
   this._node = Node.init(config.name);
@@ -11,7 +11,7 @@ function UI(config)
   this._pages = config.pages;
 }
 
-UI.prototype =
+ServerConfig.prototype =
 {
   enable: function()
   {
@@ -34,4 +34,4 @@ UI.prototype =
   }
 }
 
-module.exports = UI;
+module.exports = ServerConfig;
