@@ -1,6 +1,6 @@
 'use strict';
 
-console.info('Loading Blockly App.');
+console.info('Loading App.');
 
 const VM = require('vm');
 const ConfigManager = require('modules/config-manager');
@@ -11,15 +11,10 @@ function app(config)
   this._node = Node.init(this._name);
   this._config = new ConfigManager(this,
   {
-    workspace: config.workspace || '',
+    source: config.source || '',
     code: config.code || ''
   });
-
-  this._topics = {};
-  this._topicQ = [];
-  this._terminated = 0;
   this._enabled = 0;
-
   this._config.enable();
 }
 
@@ -36,6 +31,9 @@ app.prototype =
 
   _enable: function()
   {
+    this._topics = {};
+    this._topicQ = [];
+    this._topicQPending = null;
     this._terminated = false;
     try
     {
@@ -94,6 +92,7 @@ app.prototype =
       this._topics[topicName] = {};
       this._node.subscribe({ topic: topicName }, (event) => {
         this._topicQ.push(event);
+        this._topicQPending && this._topicQPending();
       });
     }
   },
@@ -111,19 +110,26 @@ app.prototype =
   {
     return new Promise((resolve, reject) => {
       setImmediate(() => {
-        this._topicQ.forEach((event) => {
-          Object.assign(this._topics[event.topic] || {}, event);
-        });
-        this._topicQ = [];
         if (this._terminated)
         {
-          reject();
+          reject(new Error('Terminated'));
+        }
+        else if (this._topicQ.length === 0)
+        {
+          this._topicQPending = () => {
+            this._topicQPending = null;
+            this._syncTopicUpdates().then(resolve, reject);
+          }
         }
         else
         {
+          this._topicQ.forEach((event) => {
+            Object.assign(this._topics[event.topic] || {}, event);
+          });
+          this._topicQ = [];
           resolve();
         }
-      });
+      });;
     });
   }
 };
