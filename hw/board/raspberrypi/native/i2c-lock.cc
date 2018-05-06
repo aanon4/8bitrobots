@@ -28,7 +28,7 @@ void unlock(void)
 
 void assertlock(void)
 {
-  assert(uv_mutex_trylock(&_lock) == UV__EBUSY);
+  //assert(uv_mutex_trylock(&_lock) == UV__EBUSY);
 }
   
 void init(void)
