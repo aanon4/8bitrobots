@@ -41,19 +41,23 @@ app.prototype =
     this._terminated = false;
     try
     {
+      console.log('Deploying code', this._config.get('code'));
+      const code = this._config.get('code');
       VM.runInNewContext(
-        this._config.get('code'),
+        code,
         {
           App:
           {
             registerActivity: (activity) => { this._registerActivity(activity); },
             registerConfiguration: (configuration) => { this._registerConfiguration(configuration); },
             run: () => { this._runApp(); },
-            getTopicValue: (topicName, key) => { return this._getTopicValue(topicName, key) },
-            subscribeToTopic: (topicName) => { this._subscribeToTopic(topicName) },
-            syncTopicUpdates: (id) => { return this._syncTopicUpdates(id) },
+            get: (topicName, key) => { return this._getTopicValue(topicName, key) },
+            subscribe: (topicName) => { this._subscribeToTopic(topicName) },
+            sync: (id) => { return this._syncTopicUpdates(id) },
             hasTerminated: () => { return this._terminated; },
-            callService: (serviceName, arg) => { return this._callService(serviceName, arg); }
+            call: (serviceName, arg) => { return this._callService(serviceName, arg); },
+            part: (partName, arg) => { return this._callPart(partName, arg); },
+            print: (msg) => { this._debugMessage(msg); }
           }
         }
       );
@@ -120,7 +124,7 @@ app.prototype =
     {
       this._topics[topicName] = {};
       this._node.subscribe({ topic: topicName }, (event) => {
-        this._topicQ.push(event);
+        this._topicQ.push([ topicName, event ]);
         const pending = this._topicQPending;
         this._topicQPending = {};
         for (let id in pending)
@@ -165,7 +169,7 @@ app.prototype =
         else
         {
           this._topicQ.forEach((event) => {
-            Object.assign(this._topics[event.topic] || {}, event);
+            Object.assign(this._topics[event[0]] || {}, event[1]);
           });
           this._topicQ = [];
           for (let key in this._noUpdates)
@@ -195,6 +199,21 @@ app.prototype =
       this._node.unproxy({ service: service });
     }
     this._proxies = {};
+  },
+
+  _debugMessage: function(msg)
+  {
+    console.log(msg);
+  },
+
+  _callPart: function(name, arg)
+  {
+    switch (name)
+    {
+      default:
+        console.error(`Missing App Part: ${name}`);
+        return 0;
+    }
   }
 };
 
