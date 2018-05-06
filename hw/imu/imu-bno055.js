@@ -2,7 +2,6 @@ console.info('Loading BNO055 I2C/UART IMU sensors.');
 
 const fs = require('fs');
 const Deasync = require('deasync');
-const SerialPort = require('serialport');
 const ConfigManager = require('modules/config-manager');
 
 const BNO055 =
@@ -208,6 +207,7 @@ function imu(config)
   }
   else if (config.uart)
   {
+    const SerialPort = require('serialport');
     this._uart = new SerialPort(config.uart.port,
     {
       baudRate: config.uart.baud
