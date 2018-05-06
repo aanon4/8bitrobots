@@ -19,7 +19,7 @@ Planner.prototype =
     {
       const end = step.end;
       const distance = end - start;
-      const func = step.func || Planner.EASE_INOUT;
+      const func = step.func || Planner.ease_inout;
       const ticks = (step.time || 0) / period;
       if (ticks === 0)
       {
@@ -58,27 +58,27 @@ Planner.prototype =
   }
 }
 
-Planner.LINEAR = function(start, distance, idx)
+Planner.linear = function(start, distance, idx)
 {
   return start + distance * idx;
 }
 
-Planner.EASE_INOUT = function(start, distance, idx)
+Planner.ease_inout = function(start, distance, idx)
 {
   return start + distance * scurve[Math.round(idx * 1023)];
 }
 
-Planner.EASE_OUT = function(start, distance, idx)
+Planner.ease_out = function(start, distance, idx)
 {
   return start + distance * scurve[Math.round(idx * 512)] / 0.5;
 }
 
-Planner.EASE_IN = function(start, distance, idx)
+Planner.ease_in = function(start, distance, idx)
 {
   return start + distance * (scurve[Math.round(512 + idx * 511)] - 0.5) / 0.5;
 },
 
-Planner.WAIT = function(start, distance, idx)
+Planner.wait = function(start, distance, idx)
 {
   return start;
 }

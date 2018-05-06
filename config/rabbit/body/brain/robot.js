@@ -178,17 +178,17 @@ controller.prototype =
               switch (next[4])
               {
                 case 'L':
-                  func = MotionPlanner.LINEAR;
+                  func = MotionPlanner.linear;
                   break;
                 case 'I':
-                  func = MotionPlanner.EASE_IN;
+                  func = MotionPlanner.ease_in;
                   break;
                 case 'O':
-                  func = MotionPlanner.EAST_OUT;
+                  func = MotionPlanner.ease_out;
                   break;
                 case 'E':
                 default:
-                  func = MotionPlanner.EASE_INOUT;
+                  func = MotionPlanner.ease_inout;
                   break;
               }
               p.servoActual(next[1], Math.PI / 2 + next[2], next[3] * 1000, func);
