@@ -39,11 +39,13 @@
 </head>
 <body>
   <div id="blocklyDiv" style="height: 480px; width: 100%;"></div>
+  <div><button onclick='deploy()'>Deploy</button></div>
   <script>
     window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join() });
-    window.WORKSPACE.addChangeListener(() => {
-      window.deployRobotWorkspace && window.deployRobotWorkspace(window.WORKSPACE);
-    });
+    function deploy()
+    {
+      window.APP && window.APP.deployRobotWorkspace(window.WORKSPACE);
+    }
   </script>
 </body>
 </html>
