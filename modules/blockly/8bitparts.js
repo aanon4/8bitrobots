@@ -118,15 +118,15 @@ document.addEventListener('DOMContentLoaded', function()
         [
           {
             type: 'input_value',
-            name: 'x'
+            name: 'X'
           },
           {
             type: 'input_value',
-            name: 'y'
+            name: 'Y'
           },
           {
             type: 'field_dropdown',
-            name: 'wheel',
+            name: 'OUTPUT',
             options: [ [ 'left velocity', 'left' ], [ 'right velocity', 'right' ] ]
           }
         ],
@@ -134,6 +134,14 @@ document.addEventListener('DOMContentLoaded', function()
         inputsInline: true,
       });
     }
+  };
+  Blockly.JavaScript['Tank'] = function(block)
+  {
+    const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const output = block.getFieldValue('OUTPUT');
+    const code = `App.part('Tank', { x: ${x}, y: ${y}, output: '${output}' })`
+    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
   };
   parts.push(`<block type="Tank"></block>`);
 
@@ -149,15 +157,15 @@ document.addEventListener('DOMContentLoaded', function()
         [
           {
             type: 'input_value',
-            name: 'x'
+            name: 'X'
           },
           {
             type: 'input_value',
-            name: 'y'
+            name: 'Y'
           },
           {
             type: 'field_dropdown',
-            name: 'wheel',
+            name: 'OUTPUT',
             options: [ [ 'velocity', 'velocity' ], [ 'steering angle', 'steering' ] ]
           }
         ],
@@ -165,6 +173,14 @@ document.addEventListener('DOMContentLoaded', function()
         inputsInline: true,
       });
     }
+  };
+  Blockly.JavaScript['Car'] = function(block)
+  {
+    const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const output = block.getFieldValue('OUTPUT');
+    const code = `App.part('Car', { x: ${x}, y: ${y}, output: '${output}' })`
+    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
   };
   parts.push(`<block type="Car"></block>`);
 
