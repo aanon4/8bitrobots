@@ -4,6 +4,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <script src="js/8bit-slave.js"></script>
   <script src="js/8bit.js"></script>
+  <script src="blockly/blockly_compressed.js"></script>
+  <script src="blockly/blocks_compressed.js"></script>
+  <script src="blockly/javascript_compressed.js"></script>
+  <script src="blockly/msg/js/en.js"></script>
   <script>
     window.NODE = Node.init('/blockly');
     window.TOOLBOX =
@@ -26,10 +30,6 @@
       '</xml>'
     ];
   </script>
-  <script src="blockly/blockly_compressed.js"></script>
-  <script src="blockly/blocks_compressed.js"></script>
-  <script src="blockly/javascript_compressed.js"></script>
-  <script src="blockly/msg/js/en.js"></script>
   <script src="blockly/8bitblocks.js"></script>
   <script src="blockly/8bitparts.js"></script>
   <script src="blockly/8bitapp.js"></script>
@@ -41,6 +41,9 @@
   <div id="blocklyDiv" style="height: 480px; width: 100%;"></div>
   <script>
     window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join() });
+    window.WORKSPACE.addChangeListener(() => {
+      window.deployRobotWorkspace && window.deployRobotWorkspace(window.WORKSPACE);
+    });
   </script>
 </body>
 </html>

@@ -2,32 +2,32 @@ document.addEventListener('DOMContentLoaded', function()
 {
   const parts = [];
   
-  Blockly.Blocks['ServoTrim'] =
+  Blockly.Blocks['Constrain'] =
   {
     init: function()
     {
       this.jsonInit(
       {
-        message0: `constrain angle %1 with trim %2 clockwise %3 and counter-clockwise %4`,
+        message0: `constrain %1 with deadband %2 low %3 and high %4`,
         args0:
         [
           {
             type: 'input_value',
-            name: 'angle'
+            name: 'VALUE'
           },
           {
             type: 'field_number',
-            name: 'trim',
+            name: 'DEADBAND',
             value: 0
           },
           {
             type: 'field_number',
-            name: 'cw',
+            name: 'MIN',
             value: 0
           },
           {
             type: 'field_number',
-            name: 'ccw',
+            name: 'MAX',
             value: 0
           }
         ],
@@ -36,7 +36,16 @@ document.addEventListener('DOMContentLoaded', function()
       });
     }
   };
-  parts.push(`<block type="ServoTrim"></block>`);
+  Blockly.JavaScript['Constrain'] = function(block)
+  {
+    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const deadband = block.getFieldValue('DEADBAND');
+    const min = block.getFieldValue('MIN');
+    const max = block.getFieldValue('MAX');
+    const code = `Math.max(Math.min(Math.abs(${value}) < ${deadband} ? 0 : ${value}, ${max}), ${min})`;
+    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
+  };
+  parts.push(`<block type="Constrain"></block>`);
 
   Blockly.Blocks['Servo'] =
   {
@@ -49,13 +58,19 @@ document.addEventListener('DOMContentLoaded', function()
         [
           {
             type: 'input_value',
-            name: 'angle'
+            name: 'VALUE'
           }
         ],
         output: null,
         inputsInline: true,
       });
     }
+  };
+  Blockly.JavaScript['Servo'] = function(block)
+  {
+    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const code = `(1.5 + (${value}) / ${90 * 0.5})`;
+    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
   };
   parts.push(`<block type="Servo"></block>`);
 
@@ -65,16 +80,16 @@ document.addEventListener('DOMContentLoaded', function()
     {
       this.jsonInit(
       {
-        message0: `convert RPM %1 to pulse with %2 max RPM`,
+        message0: `convert motor RPM %1 to pulse with %2 max RPM`,
         args0:
         [
           {
             type: 'input_value',
-            name: 'rpm'
+            name: 'VALUE'
           },
           {
             type: 'field_number',
-            name: 'maxRpm',
+            name: 'MAX_RPM',
             value: 100
           }
         ],
@@ -82,6 +97,13 @@ document.addEventListener('DOMContentLoaded', function()
         inputsInline: true,
       });
     }
+  };
+  Blockly.JavaScript['Motor'] = function(block)
+  {
+    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const maxRpm = block.getFieldValue('MAX_RPM');
+    const code = `(1.5 + (${value}) / ${maxRpm} * 0.5)`;
+    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
   };
   parts.push(`<block type="Motor"></block>`);
 

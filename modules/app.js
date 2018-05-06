@@ -1,6 +1,6 @@
 'use strict';
 
-console.info('Loading App.');
+console.info('Loading App Container.');
 
 const VM = require('vm');
 const ConfigManager = require('modules/config-manager');
@@ -33,7 +33,11 @@ app.prototype =
   {
     this._topics = {};
     this._topicQ = [];
-    this._topicQPending = null;
+    this._topicQPending = {};
+    this._services = {};
+    this._noUpdates = {};
+    this._activities = [];
+    this._configurations = [];
     this._terminated = false;
     try
     {
@@ -42,10 +46,14 @@ app.prototype =
         {
           App:
           {
+            registerActivity: (activity) => { this._registerActivity(activity); },
+            registerConfiguration: (configuration) => { this._registerConfiguration(configuration); },
+            run: () => { this._runApp(); },
             getTopicValue: (topicName, key) => { return this._getTopicValue(topicName, key) },
-            subscribeToTopic: (topicName) => { return this._subscribeToTopic(topicName) },
-            syncTopicUpdates: () => { return this._syncTopicUpdates() },
+            subscribeToTopic: (topicName) => { this._subscribeToTopic(topicName) },
+            syncTopicUpdates: (id) => { return this._syncTopicUpdates(id) },
             hasTerminated: () => { return this._terminated; },
+            callService: (serviceName, arg) => { return this._callService(serviceName, arg); }
           }
         }
       );
@@ -80,6 +88,27 @@ app.prototype =
     }
   },
 
+  _registerActivity: function(activity)
+  {
+    this._activities.push(activity);
+  },
+
+  _registerConfiguration: function(configuration)
+  {
+    this._configurations.push(configuration);
+  },
+
+  _runApp: function()
+  {
+    Promise.all(this._configurations.map((config) => {
+      return config();
+    })).then(() => {
+      this._activities.forEach((activity) => {
+        setImmediate(activity);
+      });
+    });
+  },
+
   _getTopicValue: function(topicName, key)
   {
     return (this._topics[topicName] || {})[key];
@@ -92,7 +121,12 @@ app.prototype =
       this._topics[topicName] = {};
       this._node.subscribe({ topic: topicName }, (event) => {
         this._topicQ.push(event);
-        this._topicQPending && this._topicQPending();
+        const pending = this._topicQPending;
+        this._topicQPending = {};
+        for (let id in pending)
+        {
+          pending[id]();
+        }
       });
     }
   },
@@ -106,7 +140,7 @@ app.prototype =
     this._topics = {};
   },
 
-  _syncTopicUpdates: function()
+  _syncTopicUpdates: function(id)
   {
     return new Promise((resolve, reject) => {
       setImmediate(() => {
@@ -116,9 +150,16 @@ app.prototype =
         }
         else if (this._topicQ.length === 0)
         {
-          this._topicQPending = () => {
-            this._topicQPending = null;
-            this._syncTopicUpdates().then(resolve, reject);
+          if (this._noUpdates[id])
+          {
+            this._topicQPending[id] = () => {
+              this._syncTopicUpdates(id).then(resolve, reject);
+            }
+          }
+          else
+          {
+            this._noUpdates[id] = true;
+            resolve();
           }
         }
         else
@@ -127,10 +168,33 @@ app.prototype =
             Object.assign(this._topics[event.topic] || {}, event);
           });
           this._topicQ = [];
+          for (let key in this._noUpdates)
+          {
+            this._noUpdates[key] = false;
+          }
+          this._noUpdates[id] = true;
           resolve();
         }
       });;
     });
+  },
+
+  _callService: function(service, arg)
+  {
+    if (!this._proxies[service])
+    {
+      this._proxies[service] = this._node.proxy({ service: service });
+    }
+    return this._proxies[service](arg);
+  },
+
+  _unproxyAllServices: function()
+  {
+    for (let service in this._proxies)
+    {
+      this._node.unproxy({ service: service });
+    }
+    this._proxies = {};
   }
 };
 

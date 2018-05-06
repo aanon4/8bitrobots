@@ -1,53 +1,65 @@
  document.addEventListener('DOMContentLoaded', function()
  {
+  const UUID = function()
+  {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+      return v.toString(16);
+    });
+  };
+
   Blockly.Field.prototype.maxDisplayLength = 100;
 
   function buildProgramBlocks()
   {
-    const json0 =
+    Blockly.Blocks['activity'] =
     {
-      message0: 'Loop forever',
-      message1: 'do %1',
-      args1:
-      [
+      init: function()
+      {
+        this.jsonInit(
         {
-          type: 'input_statement',
-          name: 'loop'
+          message0: 'Setup %1',
+          args0:
+          [
+            {
+              type: 'input_statement',
+              name: 'SETUP'
+            }
+          ],
+          message1: 'Then on activity',
+          message2: 'do %1',
+          args2:
+          [
+            {
+              type: 'input_statement',
+              name: 'ACTIVITY'
+            }
+          ],
+          colour: 120
+        });
+      }
+    };
+    Blockly.JavaScript['activity'] = function(block)
+    {
+      const setup = Blockly.JavaScript.statementToCode(block, 'SETUP');
+      const loop = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
+      const code = `App.registerActivity(async function()
+      {
+        ${setup}
+        while (!App.hasTerminated())
+        {
+          await App.syncTopicUpdates('${UUID()}');
+          ${loop}
         }
-      ],
-      colour: 120
+      });\n`;
+      return code;
     };
-
-    Blockly.Blocks['main_program'] =
-    {
-      init: function()
-      {
-        this.jsonInit(json0);
-      }
-    }
-
-    const json1 =
-    {
-      message0: 'Wait for events',
-      previousStatement: null,
-      nextStatement: null,
-      colour: 120
-    };
-
-    Blockly.Blocks['wait_for_events'] =
-    {
-      init: function()
-      {
-        this.jsonInit(json1);
-      }
-    }
 
     const idx = TOOLBOX.indexOf('<category name="Program">');
     if (idx !== -1)
     {
       TOOLBOX[idx + 1] = `
-        <block type="main_program"></block>
-        <block type="wait_for_events"></block>
+        <block type="activity"></block>
       `;
     }
     WORKSPACE.updateToolbox(TOOLBOX.join());
@@ -82,7 +94,7 @@
                 schema[key].splice(def, 1);
                 schema[key].unshift(config[key]);
               }
-              json[`args${count}`]= [
+              json[`args${count}`] = [
               {
                 type: 'field_dropdown',
                 name: key,
@@ -150,8 +162,9 @@
                 {
                   if (Object.keys(changes).length)
                   {
-                    CONFIG(changes).then(() => {
+                    CONFIG(changes).then((newConfig) => {
                       changes = {};
+                      config = newConfig;
                       rebuildEventAndActionBlocks();
                     });
                   }
@@ -161,7 +174,18 @@
                 break;
             }
           }
-        }
+        };
+        Blockly.JavaScript[name] = function(block)
+        {
+          const code = `App.registerConfiguration(function()
+          {
+            return NODE.proxy({ service: '${name}' })(${JSON.stringify(config)}).then(() => {
+              NODE.unproxy({ service: '${name}' });
+            });
+          });\n`;
+
+          return code;
+        };
 
         configureBlocks.push(`<block type="${name}" />`);
 
@@ -196,13 +220,26 @@
       {
         if (key !== '__return')
         {
-          json[`args${count}`]= [
+          if (typeof action.schema[key] !== 'object')
           {
-            type: 'input_value',
-            name: key,
-            check: typeof action.schema[key] !== 'object' ? action.schema[key] : 'String',
-            align: 'RIGHT'
-          }];
+            json[`args${count}`]= [
+            {
+              type: 'input_value',
+              name: key,
+              check: action.schema[key],
+              align: 'RIGHT'
+            }];
+          }
+          else
+          {
+            json[`args${count}`] = [
+            {
+              type: 'field_dropdown',
+              name: key,
+              check: 'String',
+              options: action.schema[key].map((value) => [ value, value ])
+            }];
+          }
           json[`message${count}`] = (json[`message${count}`] || '') + `${count === 0 ? ' with ' : ''}${key} %1`;
           count++;
         }
@@ -214,6 +251,34 @@
         {
           this.jsonInit(json);
         }
+      }
+      Blockly.JavaScript[action.name] = function(block)
+      {
+        let args = [];
+        for (let key in json)
+        {
+          if (key.indexOf('args') === 0)
+          {
+            const name = json[key][0].name;
+            switch (json[key][0].type)
+            {
+              case 'input_value':
+                const value = Blockly.JavaScript.valueToCode(block, name, Blockly.JavaScript.ORDER_NONE);
+                if (value)
+                {
+                  args.push(`${name}: ${value}`);
+                }
+                break;
+              case 'field_dropdown':
+                args.push(`${name}: '${block.getFieldValue(name)}'`);
+                break;
+              default:
+                break;
+            }
+          }
+        }
+        const code = `await App.callService('${action.name}, {${args.join(', ')}});\n`;
+        return code;
       }
 
       actionBlocks.push(`<block type="${action.name}"></block>`);
@@ -242,7 +307,7 @@
             [
               {
                 type: 'field_dropdown',
-                name: 'property',
+                name: 'PROPERTY',
                 options: Object.keys(event.schema).map((key) => [ key, key ])
               }
             ],
@@ -251,7 +316,15 @@
           });
         }
       };
+      Blockly.JavaScript[event.name] = function(block)
+      {
+        const property = block.getFieldValue('PROPERTY');
+        const code = `App.getTopicValue('${event.name}', '${property}')`;
+        Blockly.JavaScript._topics[event.name] = true;
+        return [ code, Blockly.JavaScript.ORDER_ADDITION ];
+      }
       eventBlocks.push(`<block type="${event.name}"></block>`);
+
     });
 
     const idx = TOOLBOX.indexOf('<category name="Events">');
