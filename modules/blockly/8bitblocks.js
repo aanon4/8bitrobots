@@ -48,7 +48,7 @@
         ${setup}
         while (!App.hasTerminated())
         {
-          await App.syncTopicUpdates('${UUID()}');
+          await App.sync('${UUID()}');
           ${loop}
         }
       });\n`;
@@ -73,6 +73,12 @@
 
       const name = service.name;
       const schema = service.schema;
+
+      // Ignore these
+      if (name === '/app/config')
+      {
+        return;
+      }
 
       const CONFIG = NODE.proxy({ service: name });
       CONFIG({}).then((config) => {
@@ -277,7 +283,7 @@
             }
           }
         }
-        const code = `await App.callService('${action.name}, {${args.join(', ')}});\n`;
+        const code = `await App.call('${action.name}, {${args.join(', ')}});\n`;
         return code;
       }
 
@@ -319,7 +325,7 @@
       Blockly.JavaScript[event.name] = function(block)
       {
         const property = block.getFieldValue('PROPERTY');
-        const code = `App.getTopicValue('${event.name}', '${property}')`;
+        const code = `App.get('${event.name}', '${property}')`;
         Blockly.JavaScript._topics[event.name] = true;
         return [ code, Blockly.JavaScript.ORDER_ADDITION ];
       }
