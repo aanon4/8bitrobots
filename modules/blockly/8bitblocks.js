@@ -84,12 +84,6 @@
       const name = service.name;
       const schema = service.schema;
 
-      // Ignore these
-      if (name === '/app/config')
-      {
-        return;
-      }
-
       const CONFIG = NODE.proxy({ service: name });
       CONFIG({}).then((config) => {
         let json =
