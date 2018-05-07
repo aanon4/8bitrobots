@@ -39,40 +39,46 @@ nodeInternal.prototype =
     const topic = this.resolveName(options.topic);
     if (topic in this._subscribers)
     {
-      throw new Error();
+      this._subscribers[topic].count++;
     }
-    const uuid = this.resolveName(`~${UUID()}`);
+    else
+    {
+      const uuid = this.resolveName(`~${UUID()}`);
 
-    const listener = (msg) => {
-      switch (msg.op)
-      {
-        case 'unsubscribe-req':
-          delete this._subscribers[topic];
-          break;
+      const listener = (msg) => {
+        switch (msg.op)
+        {
+          case 'unsubscribe-req':
+            delete this._subscribers[topic];
+            break;
 
-        case 'unsubscribe-force':
-          nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
-          break;
+          case 'unsubscribe-force':
+            nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
+            break;
 
-        case 'topic':
-          callback(msg.event);
-          break;
+          case 'topic':
+            callback(msg.event);
+            break;
 
-        default:
-          break;
+          default:
+            break;
+        }
       }
-    }
 
-    this._subscribers[topic] = uuid;
-  
-    nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
+      this._subscribers[topic] = { uuid: uuid, count: 1 };
+    
+      nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
+    }
   },
 
   unsubscribe: function(options)
   {
     const topic = this.resolveName(options.topic);
-    const uuid = this._subscribers[topic];
-    nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-req', topic: topic, subscriber: uuid });
+    if (--this._subscribers[topic].count === 0)
+    {
+      const uuid = this._subscribers[topic].uuid;
+      nodeEvent({ timestamp: Date.now(), op: 'unsubscribe-req', topic: topic, subscriber: uuid });
+    }
   },
 
   advertise: function(options)
@@ -210,93 +216,103 @@ nodeInternal.prototype =
     const service = this.resolveName(options.service);
     if (service in this._proxies)
     {
-      throw new Error();
+      this._proxies[service].count++;
+    }
+    else
+    {
+      const uuid = this.resolveName(`~${UUID()}`);
+
+      let waiting = [];
+      const pending = {};
+      let replyid = 0;
+      const replyHandler = (msg) =>
+      {
+        const pend = pending[msg.replyid];
+        if (pend)
+        {
+          delete pending[msg.replyid];
+        }
+        switch (msg.op)
+        {
+          case 'connect-ack':
+            const waited = waiting;
+            waiting = null;
+            waited.forEach((wait) => {
+              wait();
+            });
+            break;
+
+          case 'disconnect-req':
+            delete this._proxies[service];
+            break;
+
+          case 'disconnect-force':
+            waiting = [];
+            nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
+            break;
+      
+          case 'reply':
+            pend && pend(msg.reply, null);
+            break;
+
+          case 'exception':
+            pend && pend(null, msg.exception);
+            break;
+
+          default:
+            break;
+        }
+      }
+
+      this._proxies[service] =
+      {
+        uuid: uuid,
+        count: 1,
+        fn: (request) => {
+          if (!(service in this._proxies))
+          {
+            throw new Error(`Not connected: ${service}`);
+          }
+          const rid = ++replyid;
+          return new Promise((resolve, reject) => {
+            pending[rid] = (reply, exception) => {
+              if (exception)
+              {
+                reject(exception);
+              }
+              else
+              {
+                resolve(reply);
+              }
+            }
+            if (waiting === null)
+            {
+              nodeEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
+            }
+            else
+            {
+              waiting.push(() => {
+                nodeEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
+              });
+            }
+          });
+        }
+      };
+
+      nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
     }
   
-    const uuid = this.resolveName(`~${UUID()}`);
-
-    let waiting = [];
-    const pending = {};
-    let replyid = 0;
-    const replyHandler = (msg) =>
-    {
-      const pend = pending[msg.replyid];
-      if (pend)
-      {
-        delete pending[msg.replyid];
-      }
-      switch (msg.op)
-      {
-        case 'connect-ack':
-          const waited = waiting;
-          waiting = null;
-          waited.forEach((wait) => {
-            wait();
-          });
-          break;
-
-        case 'disconnect-req':
-          delete this._proxies[service];
-          break;
-
-        case 'disconnect-force':
-          waiting = [];
-          nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
-          break;
-    
-        case 'reply':
-          pend && pend(msg.reply, null);
-          break;
-
-        case 'exception':
-          pend && pend(null, msg.exception);
-          break;
-
-        default:
-          break;
-      }
-    }
-
-    this._proxies[service] = uuid;
-
-    nodeEvent({ timestamp: Date.now(), op: 'connect-req', service: service, connector: uuid }, replyHandler);
-
-    return (request) => {
-      if (!(service in this._proxies))
-      {
-        throw new Error(`Not connected: ${service}`);
-      }
-      const rid = ++replyid;
-      return new Promise((resolve, reject) => {
-        pending[rid] = (reply, exception) => {
-          if (exception)
-          {
-            reject(exception);
-          }
-          else
-          {
-            resolve(reply);
-          }
-        }
-        if (waiting === null)
-        {
-          nodeEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
-        }
-        else
-        {
-          waiting.push(() => {
-            nodeEvent({ timestamp: Date.now(), op: 'call', service: service, connector: uuid, replyid: rid, call: request } );
-          });
-        }
-      });
-    }
+    return this._proxies[service].fn;
   },
 
   unproxy: function(options)
   {
     const service = this.resolveName(options.service);
-    const uuid = this._proxies[service];
-    nodeEvent({ timestamp: Date.now(), op: 'disconnect-req', service: service, connector: uuid });
+    if (--this._proxies[service].count === 0)
+    {
+      const uuid = this._proxies[service].uuid;
+      nodeEvent({ timestamp: Date.now(), op: 'disconnect-req', service: service, connector: uuid });
+    }
   },
 
   resolveName: function(name)
