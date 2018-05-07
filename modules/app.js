@@ -38,7 +38,7 @@ app.prototype =
     this._noUpdates = {};
     this._activities = [];
     this._configurations = [];
-    this._terminated = false;
+    this._status = { terminated: false };
     try
     {
       console.log('Deploying code', this._config.get('code'));
@@ -51,10 +51,10 @@ app.prototype =
             registerActivity: (activity) => { this._registerActivity(activity); },
             registerConfiguration: (configuration) => { this._registerConfiguration(configuration); },
             run: () => { this._runApp(); },
-            get: (topicName, key) => { return this._getTopicValue(topicName, key) },
-            subscribe: (topicName) => { this._subscribeToTopic(topicName) },
-            sync: (id) => { return this._syncTopicUpdates(id) },
-            hasTerminated: () => { return this._terminated; },
+            get: (topicName, key) => { return this._getTopicValue(topicName, key); },
+            subscribe: (topicName) => { this._subscribeToTopic(topicName); },
+            sync: (id, status) => { return this._syncTopicUpdates(id, status); },
+            status: () => { return this._status; },
             call: (serviceName, arg) => { return this._callService(serviceName, arg); },
             part: (partName, arg) => { return this._callPart(partName, arg); },
             print: (msg) => { this._debugMessage(msg); }
@@ -79,8 +79,14 @@ app.prototype =
 
   _disable: function()
   {
-    this._terminated = true;
+    this._status.terminated = true;
     this._unsubscribeAllTopic();
+    const pending = this._topicQPending;
+    this._topicQPending = {};
+    for (let id in pending)
+    {
+      pending[id]();
+    }
   },
 
   reconfigure: function(changes)
@@ -144,11 +150,11 @@ app.prototype =
     this._topics = {};
   },
 
-  _syncTopicUpdates: function(id)
+  _syncTopicUpdates: function(id, status)
   {
     return new Promise((resolve, reject) => {
       setImmediate(() => {
-        if (this._terminated)
+        if (status.terminated)
         {
           reject(new Error('Terminated'));
         }
@@ -157,7 +163,7 @@ app.prototype =
           if (this._noUpdates[id])
           {
             this._topicQPending[id] = () => {
-              this._syncTopicUpdates(id).then(resolve, reject);
+              this._syncTopicUpdates(id, status).then(resolve, reject);
             }
           }
           else

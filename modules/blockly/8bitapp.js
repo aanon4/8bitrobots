@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function()
   {
     const workspaceText = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
 
-    Blockly.JavaScript.INFINITE_LOOP_TRAP = 'if (App.hasTerminated()) throw new Error("Terminated");\n';
+    Blockly.JavaScript.INFINITE_LOOP_TRAP = 'if (__status.terminated) throw new Error("Terminated");\n';
     Blockly.JavaScript._topics = {};
 
     // Monkey-patch: we only want the activity and config blocks as roots for the code.
@@ -19,17 +19,32 @@ document.addEventListener('DOMContentLoaded', function()
     workspace.getTopBlocks = _getTopBlocks;
   
     const ecode = Object.keys(Blockly.JavaScript._topics).map((topic) => {
-      return `App.subscribeToTopic('${topic}');`;
+      return `App.subscribe('${topic}');`;
     }).join('');
-    const jscode = `${code};${ecode};App.run();`;
-
-    console.log(jscode);
+    const jscode = `const __status = App.status();${code};${ecode};App.run();`;
   
-    /*const CONFIG = NODE.proxy({ service: '/app/config' });
+    const CONFIG = NODE.proxy({ service: '/app/config' });
     CONFIG({ source: workspaceText, code: jscode }).then(() => {
       NODE.unproxy({ service: '/app/config' });
-    });*/
+    });
   }
 
-  window.deployRobotWorkspace = deploy;
+  function load(workspace)
+  {
+    const CONFIG = NODE.proxy({ service: '/app/config' });
+    CONFIG({}).then((config) => {
+      NODE.unproxy({ service: '/app/config' });
+      if (config.source)
+      {
+        workspace.clear();
+        Blockly.Xml.appendDomToWorkspace(Blockly.Xml.textToDom(config.source), workspace);
+      }
+    });
+  }
+
+  window.APP =
+  {
+    deployRobotWorkspace: deploy,
+    loadRobotWorkspace: load
+  };
 });

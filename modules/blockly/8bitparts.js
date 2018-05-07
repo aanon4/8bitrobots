@@ -1,6 +1,13 @@
 document.addEventListener('DOMContentLoaded', function()
 {
   const parts = [];
+
+  // Override the default text_print.
+  Blockly.JavaScript['text_print'] = function(block)
+  {
+    const msg = Blockly.JavaScript.valueToCode(block, 'TEXT', Blockly.JavaScript.ORDER_NONE) || "''";
+    return `App.print(${msg});\n`;
+  };
   
   Blockly.Blocks['Constrain'] =
   {
@@ -38,12 +45,12 @@ document.addEventListener('DOMContentLoaded', function()
   };
   Blockly.JavaScript['Constrain'] = function(block)
   {
-    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
     const deadband = block.getFieldValue('DEADBAND');
     const min = block.getFieldValue('MIN');
     const max = block.getFieldValue('MAX');
     const code = `Math.max(Math.min(Math.abs(${value}) < ${deadband} ? 0 : ${value}, ${max}), ${min})`;
-    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
+    return [ code, Blockly.JavaScript.ORDER_NONE ];
   };
   parts.push(`<block type="Constrain"></block>`);
 
@@ -68,9 +75,9 @@ document.addEventListener('DOMContentLoaded', function()
   };
   Blockly.JavaScript['Servo'] = function(block)
   {
-    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
     const code = `(1.5 + (${value}) / ${90 * 0.5})`;
-    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
+    return [ code, Blockly.JavaScript.ORDER_NONE ];
   };
   parts.push(`<block type="Servo"></block>`);
 
@@ -100,10 +107,10 @@ document.addEventListener('DOMContentLoaded', function()
   };
   Blockly.JavaScript['Motor'] = function(block)
   {
-    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
     const maxRpm = block.getFieldValue('MAX_RPM');
     const code = `(1.5 + (${value}) / ${maxRpm} * 0.5)`;
-    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
+    return [ code, Blockly.JavaScript.ORDER_NONE ];
   };
   parts.push(`<block type="Motor"></block>`);
 
@@ -137,11 +144,11 @@ document.addEventListener('DOMContentLoaded', function()
   };
   Blockly.JavaScript['Tank'] = function(block)
   {
-    const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ADDITION) || 0;
-    const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
+    const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
     const output = block.getFieldValue('OUTPUT');
     const code = `App.part('Tank', { x: ${x}, y: ${y}, output: '${output}' })`
-    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
+    return [ code, Blockly.JavaScript.ORDER_NONE ];
   };
   parts.push(`<block type="Tank"></block>`);
 
@@ -176,11 +183,11 @@ document.addEventListener('DOMContentLoaded', function()
   };
   Blockly.JavaScript['Car'] = function(block)
   {
-    const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ADDITION) || 0;
-    const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ADDITION) || 0;
+    const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
+    const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
     const output = block.getFieldValue('OUTPUT');
     const code = `App.part('Car', { x: ${x}, y: ${y}, output: '${output}' })`
-    return [ code, Blockly.JavaScript.ORDER_ADDITION ];
+    return [ code, Blockly.JavaScript.ORDER_NONE ];
   };
   parts.push(`<block type="Car"></block>`);
 

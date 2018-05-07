@@ -45,11 +45,21 @@
       const loop = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
       const code = `App.registerActivity(async function()
       {
-        ${setup}
-        while (!App.hasTerminated())
+        try
         {
-          await App.sync('${UUID()}');
-          ${loop}
+          ${setup}
+          while (!__status.terminated)
+          {
+            await App.sync('${UUID()}', __status);
+            ${loop}
+          }
+        }
+        catch (e)
+        {
+          if (!__status.terminated)
+          {
+            App.print(e);
+          }
         }
       });\n`;
       return code;
