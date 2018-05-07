@@ -43,26 +43,36 @@
     {
       const setup = Blockly.JavaScript.statementToCode(block, 'SETUP');
       const loop = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
-      const code = `App.registerActivity(async function()
+      let code = setup;
+      if (loop)
       {
-        try
+        code += `while (!__status.terminated)
         {
-          ${setup}
-          while (!__status.terminated)
-          {
-            await App.sync('${UUID()}', __status);
-            ${loop}
-          }
-        }
-        catch (e)
+          await App.sync('${UUID()}', __status);
+          ${loop}
+        }`;
+      }
+      if (code)
+      {
+        return `App.registerActivity(async function()
         {
-          if (!__status.terminated)
+          try
           {
-            App.print(e);
+            ${code}
           }
-        }
-      });\n`;
-      return code;
+          catch (e)
+          {
+            if (!__status.terminated)
+            {
+              App.print(e);
+            }
+          }
+        });\n`;
+      }
+      else
+      {
+        return '';
+      }
     };
 
     const idx = TOOLBOX.indexOf('<category name="Program">');
