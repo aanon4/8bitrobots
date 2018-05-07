@@ -41,7 +41,7 @@
   <div id="blocklyDiv" style="height: 480px; width: 100%;"></div>
   <div><button onclick='deploy()'>Deploy</button><button onclick='load()'>Load</button></div>
   <script>
-    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join() });
+    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join(), sounds: false, media: 'images/' });
     function deploy()
     {
       window.APP && window.APP.deployRobotWorkspace(window.WORKSPACE);
