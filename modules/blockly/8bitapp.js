@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function()
     const ecode = Object.keys(Blockly.JavaScript._topics).map((topic) => {
       return `App.subscribe('${topic}');`;
     }).join('');
-    const jscode = `const __status = App.status();${code};${ecode};App.run();`;
+    const jscode = code || ecode ? `const __status = App.status();${code};${ecode};App.run();` : '';
   
     const CONFIG = NODE.proxy({ service: '/app/config' });
     CONFIG({ source: workspaceText, code: jscode }).then(() => {
