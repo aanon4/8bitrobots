@@ -19,6 +19,19 @@ document.addEventListener('DOMContentLoaded', function()
     return arr;
   }
 
+  function filter(item)
+  {
+    const f =
+    {
+      '/app/config': true,
+      '/list': true,
+      '/server/add_page': true,
+      '/networking/config': true
+    };
+    return !f[item];
+  }
+  
+
   // --------------------------------------------------------------------------
   // Configuration
   // --------------------------------------------------------------------------
@@ -34,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function()
     const msg = Blockly.JavaScript.valueToCode(block, 'TEXT', Blockly.JavaScript.ORDER_NONE) || "''";
     return `App.print(${msg});\n`;
   };
+  
 
   // --------------------------------------------------------------------------
   // Program Blocks
@@ -793,8 +807,8 @@ document.addEventListener('DOMContentLoaded', function()
   {
     LIST({}).then((list) => {
       Promise.all([
-        buildEventBlocks(sort(list.topics.filter((topic) => topic.schema ))),
-        buildActionBlocks(sort(list.services.filter((service) => !service.name.endsWith('/config') && service.schema )))
+        buildEventBlocks(sort(list.topics.filter((topic) => filter(topic.name) && topic.schema ))),
+        buildActionBlocks(sort(list.services.filter((service) => filter(service.name) && !service.name.endsWith('/config') && service.schema )))
       ]).then(() => {
         generateToolbox();
       });
@@ -804,9 +818,9 @@ document.addEventListener('DOMContentLoaded', function()
   LIST({}).then((list) => {
     Promise.all([
       buildProgramBlocks(),
-      buildConfigBlocks(sort(list.services.filter((service) => service.name.endsWith('/config') && service.schema ))),
-      buildEventBlocks(sort(list.topics.filter((topic) => topic.schema ))),
-      buildActionBlocks(sort(list.services.filter((service) => !service.name.endsWith('/config') && service.schema ))),
+      buildConfigBlocks(sort(list.services.filter((service) => filter(service.name) && service.name.endsWith('/config') && service.schema ))),
+      buildEventBlocks(sort(list.topics.filter((topic) => filter(topic.name) && topic.schema ))),
+      buildActionBlocks(sort(list.services.filter((service) => filter(service.name) && !service.name.endsWith('/config') && service.schema ))),
       buildPartBlocks()
     ]).then(() => {
       generateToolbox();
