@@ -215,11 +215,14 @@ app.prototype =
 
   _callPart: function(name, arg)
   {
-    switch (name)
+    try
     {
-      default:
-        console.error(`Missing App Part: ${name}`);
-        return 0;
+      return require(`./parts/${name}`)(arg);
+    }
+    catch (_)
+    {
+      console.error(`Missing App Part: ${name}`);
+      return 0;
     }
   }
 };

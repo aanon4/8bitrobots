@@ -583,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function()
     };
     myBlocks['Motor'] = { category: 'Part', enabled: true, blocks: [] };
 
-    Blockly.Blocks['Tank'] =
+    Blockly.Blocks['tank'] =
     {
       init: function()
       {
@@ -611,17 +611,17 @@ document.addEventListener('DOMContentLoaded', function()
         });
       }
     };
-    Blockly.JavaScript['Tank'] = function(block)
+    Blockly.JavaScript['tank'] = function(block)
     {
       const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
       const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
       const output = block.getFieldValue('OUTPUT');
-      const code = `App.part('Tank', { x: ${x}, y: ${y}, output: '${output}' })`
+      const code = `App.part('tank', { x: ${x}, y: ${y}, output: '${output}' })`
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
-    myBlocks['Tank'] = { category: 'Part', enabled: true, blocks: [] };
+    myBlocks['tank'] = { category: 'Part', enabled: true, blocks: [] };
 
-    Blockly.Blocks['Car'] =
+    Blockly.Blocks['car'] =
     {
       init: function()
       {
@@ -649,15 +649,15 @@ document.addEventListener('DOMContentLoaded', function()
         });
       }
     };
-    Blockly.JavaScript['Car'] = function(block)
+    Blockly.JavaScript['car'] = function(block)
     {
       const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
       const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
       const output = block.getFieldValue('OUTPUT');
-      const code = `App.part('Car', { x: ${x}, y: ${y}, output: '${output}' })`
+      const code = `App.part('car', { x: ${x}, y: ${y}, output: '${output}' })`
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
-    myBlocks['Car'] = { category: 'Part', enabled: true, blocks: [] };
+    myBlocks['car'] = { category: 'Part', enabled: true, blocks: [] };
   }
 
   function generateToolbox()
