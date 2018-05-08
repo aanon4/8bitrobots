@@ -125,9 +125,11 @@ document.addEventListener('DOMContentLoaded', function()
 
         const name = service.name;
         const schema = service.schema;
+        const config = {};
 
         const CONFIG = NODE.proxy({ service: name });
-        CONFIG({}).then((config) => {
+        CONFIG({}).then((newConfig) => {
+          Object.assign(config, newConfig);
           let json =
           {
             message0: `Configure ${name.substr(0, name.length - 7)}`,
@@ -190,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function()
             }
           }
       
-          let changes = {};
+          let changes = false;
           Blockly.Blocks[name] =
           {
             init: function()
@@ -202,19 +204,31 @@ document.addEventListener('DOMContentLoaded', function()
             {
               switch (e.type)
               {
-                case Blockly.Events.BLOCK_CHANGE:
-                  if (this.id !== e.blockId)
+                case Blockly.Events.BLOCK_CREATE:
+                {
+                  const block = WORKSPACE.getBlockById(e.blockId);
+                  if (block.type === name)
                   {
-                    break;
+                    for (let key in config)
+                    {
+                      block.setFieldValue(config[key], key);
+                    }
                   }
-                  changes[e.name] = e.newValue;
+                  break;
+                }
+                case Blockly.Events.BLOCK_CHANGE:
+                  if (this.id === e.blockId)
+                  {
+                    config[e.name] = e.newValue;
+                    changes = true;
+                  }
                   break;
                 case Blockly.Events.UI:
-                  if (Object.keys(changes).length)
+                  if (changes)
                   {
-                    CONFIG(changes).then((newConfig) => {
-                      changes = {};
-                      config = newConfig;
+                    CONFIG(config).then((newConfig) => {
+                      changes = false;
+                      Object.assign(config, newConfig);
                       rebuildEventAndActionBlocks();
                     });
                   }
@@ -744,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function()
     }).join('');
     const jscode = code || ecode ? `const __status = App.status();${code};${ecode};App.run();` : '';
 
-    console.log(jscode);
+    //console.log(jscode);
   
     const CONFIG = NODE.proxy({ service: '/app/config' });
     CONFIG({ source: workspaceText, code: jscode }).then(() => {
