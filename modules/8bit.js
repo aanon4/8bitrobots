@@ -40,6 +40,7 @@ nodeInternal.prototype =
     if (topic in this._subscribers)
     {
       this._subscribers[topic].count++;
+      this._subscribers[topic].callbacks.push(callback);
     }
     else
     {
@@ -57,7 +58,9 @@ nodeInternal.prototype =
             break;
 
           case 'topic':
-            callback(msg.event);
+            this._subscribers[topic].callbacks.forEach((fn) => {
+              fn(msg.event);
+            });
             break;
 
           default:
@@ -65,7 +68,7 @@ nodeInternal.prototype =
         }
       }
 
-      this._subscribers[topic] = { uuid: uuid, count: 1 };
+      this._subscribers[topic] = { uuid: uuid, count: 1, callbacks: [ callback ] };
     
       nodeEvent({ timestamp: Date.now(), op: 'subscribe-req', topic: topic, subscriber: uuid }, listener);
     }
