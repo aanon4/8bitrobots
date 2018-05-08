@@ -42,7 +42,7 @@ app.prototype =
     this._status = { terminated: false };
     try
     {
-      console.log('Deploying code', this._config.get('code'));
+      //console.log('Deploying code', this._config.get('code'));
       const code = this._config.get('code');
       VM.runInNewContext(
         code,
