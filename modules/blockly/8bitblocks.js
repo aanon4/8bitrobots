@@ -474,12 +474,12 @@ document.addEventListener('DOMContentLoaded', function()
             {
               type: 'field_number',
               name: 'MIN',
-              value: 0
+              value: -1
             },
             {
               type: 'field_number',
               name: 'MAX',
-              value: 0
+              value: 1
             }
           ],
           output: null,
@@ -671,7 +671,6 @@ document.addEventListener('DOMContentLoaded', function()
 
   WORKSPACE.addChangeListener(function(event)
   {
-    console.log(event);
     switch (event.type)
     {
       case Blockly.Events.BLOCK_CREATE:
@@ -747,6 +746,8 @@ document.addEventListener('DOMContentLoaded', function()
       return `App.subscribe('${topic}');`;
     }).join('');
     const jscode = code || ecode ? `const __status = App.status();${code};${ecode};App.run();` : '';
+
+    console.log(jscode);
   
     const CONFIG = NODE.proxy({ service: '/app/config' });
     CONFIG({ source: workspaceText, code: jscode }).then(() => {
@@ -754,7 +755,7 @@ document.addEventListener('DOMContentLoaded', function()
     });
   }
 
-  APP.loadRobotWorkspace = function(workspace)
+  function loadWorkspace(workspace)
   {
     const CONFIG = NODE.proxy({ service: '/app/config' });
     CONFIG({}).then((config) => {
@@ -798,6 +799,7 @@ document.addEventListener('DOMContentLoaded', function()
       buildPartBlocks()
     ]).then(() => {
       generateToolbox();
+      loadWorkspace(WORKSPACE);
     });
   });
  });
