@@ -694,19 +694,26 @@ document.addEventListener('DOMContentLoaded', function()
         break;
       }
       case Blockly.Events.BLOCK_DELETE:
-      {        
-        for (let type in myBlocks)
-        {
-          const idx = myBlocks[type].blocks.indexOf(event.blockId);
-          if (idx !== -1)
+      {
+        let rebuildToolbox = false;
+        event.ids.forEach((id) => {
+          for (let type in myBlocks)
           {
-            myBlocks[type].blocks.splice(idx, 1);
-            if (myBlocks[type].category === 'Config')
+            const idx = myBlocks[type].blocks.indexOf(id);
+            if (idx !== -1)
             {
-              generateToolbox();
+              myBlocks[type].blocks.splice(idx, 1);
+              if (myBlocks[type].category === 'Config')
+              {
+                rebuildToolbox = true;
+              }
+              break;
             }
-            break;
           }
+        });
+        if (rebuildToolbox)
+        {
+          generateToolbox();
         }
         break;
       }
