@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', function()
   // Configuration
   // --------------------------------------------------------------------------
 
-  const myBlocks = {};
+  let myBlocks = {};
+  window.MYBLOCKS = myBlocks;
   window.APP = {};
   Blockly.Field.prototype.maxDisplayLength = 100;
   Blockly.JavaScript.INFINITE_LOOP_TRAP = 'if (__status.terminated) throw new Error("Terminated");\n';
@@ -230,9 +231,7 @@ document.addEventListener('DOMContentLoaded', function()
           {
             const code = `App.registerConfiguration(function()
             {
-              return NODE.proxy({ service: '${name}' })(${JSON.stringify(config)}).then(() => {
-                NODE.unproxy({ service: '${name}' });
-              });
+              return App.call('${name}', ${JSON.stringify(config)});
             });\n`;
 
             return code;
@@ -338,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function()
             }
           }
         }
-        const code = `await App.call('${action.name}, {${args.join(', ')}});\n`;
+        const code = `await App.call('${action.name}', {${args.join(', ')}});\n`;
         return code;
       }
 
@@ -672,18 +671,25 @@ document.addEventListener('DOMContentLoaded', function()
 
   WORKSPACE.addChangeListener(function(event)
   {
+    console.log(event);
     switch (event.type)
     {
       case Blockly.Events.BLOCK_CREATE:
       {
-        const block = WORKSPACE.getBlockById(event.blockId);
-        if (block.type in myBlocks)
-        {
-          myBlocks[block.type].blocks.push(event.blockId);
-          if (myBlocks[block.type].category === 'Config')
+        let rebuildToolbox = false;
+        WORKSPACE.getBlockById(event.blockId).getDescendants().forEach((block) => {
+          if (block.type in myBlocks)
           {
-            generateToolbox();
+            myBlocks[block.type].blocks.push(block.id);
+            if (myBlocks[block.type].category === 'Config')
+            {
+              rebuildToolbox = true;
+            }
           }
+        });
+        if (rebuildToolbox)
+        {
+          generateToolbox();
         }
         break;
       }
@@ -749,6 +755,10 @@ document.addEventListener('DOMContentLoaded', function()
       if (config.source)
       {
         workspace.clear();
+        for (let type in myBlocks)
+        {
+          myBlocks[type].blocks = [];
+        }
         Blockly.Xml.appendDomToWorkspace(Blockly.Xml.textToDom(config.source), workspace);
       }
     });
