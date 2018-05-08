@@ -31,6 +31,7 @@ app.prototype =
 
   _enable: function()
   {
+    this._proxies = {};
     this._topics = {};
     this._topicQ = [];
     this._topicQPending = {};
