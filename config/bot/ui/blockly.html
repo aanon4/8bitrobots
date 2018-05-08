@@ -14,7 +14,7 @@
     [
       '<xml>',
       '<category name="Program">', '', '</category>',
-      '<category name="General">', `
+      `<category name="General">
         <block type="controls_if" />
         <block type="controls_repeat_ext" />
         <block type="logic_compare" />
@@ -23,6 +23,8 @@
         <block type="text" />
         <block type="text_print" />
       </category>`,
+      '<category name="Variables" custom="VARIABLE" />',
+      '<category name="Functions" custom="PROCEDURE" />',
       '<category name="Config">', '', '</category>',
       '<category name="Event">', '', '</category>',
       '<category name="Action">', '', '</category>',
@@ -37,16 +39,12 @@
 </head>
 <body>
   <div id="blocklyDiv" style="height: 480px; width: 100%;"></div>
-  <div><button onclick='deploy()'>Deploy</button><button onclick='load()'>Load</button></div>
+  <div><button onclick='deploy()'>Deploy</button></div>
   <script>
-    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join(), sounds: false, media: 'images/' });
+    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join(), sounds: false, media: 'images/', disable: false });
     function deploy()
     {
       window.APP && window.APP.deployRobotWorkspace(window.WORKSPACE);
-    }
-    function load()
-    {
-      window.APP && window.APP.loadRobotWorkspace(window.WORKSPACE);
     }
   </script>
 </body>
