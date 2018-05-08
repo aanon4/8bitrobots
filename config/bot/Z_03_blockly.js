@@ -13,7 +13,8 @@ module.exports = function()
       '/blockly/javascript_compressed.js': 'modules/blockly/javascript_compressed.js',
       '/blockly/msg/js/': 'modules/blockly/msg/js/',
       '/blockly/8bitblocks.js': 'modules/blockly/8bitblocks.js',
-      '/images/sprites.png': 'modules/blockly/sprites.png'
+      '/images/sprites.png': 'modules/blockly/sprites.png',
+      '/images/handdelete.cur': 'modules/blockly/handdelete.cur',
     }
   });
 }
