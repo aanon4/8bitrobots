@@ -210,16 +210,13 @@ document.addEventListener('DOMContentLoaded', function()
                   changes[e.name] = e.newValue;
                   break;
                 case Blockly.Events.UI:
-                  if (e.element === 'selected' && e.oldValue === this.id)
+                  if (Object.keys(changes).length)
                   {
-                    if (Object.keys(changes).length)
-                    {
-                      CONFIG(changes).then((newConfig) => {
-                        changes = {};
-                        config = newConfig;
-                        rebuildEventAndActionBlocks();
-                      });
-                    }
+                    CONFIG(changes).then((newConfig) => {
+                      changes = {};
+                      config = newConfig;
+                      rebuildEventAndActionBlocks();
+                    });
                   }
                   break;
                 default:
@@ -350,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function()
       if (myBlocks[action.name].friendlyName !== action.friendlyName)
       {
         myBlocks[action.name].blocks.forEach((blockId) => {
-          WORKSPACE.getBlockById(blockId).setDisabled(true);
+          WORKSPACE.getBlockById(blockId).dispose(false);
         });
         myBlocks[action.name].blocks = [];
       }
@@ -362,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function()
       if (!myBlocks[key].enabled && myBlocks[key].category === 'Action')
       {
         myBlocks[key].blocks.forEach((blockId) => {
-          WORKSPACE.getBlockById(blockId).setDisabled(true);
+          WORKSPACE.getBlockById(blockId).dispose(false);
         });
         myBlocks[key].blocks = [];
       }
@@ -390,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function()
         {
           this.jsonInit(
           {
-            message0: `value %1 of ${event.friendlyName ? event.friendlyName : event.name}`,
+            message0: `${event.friendlyName ? event.friendlyName : event.name} value %1`,
             args0:
             [
               {
@@ -421,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function()
       if (myBlocks[event.name].friendlyName !== event.friendlyName)
       {
         myBlocks[event.name].blocks.forEach((blockId) => {
-          WORKSPACE.getBlockById(blockId).setDisabled(true);
+          WORKSPACE.getBlockById(blockId).dispose(false);
         });
         myBlocks[event.name].blocks = [];
       }
@@ -433,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function()
       if (!myBlocks[key].enabled && myBlocks[key].category === 'Event')
       {
         myBlocks[key].blocks.forEach((blockId) => {
-          WORKSPACE.getBlockById(blockId).setDisabled(true);
+          WORKSPACE.getBlockById(blockId).dispose(false);
         });
         myBlocks[key].blocks = [];
       }
