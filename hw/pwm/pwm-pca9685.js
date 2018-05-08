@@ -5,7 +5,7 @@ console.info('Loading PCA9685 controllers.');
 const MotionPlanner = require('modules/motion-planner');
 const ConfigManager = require('modules/config-manager');
 
-const SERVICE_SETPULSE = { service: 'set_pulse', schema: { pulse: 'Number', time: 'Number', func: [ 'linear', 'ease_in', 'ease_inout', 'ease_out' ] } };
+const SERVICE_SETPULSE = { service: 'set_pulse', schema: { pulse: 'Number', time: 'Number', func: [ 'linear', 'ease_in', 'ease_inout', 'ease_out', 'idle' ] } };
 const SERVICE_WAITFOR = { service: 'wait_for_pulse', schema: { compare: [ '==', '<=', '>=', 'idle' ], pulse: 'Number' } };
 const TOPIC_CURRENT = { topic: 'current_pulse', schema: { pulse: 'Number', target_pulse: 'Number', changing: 'Boolean' } };
 
