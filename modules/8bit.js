@@ -58,9 +58,12 @@ nodeInternal.prototype =
             break;
 
           case 'topic':
-            this._subscribers[topic].callbacks.forEach((fn) => {
-              fn(msg.event);
-            });
+            if (this._subscribers[topic])
+            {
+              this._subscribers[topic].callbacks.forEach((fn) => {
+                fn(msg.event);
+              });
+            }
             break;
 
           default:
