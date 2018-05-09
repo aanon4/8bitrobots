@@ -293,6 +293,7 @@ PWM.prototype =
   {
     if (this._enabled++ === 0)
     {
+      this._setCyclePeriod();
       for (let i = 0; i < 16; i++)
       {
         const name = this._config.get(`name${i}`);
