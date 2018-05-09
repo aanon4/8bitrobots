@@ -59,6 +59,22 @@ ConfigManager.prototype =
           {
             delete request[key];
           }
+          else
+          {
+            switch (this._service.schema[key])
+            {
+              case 'Number':
+                request[key] = parseFloat(request[key]);
+                break;
+              case 'Boolean':
+                request[key] = !!request[key];
+                break;
+              case 'String':
+              default:
+                request[key] = request[key].toString();
+                break;
+            }
+          }
         }
         let changes = this._state.update(Object.keys(this._defaults), request);
         if (changes)
@@ -68,7 +84,11 @@ ConfigManager.prototype =
         let result = {};
         for (let key in this._defaults)
         {
-          result[key] = this._state.get(key) || this._defaults[key];
+          result[key] = this._state.get(key);
+          if (result[key] === undefined || result[key] === null)
+          {
+            result[key] = this._defaults[key];
+          }
         }
         return result;
       });
