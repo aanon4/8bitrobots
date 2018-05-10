@@ -37,6 +37,7 @@ app.prototype =
     this._topicQPending = {};
     this._services = {};
     this._noUpdates = {};
+    this._setups = [];
     this._activities = [];
     this._configurations = [];
     this._status = { terminated: false };
@@ -49,6 +50,7 @@ app.prototype =
         {
           App:
           {
+            registerSetup: (setup) => { this._registerSetup(setup); },
             registerActivity: (activity) => { this._registerActivity(activity); },
             registerConfiguration: (configuration) => { this._registerConfiguration(configuration); },
             run: () => { this._runApp(); },
@@ -99,6 +101,11 @@ app.prototype =
     }
   },
 
+  _registerSetup: function(setup)
+  {
+    this._setups.push(setup);
+  },
+
   _registerActivity: function(activity)
   {
     this._activities.push(activity);
@@ -114,6 +121,10 @@ app.prototype =
     Promise.all(this._configurations.map((config) => {
       return config();
     })).then(() => {
+      return Promise.all(this._setups.map((setup) => {
+        return setup();
+      }));
+    }).then(() => {
       this._activities.forEach((activity) => {
         setImmediate(activity);
       });

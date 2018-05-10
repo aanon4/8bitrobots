@@ -54,9 +54,8 @@ document.addEventListener('DOMContentLoaded', function()
   // --------------------------------------------------------------------------
   function buildProgramBlocks()
   {
-    Blockly.Blocks['activity'] =
+    Blockly.Blocks['setup'] =
     {
-      name8bit: 'activity',
       init: function()
       {
         this.jsonInit(
@@ -69,9 +68,46 @@ document.addEventListener('DOMContentLoaded', function()
               name: 'SETUP'
             }
           ],
-          message1: 'Then on activity',
-          message2: 'do %1',
-          args2:
+          colour: 120
+        });
+      }
+    };
+    Blockly.JavaScript['setup'] = function(block)
+    {
+      const code = Blockly.JavaScript.statementToCode(block, 'SETUP');
+      if (code)
+      {
+        return `App.registerSetup(async function()
+        {
+          try
+          {
+            ${code}
+          }
+          catch (e)
+          {
+            if (!__status.terminated)
+            {
+              App.print(e);
+            }
+          }
+        });\n`;
+      }
+      else
+      {
+        return '';
+      }
+    };
+    myBlocks['setup'] = { category: 'Program', enabled: true, blocks:[] };
+  
+    Blockly.Blocks['activity'] =
+    {
+      init: function()
+      {
+        this.jsonInit(
+        {
+          message0: 'On activity',
+          message1: 'do %1',
+          args1:
           [
             {
               type: 'input_statement',
@@ -84,24 +120,18 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['activity'] = function(block)
     {
-      const setup = Blockly.JavaScript.statementToCode(block, 'SETUP');
-      const loop = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
-      let code = setup;
-      if (loop)
-      {
-        code += `while (!__status.terminated)
-        {
-          await App.sync('${UUID()}', __status);
-          ${loop}
-        }`;
-      }
+      const code = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
       if (code)
       {
         return `App.registerActivity(async function()
         {
           try
           {
-            ${code}
+            while (!__status.terminated)
+            {
+              await App.sync('${UUID()}', __status);
+              ${code}
+            }
           }
           catch (e)
           {
@@ -761,7 +791,7 @@ document.addEventListener('DOMContentLoaded', function()
     workspace.getTopBlocks = function(ordered)
     {
       return _getTopBlocks.call(workspace, ordered).filter((block) => {
-        return block.type == 'activity' || block.type.endsWith('/config');
+        return block.type === 'setup' || block.type === 'activity' || block.type.endsWith('/config');
       });
     }
     const code = Blockly.JavaScript.workspaceToCode(workspace);
