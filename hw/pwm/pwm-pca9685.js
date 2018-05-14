@@ -265,7 +265,7 @@ pwmChannel.prototype =
 function PWM(config)
 {
   this._i2c = config.i2c;
-  this._name = `${config.name || '/pwm-i2c'}/${this._i2c.id()}`;
+  this._name = `/i2c/${this._i2c.id()}${config.name || '/pwm'}`;
   this._node = Node.init(`${this._name}/node`);
   this._enabled = 0;
   const cenabled = {};
