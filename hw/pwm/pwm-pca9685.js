@@ -5,9 +5,9 @@ console.info('Loading PCA9685 controllers.');
 const MotionPlanner = require('modules/motion-planner');
 const ConfigManager = require('modules/config-manager');
 
-const SERVICE_SETPULSE = { service: 'set_pulse', schema: { pulse: 'Number', time: 'Number', func: [ 'linear', 'ease_in', 'ease_inout', 'ease_out', 'idle' ] } };
-const SERVICE_WAITFOR = { service: 'wait_for_pulse', schema: { compare: [ '==', '<=', '>=', 'idle' ], pulse: 'Number' } };
-const TOPIC_CURRENT = { topic: 'current_pulse', schema: { pulse: 'Number', target_pulse: 'Number', changing: 'Boolean' } };
+const SERVICE_SETPULSE = { service: 'set_pulse', schema: { pulse: 'Number', duty: 'Number', time: 'Number', func: [ 'linear', 'ease_in', 'ease_inout', 'ease_out', 'idle' ] } };
+const SERVICE_WAITFOR = { service: 'wait_for', schema: { compare: [ '==', '<=', '>=', 'idle' ], pulse: 'Number', duty: 'Number' } };
+const TOPIC_CURRENT = { topic: 'current_pulse', schema: { pulse: 'Number', target_pulse: 'Number', duty: 'Number', target_duty: 'Number', changing: 'Boolean' } };
 
 
 function pwmChannel(pwm, subaddress, doApi)
@@ -32,12 +32,16 @@ pwmChannel.prototype =
     {
       if (this._doApi)
       {
-        this._adPos = this._node.advertise(Object.assign({ friendlyName: this._friendlyName} , TOPIC_CURRENT));
+        this._adPos = this._node.advertise(Object.assign({ friendlyName: this._friendlyName }, TOPIC_CURRENT));
         this._node.service(Object.assign({ friendlyName: this._friendlyName }, SERVICE_SETPULSE), (request) =>
         {
           if (request.func === 'idle')
           {
             this.idle();
+          }
+          else if ('duty' in request)
+          {
+            this.setDutyCycle(request.duty, request.time, MotionPlanner[request.func]);
           }
           else
           {
@@ -47,7 +51,16 @@ pwmChannel.prototype =
         });
         this._node.service(Object.assign({ friendlyName: this._friendlyName }, SERVICE_WAITFOR ), (event) =>
         {
-          return this.waitForPulse(event.compare, event.pulse);
+          let pulse;
+          if (duty in event)
+          {
+            pulse = event.duty * this._pwm._cycleMs;
+          }
+          else
+          {
+            pulse = event.pulse;
+          }
+          return this.waitForPulse(event.compare, pulse);
         });
       }
     }
@@ -77,7 +90,7 @@ pwmChannel.prototype =
   {
     this._friendlyName = name;
   },
-
+  
   setPulse: function(onMs, periodMs, func)
   {
     this.setPlan(
@@ -120,7 +133,7 @@ pwmChannel.prototype =
     {
       fraction = 1;
     }
-    this.setPulse(fraction * this.getCyclePeriod(), periodMs, func);
+    this.setPulse(fraction * this._pwm._cycleMs, periodMs, func);
   },
   
   getCurrentPulse: function()
@@ -133,16 +146,22 @@ pwmChannel.prototype =
     return this._lastMs;
   },
 
+  getCurrentDuty: function()
+  {
+    return this._currentMs / this._pwm._cycleMs;
+  },
+
+  getTargetDuty: function()
+  {
+    return this._lastMs / this._pwm.cycleMs;
+  },
+
   idle: function()
   {
     if (this._currentMs !== 0)
     {
       this._enqueue({ idle: true });
     }
-  },
-
-  setCyclePeriod: function(cycleMs)
-  {
   },
   
   getCyclePeriod: function()
@@ -213,7 +232,7 @@ pwmChannel.prototype =
               this._pwm._setPulseMs(this._subaddress, 0);
               if (this._adPos)
               {
-                this._adPos.publish({ pulse: this._currentMs, target_pulse: this._lastMs, changing: this._plans.length > 0 });
+                this._adPos.publish({ pulse: this._currentMs, target_pulse: this._lastMs, duty: this._currentMs / this._pwm._cycleMs, target_duty: this._lastMs / this._pwm._cycleM, changing: this._plans.length > 0 });
               }
             }
             this._plans.shift();
@@ -221,13 +240,13 @@ pwmChannel.prototype =
           }
           else if ('movement' in plan)
           {
-            this._planner.execute(plan.movement, this.getCyclePeriod(),
+            this._planner.execute(plan.movement, this._pwm._cycleMs,
               (value) => {
                 this._currentMs = value;
                 this._pwm._setPulseMs(this._subaddress, this._currentMs);
                 if (this._adPos)
                 {
-                  this._adPos.publish({ pulse: this._currentMs, target_pulse: this._lastMs, changing: this._plans.length > 0 });
+                  this._adPos.publish({ pulse: this._currentMs, target_pulse: this._lastMs, duty: this._currentMs / this._pwm._cycleMs, target_duty: this._lastMs / this._pwm._cycleM, changing: this._plans.length > 0 });
                 }
               },
               () => {
