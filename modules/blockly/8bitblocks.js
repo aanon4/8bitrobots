@@ -586,17 +586,12 @@ document.addEventListener('DOMContentLoaded', function()
       {
         this.jsonInit(
         {
-          message0: `convert motor RPM %1 to pulse with %2 max RPM`,
+          message0: `convert motor velocity %1 to pulse`,
           args0:
           [
             {
               type: 'input_value',
               name: 'VALUE'
-            },
-            {
-              type: 'field_number',
-              name: 'MAX_RPM',
-              value: 100
             }
           ],
           output: null,
@@ -607,8 +602,7 @@ document.addEventListener('DOMContentLoaded', function()
     Blockly.JavaScript['Motor'] = function(block)
     {
       const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
-      const maxRpm = block.getFieldValue('MAX_RPM');
-      const code = `(1.5 + (${value}) / ${maxRpm} * 0.5)`;
+      const code = `(1.5 + (${value}) * 0.5)`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Motor'] = { category: 'Part', enabled: true, blocks: [] };
