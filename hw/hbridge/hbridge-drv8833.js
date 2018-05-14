@@ -2,9 +2,11 @@
 
 console.info('Loading DRV8833 H-Bridge controllers.');
 
-const SERVICE_SETRPM = { service: 'set_rpm', schema: { rpm: 'Number', time: 'Number', func: 'String' } };
-const SERVICE_WAITFOR = { service: 'wait_for_rpm', schema: { compare: 'String', velocity: 'Number' } };
-const TOPIC_CURRENT = { topic: 'current_rpm', schema: { rpm: 'Number', target_rpm: 'Number', changing: 'Boolean' } };
+const ConfigManager = require('modules/config-manager');
+
+const SERVICE_SETDUTY = { service: 'set_duty', schema: { duty: 'Number', time: 'Number', func: 'String' } };
+const SERVICE_WAITFOR = { service: 'wait_for', schema: { compare: 'String', duty: 'Number' } };
+const TOPIC_CURRENT = { topic: 'current_duty', schema: { duty: 'Number', target_duty: 'Number', changing: 'Boolean' } };
 
 
 function hbridgeChannel(config)
@@ -13,10 +15,9 @@ function hbridgeChannel(config)
   this._node = Node.init(this._name);
   this._in1 = config.in1;
   this._in2 = config.in2;
-  this._v = config.v;
   this._enabled = 0;
-  this._targetRPM = null;
-  this._kV = config.kV || 0;
+  this._targetDuty = null;
+  this._friendlyName = null;
 }
 
 hbridgeChannel.prototype =
@@ -28,8 +29,8 @@ hbridgeChannel.prototype =
       this._in1.enable();
       this._in2.enable();
       this.idle();
-      this._adPos = this._node.advertise(TOPIC_CURRENT);
-      this._node.service(SERVICE_SETRPM, (request) =>
+      this._adPos = this._node.advertise(Object.assign({ friendlyName: this._friendlyName }, TOPIC_CURRENT));
+      this._node.service(Object.assign({ friendlyName: this._friendlyName }, SERVICE_SETDUTY), (request) =>
       {
         switch (request.func)
         {
@@ -40,16 +41,16 @@ hbridgeChannel.prototype =
             this.brake();
             break;
           default:
-            this.setRPM(request.rpm, request.time, MotionPlanner[request.func]);
+            this.setDuty(request.duty, request.time, MotionPlanner[request.func]);
             break;
         }
         return true;
       });
-      this._node.service(SERVICE_WAITFOR, (event) =>
+      this._node.service(Object.assign({ friendlyName: this._friendlyName }, SERVICE_WAITFOR), (event) =>
       {
-        if (event.rpm >= 0)
+        if (event.duty >= 0)
         {
-          return this._in1.waitForPulse(event.compare, Math.min(1.0, event.rpm / this._maxRPM()));
+          return this._in1.waitForPulse(event.compare, Math.min(1.0, event.duty));
         }
         else
         {
@@ -60,7 +61,7 @@ hbridgeChannel.prototype =
             '==' : '==',
             'idle' : 'idle'
           };
-          return this._in2.waitForPulse(swap[event.compare], -Math.max(-1.0, event.rpm / this._maxRPM()));
+          return this._in2.waitForPulse(swap[event.compare], -Math.max(-1.0, event.duty));
         }
       });
     }
@@ -74,57 +75,46 @@ hbridgeChannel.prototype =
       this.idle();
       this._in1.disable();
       this._in2.disable();
+      this._node.unadvertise(TOPIC_CURRENT);
+      this._node.unservice(SERVICE_SETDUTY);
+      this._node.unservice(SERVICE_WAITFOR);
     }
     return this;
   },
 
-  setRPM: function(rpm, changeMs, func)
+  setFriendlyName: function(name)
   {
-    const maxRPM = this._maxRPM();
-    let duty;
-    if (rpm === 0 || maxRPM === 0)
+    this._friendlyName = name;
+  },
+
+  setDuty: function(duty, changeMs, func)
+  {
+    if (duty === 0)
     {
-      duty = 0;
       this._in1.setDutyCycle(0, changeMs, func);
       this._in2.setDutyCycle(0, changeMs, func);
     }
-    else if (rpm > 0)
+    else if (duty > 0)
     {
-      duty = Math.min(1.0, rpm / maxRPM);
-      this._in1.setDutyCycle(duty, changeMs, func);
+      this._in1.setDutyCycle(Math.min(1.0, duty), changeMs, func);
       this._in2.setDutyCycle(0, changeMs, func);
     }
     else
     {
-      duty = Math.max(-1.0, rpm / maxRPM);
       this._in1.setDutyCycle(0, changeMs, func);
-      this._in2.setDutyCycle(-duty, changeMs, func);
+      this._in2.setDutyCycle(-Math.max(-1.0, duty), changeMs, func);
     }
-    this._targetRPM = maxRPM * duty;
+    this._targetDuty = duty;
   },
 
-  getCurrentRPM: function()
+  getCurrentDuty: function()
   {
-    const maxRPM = this._maxRPM();
-    let pulse = this._in1.getCurrentPulse();
-    if (pulse != 0)
-    {
-      return maxRPM * pulse;
-    }
-    else
-    {
-      return -this._in2.getCurrentPulse() * maxRPM;
-    }
+    return this._in1.getCurrentDuty();
   },
 
-  _maxRPM: function()
+  getTargetDuty: function()
   {
-    return this._kV * this._v;
-  },
-
-  getTargetRPM: function()
-  {
-    return this._targetRPM;
+    return this._targetDuty;
   },
 
   idle: function()
@@ -138,24 +128,13 @@ hbridgeChannel.prototype =
     this._in1.setDutyCycle(1, changeMs, func);
     this._in2.setDutyCycle(1, changeMs, func);
   },
-
-  setKVandPoles: function(kV, poles)
-  {
-    this._kV = kV;
-  },
-
-  setCyclePeriod: function(cycleMs)
-  {
-    this._in1.setCyclePeriod(cycleMs);
-    this._in2.setCyclePeriod(cycleMs);
-  },
   
   getCyclePeriod: function()
   {
     return this._in1.getCyclePeriod();
   },
 
-  isRPMChanging: function()
+  isDutyChanging: function()
   {
     return this._in1.isPulseChanging() || this._in2.isPulseChanging();
   }
@@ -163,23 +142,31 @@ hbridgeChannel.prototype =
 
 function hbridge(config)
 {
+  this._name = config.name;
+  this._node = Node.init(this._name);
+  this._enabled = 0;
   this._channels =
   [
     new hbridgeChannel(
     {
       name: `${config.name}/a/node`,
-      v: config.v,
       in1: config.ain1,
       in2: config.ain2
     }),
     new hbridgeChannel(
     {
       name: `${config.name}/b/node`,
-      v: config.v,
       in1: config.bin1,
       in2: config.bin2
     })
   ];
+
+  this._config = new ConfigManager(this,
+  {
+    name0: '',
+    name1: ''
+  });
+  this._config.enable();
 }
 
 hbridge.prototype =
@@ -191,7 +178,62 @@ hbridge.prototype =
       throw new Error('Bad hbridge channel');
     }
     return this._channels[config.channel];
-  }
+  },
+
+  enable: function()
+  {
+    if (this._enabled++ === 0)
+    {
+      for (let i = 0; i < 2; i++)
+      {
+        const name = this._config.get(`name${i}`);
+        if (name && name.trim())
+        {
+          this._channels[i].setFriendlyName(name);
+          this._channels[i].enable();
+        }
+      }
+    }
+    return this;
+  },
+
+  disable: function()
+  {
+    if (--this._enabled === 0)
+    {
+      for (let i = 0; i < 2; i++)
+      {
+        const name = this._config.get(`name${i}`);
+        if (name && name.trim())
+        {
+          this._channels[i].disable();
+        }
+      }
+    }
+    return this;
+  },
+
+  reconfigure: function(changes)
+  {
+    for (let key in changes)
+    {
+      if (key.substring(0, 4) === 'name')
+      {
+        const channel = this._channels[key.substring(4)];
+        const name = changes[key].new;
+        const old = changes[key].old;
+        if (old && old.trim())
+        {
+          channel.disable();
+        }
+        if (name && name.trim())
+        {
+          channel.setFriendlyName(name);
+          channel.enable();
+        }
+      }
+    }
+  },
 };
 
 module.exports = hbridge;
