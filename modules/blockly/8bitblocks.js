@@ -120,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['activity'] = function(block)
     {
+      Blockly.JavaScript._currentActivity = UUID();
+      Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity] = {};
       const code = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
       if (code)
       {
@@ -129,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function()
           {
             while (!__status.terminated)
             {
-              await App.sync('${UUID()}', __status);
+              await App.sync('${Blockly.JavaScript._currentActivity}', __status);
               ${code}
             }
           }
@@ -462,8 +464,12 @@ document.addEventListener('DOMContentLoaded', function()
       Blockly.JavaScript[event.name] = function(block)
       {
         const property = block.getFieldValue('PROPERTY');
-        const code = `App.get('${event.name}', '${property}')`;
-        Blockly.JavaScript._topics[event.name] = true;
+        const code = `App.get('${Blockly.JavaScript._currentActivity}', '${event.name}', '${property}')`;
+        const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
+        if (!topics[event.name])
+        {
+          topics[event.name] = { active: true, heartbeat: 0 };
+        }
         return [ code, Blockly.JavaScript.ORDER_ADDITION ];
       }
 
@@ -481,6 +487,54 @@ document.addEventListener('DOMContentLoaded', function()
         myBlocks[event.name].blocks = [];
       }
     });
+
+
+    // Heartbeat event block
+    const heartevents = Object.keys(myBlocks).filter((name) => {
+      return myBlocks[name].category === 'Event';
+    });
+    Blockly.Blocks['heatbeat'] =
+    {
+      init: function()
+      {
+        this.jsonInit(
+        {
+          message0: `heartbeat of %1 is greater than %2 seconds`,
+          args0:
+          [
+            {
+              type: 'field_dropdown',
+              name: 'EVENT_NAME',
+              options: heartevents.map((name) => [ myBlocks[name].friendlyName || name, name ])
+            },
+            {
+              type: 'field_number',
+              name: 'LIMIT',
+              value: 5
+            }
+          ],
+          output: null,
+          colour: 120
+        });
+      }
+    };
+    Blockly.JavaScript['heatbeat'] = function(block)
+    {
+      const eventName = block.getFieldValue('EVENT_NAME');
+      const limit = block.getFieldValue('LIMIT');
+      const code = `App.get('${Blockly.JavaScript._currentActivity}', '${eventName}', '__heartbeat') > ${limit}`;
+      const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
+      if (!topics[eventName])
+      {
+        topics[eventName] = { active: true, heartbeat: limit };
+      }
+      else if (limit < topics[eventName].heartbeat)
+      {
+        topics[eventName].heartbeat = limit;
+      }
+      return [ code, Blockly.JavaScript.ORDER_NONE ];
+    }
+    myBlocks['heatbeat'] = { category: 'Event', enabled: true, blocks: [] };
 
     // Disable and disassociate any event blocks we no longer support.
     for (let key in myBlocks)
@@ -778,6 +832,7 @@ document.addEventListener('DOMContentLoaded', function()
   {
     const workspaceText = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
 
+    Blockly.JavaScript._currentActivity = null;
     Blockly.JavaScript._topics = {};
 
     // Monkey-patch: we only want the activity and config blocks as roots for the code.
@@ -791,8 +846,10 @@ document.addEventListener('DOMContentLoaded', function()
     const code = Blockly.JavaScript.workspaceToCode(workspace);
     workspace.getTopBlocks = _getTopBlocks;
   
-    const ecode = Object.keys(Blockly.JavaScript._topics).map((topic) => {
-      return `App.subscribe('${topic}');`;
+    const ecode = Object.keys(Blockly.JavaScript._topics).map((activity) => {
+      return Object.keys(Blockly.JavaScript._topics[activity]).map((topic) => {
+        return `App.subscribe('${activity}', '${topic}', ${Blockly.JavaScript._topics[activity][topic].heartbeat * 1000});`;
+      });
     }).join('');
     const jscode = code || ecode ? `const __status = App.status();${code};${ecode};App.run();` : '';
 

@@ -36,14 +36,14 @@ app.prototype =
     this._topicQ = [];
     this._topicQPending = {};
     this._services = {};
-    this._noUpdates = {};
     this._setups = [];
     this._activities = [];
     this._configurations = [];
     this._status = { terminated: false };
+    this._heartbeatTimers = {};
     try
     {
-      //console.log('Deploying code', this._config.get('code'));
+      console.log('Deploying code', this._config.get('code'));
       const code = this._config.get('code');
       VM.runInNewContext(
         code,
@@ -54,9 +54,9 @@ app.prototype =
             registerActivity: (activity) => { this._registerActivity(activity); },
             registerConfiguration: (configuration) => { this._registerConfiguration(configuration); },
             run: () => { this._runApp(); },
-            get: (topicName, key) => { return this._getTopicValue(topicName, key); },
-            subscribe: (topicName) => { this._subscribeToTopic(topicName); },
-            sync: (id, status) => { return this._syncTopicUpdates(id, status); },
+            get: (activity, topicName, key) => { return this._getTopicValue(activity, topicName, key); },
+            subscribe: (activity, topicName, heartbeat) => { this._subscribeToTopic(activity, topicName, heartbeat); },
+            sync: (activity, status) => { return this._syncTopicUpdates(activity, status); },
             status: () => { return this._status; },
             call: (serviceName, arg) => { return this._callService(serviceName, arg); },
             part: (partName, arg) => { return this._callPart(partName, arg); },
@@ -84,6 +84,7 @@ app.prototype =
   {
     this._status.terminated = true;
     this._unsubscribeAllTopic();
+    this._disableAllHeartbeats();
     const pending = this._topicQPending;
     this._topicQPending = {};
     for (let id in pending)
@@ -131,25 +132,62 @@ app.prototype =
     });
   },
 
-  _getTopicValue: function(topicName, key)
+  _getTopicValue: function(activity, topicName, key)
   {
-    return (this._topics[topicName] || {})[key];
+    const topic = this._topics[topicName];
+    if (topic)
+    {
+      if (key === '__heartbeat')
+      {
+        return (Date.now() - topic.heartbeat) / 1000;
+      }
+      const ainfo = topic.activities[activity];
+      if (ainfo)
+      {
+        return ainfo.state[key];
+      }
+    }
+    return undefined;
   },
 
-  _subscribeToTopic: function(topicName)
+  _subscribeToTopic: function(activity, topicName, heartbeat)
   {
     if (!this._topics[topicName])
     {
-      this._topics[topicName] = {};
-      this._node.subscribe({ topic: topicName }, (event) => {
-        this._topicQ.push([ topicName, event ]);
-        const pending = this._topicQPending;
-        this._topicQPending = {};
-        for (let id in pending)
+      const info =
+      {
+        activities:
         {
-          pending[id]();
+          [activity]: { state: {}, callback: null, version: 0 }
+        },
+        state: {},
+        heartbeat: Date.now(),
+        version: 1
+      };
+      this._topics[topicName] = info;
+    
+      this._node.subscribe({ topic: topicName }, (event) => {
+        Object.assign(info.state, event);
+        info.heartbeat = Date.now();
+        info.version++;
+        for (let id in info.activities)
+        {
+          const callback = this._topicQPending[id];
+          if (callback)
+          {
+            this._topicQPending[id] = null;
+            callback();
+          }
         }
       });
+    }
+    else
+    {
+      this._topics[topicName].activities[activity] = { state: {}, callback: null, version: 0 };
+    }
+    if (heartbeat)
+    {
+      this._enableHeartbeat(activity, topicName, heartbeat);
     }
   },
 
@@ -170,34 +208,32 @@ app.prototype =
         {
           reject(new Error('Terminated'));
         }
-        else if (this._topicQ.length === 0)
+        else
         {
-          if (this._noUpdates[id])
+          let success = false;
+          for (let topicName in this._topics)
+          {
+            const topic = this._topics[topicName];
+            const activity = topic.activities[id];
+            if (activity && activity.version != topic.version)
+            {
+              Object.assign(activity.state, topic.state);
+              activity.version = topic.version;
+              success = true;
+            }
+          }
+          if (success)
+          {
+            resolve();
+          }
+          else
           {
             this._topicQPending[id] = () => {
               this._syncTopicUpdates(id, status).then(resolve, reject);
             }
           }
-          else
-          {
-            this._noUpdates[id] = true;
-            resolve();
-          }
         }
-        else
-        {
-          this._topicQ.forEach((event) => {
-            Object.assign(this._topics[event[0]] || {}, event[1]);
-          });
-          this._topicQ = [];
-          for (let key in this._noUpdates)
-          {
-            this._noUpdates[key] = false;
-          }
-          this._noUpdates[id] = true;
-          resolve();
-        }
-      });;
+      });
     });
   },
 
@@ -235,6 +271,32 @@ app.prototype =
       console.error(`Missing App Part: ${name}`);
       return 0;
     }
+  },
+
+  _enableHeartbeat: function(activity, topicName, heartbeat)
+  {
+    const id = `${activity}/${topicName}`;
+    if (!this._heartbeatTimers[id])
+    {
+      this._heartbeatTimers[id] = setInterval(() => {
+        this._topics[topicName].activities[activity].version--;
+        const callback = this._topicQPending[activity];
+        if (callback)
+        {
+          this._topicQPending[activity] = null;
+          callback();
+        }
+      }, heartbeat);
+    }
+  },
+
+  _disableAllHeartbeats: function()
+  {
+    for (let id in this._heartbeatTimers)
+    {
+      clearInterval(this._heartbeatTimers[id]);
+    }
+    this._heartbeatTimers = {};
   }
 };
 
