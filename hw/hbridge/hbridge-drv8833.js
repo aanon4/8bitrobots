@@ -38,7 +38,7 @@ hbridgeChannel.prototype =
             this.idle();
             break;
           case 'brake':
-            this.brake();
+            this.brake(request.time);
             break;
           default:
             this.setDuty(request.duty, request.time, MotionPlanner[request.func]);
@@ -123,10 +123,18 @@ hbridgeChannel.prototype =
     this._in2.idle();
   },
 
-  brake: function()
+  brake: function(durationMs)
   {
-    this._in1.setDutyCycle(1, changeMs, func);
-    this._in2.setDutyCycle(1, changeMs, func);
+    // Brake immediately
+    this._in1.setDutyCycle(1, 0, null);
+    this._in2.setDutyCycle(1, 0, null);
+    // If we have a duration, hold the brake for the given time before allowing
+    // the next change.
+    if (durationMs)
+    {
+      this._in1.setDutyCycle(1, durationMs, null);
+      this._in2.setDutyCycle(1, durationMs, null);
+    }
   },
   
   getCyclePeriod: function()
