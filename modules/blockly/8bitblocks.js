@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function()
       const deadband = block.getFieldValue('DEADBAND');
       const min = block.getFieldValue('MIN');
       const max = block.getFieldValue('MAX');
-      const code = `Math.max(Math.min(Math.abs(${value}) < ${deadband} ? 0 : ${value}, ${max}), ${min})`;
+      const code = `(${value} > ${deadband} ? Math.min(${max}, ${value} - ${deadband}) : ${value} < -${deadband} ? Math.max(${min}, ${value} + ${deadband}) ? 0)`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Constrain'] = { category: 'Part', enabled: true, blocks: [] };
