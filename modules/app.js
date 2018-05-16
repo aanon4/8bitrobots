@@ -133,17 +133,20 @@ app.prototype =
 
   _getTopicValue: function(activity, topicName, key)
   {
-    const topic = this._topics[topicName];
-    if (topic)
+    if (activity)
     {
-      if (key === '__heartbeat')
+      const topic = this._topics[topicName];
+      if (topic)
       {
-        return (Date.now() - topic.heartbeat) / 1000;
-      }
-      const ainfo = topic.activities[activity];
-      if (ainfo)
-      {
-        return ainfo.state[key];
+        if (key === '__heartbeat')
+        {
+          return (Date.now() - topic.heartbeat) / 1000;
+        }
+        const ainfo = topic.activities[activity];
+        if (ainfo)
+        {
+          return ainfo.state[key];
+        }
       }
     }
     return undefined;
@@ -151,7 +154,11 @@ app.prototype =
 
   _subscribeToTopic: function(activity, topicName, heartbeat)
   {
-    if (!this._topics[topicName])
+    if (!activity)
+    {
+      return;
+    }
+    else if (!this._topics[topicName])
     {
       const info =
       {

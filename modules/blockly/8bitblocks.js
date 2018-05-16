@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['setup'] = function(block)
     {
+      Blockly.JavaScript._currentActivity = '';
       const code = Blockly.JavaScript.statementToCode(block, 'SETUP');
       if (code)
       {
@@ -458,10 +459,13 @@ document.addEventListener('DOMContentLoaded', function()
       {
         const property = block.getFieldValue('PROPERTY');
         const code = `App.get('${Blockly.JavaScript._currentActivity}', '${event.name}', '${property}')`;
-        const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
-        if (!topics[event.name])
+        if (Blockly.JavaScript._currentActivity)
         {
-          topics[event.name] = { active: true, heartbeat: 0 };
+          const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
+          if (!topics[event.name])
+          {
+            topics[event.name] = { active: true, heartbeat: 0 };
+          }
         }
         return [ code, Blockly.JavaScript.ORDER_ADDITION ];
       }
@@ -516,14 +520,17 @@ document.addEventListener('DOMContentLoaded', function()
       const eventName = block.getFieldValue('EVENT_NAME');
       const limit = block.getFieldValue('LIMIT');
       const code = `App.get('${Blockly.JavaScript._currentActivity}', '${eventName}', '__heartbeat') > ${limit}`;
-      const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
-      if (!topics[eventName])
+      if (Blockly.JavaScript._currentActivity)
       {
-        topics[eventName] = { active: true, heartbeat: limit };
-      }
-      else if (limit < topics[eventName].heartbeat)
-      {
-        topics[eventName].heartbeat = limit;
+        const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
+        if (!topics[eventName])
+        {
+          topics[eventName] = { active: true, heartbeat: limit };
+        }
+        else if (limit < topics[eventName].heartbeat)
+        {
+          topics[eventName].heartbeat = limit;
+        }
       }
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     }
@@ -825,7 +832,7 @@ document.addEventListener('DOMContentLoaded', function()
   {
     const workspaceText = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
 
-    Blockly.JavaScript._currentActivity = null;
+    Blockly.JavaScript._currentActivity = '';
     Blockly.JavaScript._topics = {};
 
     // Monkey-patch: we only want the activity and config blocks as roots for the code.
