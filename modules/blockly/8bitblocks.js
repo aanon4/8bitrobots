@@ -40,7 +40,6 @@ document.addEventListener('DOMContentLoaded', function()
   window.MYBLOCKS = myBlocks;
   window.APP = {};
   Blockly.Field.prototype.maxDisplayLength = 100;
-  Blockly.JavaScript.INFINITE_LOOP_TRAP = 'if (__status.terminated) throw new Error("Terminated");\n';
   // Override the default text_print.
   Blockly.JavaScript['text_print'] = function(block)
   {
@@ -85,10 +84,7 @@ document.addEventListener('DOMContentLoaded', function()
           }
           catch (e)
           {
-            if (!__status.terminated)
-            {
-              App.print(e);
-            }
+            App.print(e);
           }
         });\n`;
       }
@@ -122,25 +118,22 @@ document.addEventListener('DOMContentLoaded', function()
     {
       Blockly.JavaScript._currentActivity = UUID();
       Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity] = {};
+      Blockly.JavaScript.INFINITE_LOOP_TRAP = `if (!App.live('${Blockly.JavaScript._currentActivity}')) throw new Error("Terminated");\n`;
       const code = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
       if (code)
       {
-        return `App.registerActivity(async function()
+        return `App.registerActivity('${Blockly.JavaScript._currentActivity}', async function()
         {
           try
           {
-            while (!__status.terminated)
+            while (await App.sync('${Blockly.JavaScript._currentActivity}'))
             {
-              await App.sync('${Blockly.JavaScript._currentActivity}', __status);
               ${code}
             }
           }
           catch (e)
           {
-            if (!__status.terminated)
-            {
-              App.print(e);
-            }
+            App.print(e);
           }
         });\n`;
       }
@@ -851,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function()
         return `App.subscribe('${activity}', '${topic}', ${Blockly.JavaScript._topics[activity][topic].heartbeat * 1000});`;
       });
     }).join('');
-    const jscode = code || ecode ? `const __status = App.status();${code};${ecode};App.run();` : '';
+    const jscode = code || ecode ? `${code};${ecode};App.run();` : '';
 
     //console.log(jscode);
   

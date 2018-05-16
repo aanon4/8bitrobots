@@ -34,12 +34,11 @@ app.prototype =
     this._proxies = {};
     this._topics = {};
     this._topicQ = [];
-    this._topicQPending = {};
+    this._activitiesPending = {};
     this._services = {};
     this._setups = [];
     this._activities = [];
     this._configurations = [];
-    this._status = { terminated: false };
     this._heartbeatTimers = {};
     try
     {
@@ -51,16 +50,16 @@ app.prototype =
           App:
           {
             registerSetup: (setup) => { this._registerSetup(setup); },
-            registerActivity: (activity) => { this._registerActivity(activity); },
+            registerActivity: (activity, fn) => { this._registerActivity(activity, fn); },
             registerConfiguration: (configuration) => { this._registerConfiguration(configuration); },
             run: () => { this._runApp(); },
             get: (activity, topicName, key) => { return this._getTopicValue(activity, topicName, key); },
             subscribe: (activity, topicName, heartbeat) => { this._subscribeToTopic(activity, topicName, heartbeat); },
-            sync: (activity, status) => { return this._syncTopicUpdates(activity, status); },
-            status: () => { return this._status; },
+            sync: (activity) => { return this._syncTopicUpdates(activity); },
             call: (serviceName, arg) => { return this._callService(serviceName, arg); },
             part: (partName, arg) => { return this._callPart(partName, arg); },
-            print: (msg) => { this._debugMessage(msg); }
+            print: (msg) => { this._debugMessage(msg); },
+            live: (activity) => { return activity in this._activitiesPending; }
           }
         }
       );
@@ -82,11 +81,10 @@ app.prototype =
 
   _disable: function()
   {
-    this._status.terminated = true;
     this._unsubscribeAllTopic();
     this._disableAllHeartbeats();
-    const pending = this._topicQPending;
-    this._topicQPending = {};
+    const pending = this._activitiesPending;
+    this._activitiesPending = {};
     for (let id in pending)
     {
       pending[id]();
@@ -107,9 +105,10 @@ app.prototype =
     this._setups.push(setup);
   },
 
-  _registerActivity: function(activity)
+  _registerActivity: function(activity, fn)
   {
-    this._activities.push(activity);
+    this._activitiesPending[activity] = null;
+    this._activities.push(fn);
   },
 
   _registerConfiguration: function(configuration)
@@ -172,10 +171,10 @@ app.prototype =
         info.version++;
         for (let id in info.activities)
         {
-          const callback = this._topicQPending[id];
+          const callback = this._activitiesPending[id];
           if (callback)
           {
-            this._topicQPending[id] = null;
+            this._activitiesPending[id] = null;
             callback();
           }
         }
@@ -200,13 +199,13 @@ app.prototype =
     this._topics = {};
   },
 
-  _syncTopicUpdates: function(id, status)
+  _syncTopicUpdates: function(id)
   {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       setImmediate(() => {
-        if (status.terminated)
+        if (!(id in this._activitiesPending))
         {
-          reject(new Error('Terminated'));
+          resolve(false);
         }
         else
         {
@@ -224,12 +223,12 @@ app.prototype =
           }
           if (success)
           {
-            resolve();
+            resolve(true);
           }
           else
           {
-            this._topicQPending[id] = () => {
-              this._syncTopicUpdates(id, status).then(resolve, reject);
+            this._activitiesPending[id] = () => {
+              this._syncTopicUpdates(id).then(resolve);
             }
           }
         }
@@ -280,10 +279,10 @@ app.prototype =
     {
       this._heartbeatTimers[id] = setInterval(() => {
         this._topics[topicName].activities[activity].version--;
-        const callback = this._topicQPending[activity];
+        const callback = this._activitiesPending[activity];
         if (callback)
         {
-          this._topicQPending[activity] = null;
+          this._activitiesPending[activity] = null;
           callback();
         }
       }, heartbeat);
