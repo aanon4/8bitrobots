@@ -40,9 +40,10 @@ app.prototype =
     this._activities = [];
     this._configurations = [];
     this._heartbeatTimers = {};
+    this._parts = {};
     try
     {
-      console.log('Deploying code', this._config.get('code'));
+      //console.log('Deploying code', this._config.get('code'));
       const code = this._config.get('code');
       VM.runInNewContext(
         code,
@@ -57,7 +58,7 @@ app.prototype =
             subscribe: (activity, topicName, heartbeat) => { this._subscribeToTopic(activity, topicName, heartbeat); },
             sync: (activity) => { return this._syncTopicUpdates(activity); },
             call: (serviceName, arg) => { return this._callService(serviceName, arg); },
-            part: (partName, arg) => { return this._callPart(partName, arg); },
+            part: (partName, instanceName, arg) => { return this._callPart(partName, instanceName, arg); },
             print: (msg) => { this._debugMessage(msg); },
             live: (activity) => { return activity in this._activitiesPending; }
           }
@@ -266,17 +267,24 @@ app.prototype =
     console.log(msg);
   },
 
-  _callPart: function(name, arg)
+  _callPart: function(partName, instanceName, arg)
   {
-    try
+    const id = `${partName}/${instanceName}`;
+    let part = this._parts[id];
+    if (!part)
     {
-      return require(`./parts/${name}`)(arg);
+      try
+      {
+        part = require(`./parts/${partName}`)(instanceName);
+      }
+      catch (_)
+      {
+        console.error(`Missing App Part: ${partName}`);
+        return null;
+      }
+      this._parts[id] = part;
     }
-    catch (_)
-    {
-      console.error(`Missing App Part: ${name}`);
-      return 0;
-    }
+    return part(arg);
   },
 
   _enableHeartbeat: function(activity, topicName, heartbeat)

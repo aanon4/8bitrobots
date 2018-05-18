@@ -1,4 +1,4 @@
-function tank(name)
+function car(name)
 {
   return function(args)
   {
@@ -9,15 +9,15 @@ function tank(name)
     forward = (forward < 0 ? -1 : 1) * (forward * forward);
     strafe = (strafe < 0 ? -1 : 1) * (strafe * strafe);
 
-    // Assume left and right wheels rotate cw and ccw
-    // Note: do not reverse the strafe.
-    if (args.output === 'right')
+    if (args.output === 'velocity')
     {
-      forward = -forward;
+      return forward;
     }
-
-    return Math.min(Math.max(forward + strafe * 0.75, -1), 1);
+    else
+    {
+      return Math.atan2(strafe, 1) / Math.PI * 180;
+    }
   }
 }
 
-module.exports = tank;
+module.exports = car;

@@ -602,7 +602,7 @@ document.addEventListener('DOMContentLoaded', function()
       const deadband = block.getFieldValue('DEADBAND');
       const min = block.getFieldValue('MIN');
       const max = block.getFieldValue('MAX');
-      const code = `(${value} > ${deadband} ? Math.min(${max}, ${value} - ${deadband}) : ${value} < -${deadband} ? Math.max(${min}, ${value} + ${deadband}) ? 0)`;
+      const code = `App.part('constrain', '', { value: ${value}, deadband: ${deadband}, min: ${min}, max: ${max} })`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Constrain'] = { category: 'Part', enabled: true, blocks: [] };
@@ -629,18 +629,18 @@ document.addEventListener('DOMContentLoaded', function()
     Blockly.JavaScript['Servo'] = function(block)
     {
       const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
-      const code = `(1.5 + (${value}) / ${90 * 0.5})`;
+      const code = `App.part('Servo', '', { value: ${value} })`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Servo'] = { category: 'Part', enabled: true, blocks: [] };
 
-    Blockly.Blocks['Motor'] =
+    Blockly.Blocks['ContinuousServo'] =
     {
       init: function()
       {
         this.jsonInit(
         {
-          message0: `convert motor velocity %1 to pulse`,
+          message0: `convert continuous servo velocity %1 to pulse`,
           args0:
           [
             {
@@ -653,21 +653,21 @@ document.addEventListener('DOMContentLoaded', function()
         });
       }
     };
-    Blockly.JavaScript['Motor'] = function(block)
+    Blockly.JavaScript['ContinuousServo'] = function(block)
     {
       const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
-      const code = `(1.5 + (${value}) * 0.5)`;
+      const code = `App.part('ContinuousServo', '', { value: ${value} })`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
-    myBlocks['Motor'] = { category: 'Part', enabled: true, blocks: [] };
+    myBlocks['ContinuousServo'] = { category: 'Part', enabled: true, blocks: [] };
 
-    Blockly.Blocks['tank'] =
+    Blockly.Blocks['Tank'] =
     {
       init: function()
       {
         this.jsonInit(
         {
-          message0: `convert x %1 y %2 to tank %3`,
+          message0: `for tank convert x %1 and y %2 to %3`,
           args0:
           [
             {
@@ -689,23 +689,23 @@ document.addEventListener('DOMContentLoaded', function()
         });
       }
     };
-    Blockly.JavaScript['tank'] = function(block)
+    Blockly.JavaScript['Tank'] = function(block)
     {
       const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
       const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
       const output = block.getFieldValue('OUTPUT');
-      const code = `App.part('tank', { x: ${x}, y: ${y}, output: '${output}' })`
+      const code = `App.part('Tank', '', { x: ${x}, y: ${y}, output: '${output}' })`
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
-    myBlocks['tank'] = { category: 'Part', enabled: true, blocks: [] };
+    myBlocks['Tank'] = { category: 'Part', enabled: true, blocks: [] };
 
-    Blockly.Blocks['car'] =
+    Blockly.Blocks['Car'] =
     {
       init: function()
       {
         this.jsonInit(
         {
-          message0: `convert x %1 y %2 to car %3`,
+          message0: 'for car convert x %1 and y %2 to %3',
           args0:
           [
             {
@@ -727,15 +727,15 @@ document.addEventListener('DOMContentLoaded', function()
         });
       }
     };
-    Blockly.JavaScript['car'] = function(block)
+    Blockly.JavaScript['Car'] = function(block)
     {
       const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
       const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
       const output = block.getFieldValue('OUTPUT');
-      const code = `App.part('car', { x: ${x}, y: ${y}, output: '${output}' })`
+      const code = `App.part('Car', '', { x: ${x}, y: ${y}, output: '${output}' })`
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
-    myBlocks['car'] = { category: 'Part', enabled: true, blocks: [] };
+    myBlocks['Car'] = { category: 'Part', enabled: true, blocks: [] };
   }
 
   function generateToolbox()
