@@ -51,16 +51,10 @@ app.prototype =
           App:
           {
             registerSetup: (setup) => { this._registerSetup(setup); },
-            registerActivity: (activity, fn) => { this._registerActivity(activity, fn); },
+            registerActivity: (activityId, fn) => { this._registerActivity(activityId, fn); },
             registerConfiguration: (configuration) => { this._registerConfiguration(configuration); },
             run: () => { this._runApp(); },
-            get: (activity, topicName, key) => { return this._getTopicValue(activity, topicName, key); },
             subscribe: (activity, topicName, heartbeat) => { this._subscribeToTopic(activity, topicName, heartbeat); },
-            sync: (activity) => { return this._syncTopicUpdates(activity); },
-            call: (serviceName, arg) => { return this._callService(serviceName, arg); },
-            part: (partName, instanceName, arg) => { return this._callPart(partName, instanceName, arg); },
-            print: (msg) => { this._debugMessage(msg); },
-            live: (activity) => { return activity in this._activitiesPending; }
           }
         }
       );
@@ -103,18 +97,43 @@ app.prototype =
 
   _registerSetup: function(setup)
   {
-    this._setups.push(setup);
+    const activity =
+    {
+      service: (serviceName) => { return this._getService(serviceName); },
+      print: (msg) => { this._debugMessage(msg); }
+    };
+    this._setups.push(() => {
+      setup(activity);
+    });
   },
 
-  _registerActivity: function(activity, fn)
+  _registerActivity: function(activityId, fn)
   {
-    this._activitiesPending[activity] = null;
-    this._activities.push(fn);
+    const activity =
+    {
+      sync: () => { return this._syncTopicUpdates(activityId); },
+      get: (topicName) => { return this._getTopic(activityId, topicName); },
+      service: (serviceName) => { return this._getService(serviceName); },
+      part: (partName, instanceName) => { return this._getPart(partName, instanceName); },
+      print: (msg) => { this._debugMessage(msg); },
+      terminated: () => { return !(activityId in this._activitiesPending); }
+    };
+    this._activitiesPending[activityId] = null;
+    this._activities.push(() => {
+      await fn(activity);
+      delete this._activitiesPending[activityId];
+    });
   },
 
   _registerConfiguration: function(configuration)
   {
-    this._configurations.push(configuration);
+    const activity =
+    {
+      service: (serviceName) => { return this._getService(serviceName); }
+    };
+    this._configurations.push(() => {
+      configuration(activity);
+    });
   },
 
   _runApp: function()
@@ -132,25 +151,22 @@ app.prototype =
     });
   },
 
-  _getTopicValue: function(activity, topicName, key)
+  _getTopic: function(activityId, topicName)
   {
-    if (activity)
+    if (activityId)
     {
       const topic = this._topics[topicName];
       if (topic)
       {
-        if (key === '__heartbeat')
-        {
-          return (Date.now() - topic.heartbeat) / 1000;
-        }
         const ainfo = topic.activities[activity];
         if (ainfo)
         {
-          return ainfo.state[key];
+          ainfo.state.__heartbeat = (Date.now() - topic.heartbeat) / 1000;
+          return ainfo.state;
         }
       }
     }
-    return undefined;
+    return {};
   },
 
   _subscribeToTopic: function(activity, topicName, heartbeat)
@@ -244,13 +260,13 @@ app.prototype =
     });
   },
 
-  _callService: function(service, arg)
+  _getService: function(service)
   {
     if (!this._proxies[service])
     {
       this._proxies[service] = this._node.proxy({ service: service });
     }
-    return this._proxies[service](arg);
+    return this._proxies[service];
   },
 
   _unproxyAllServices: function()
@@ -267,7 +283,7 @@ app.prototype =
     console.log(msg);
   },
 
-  _callPart: function(partName, instanceName, arg)
+  _getPart: function(partName, instanceName)
   {
     const id = `${partName}/${instanceName}`;
     let part = this._parts[id];
@@ -284,7 +300,7 @@ app.prototype =
       }
       this._parts[id] = part;
     }
-    return part(arg);
+    return part;
   },
 
   _enableHeartbeat: function(activity, topicName, heartbeat)

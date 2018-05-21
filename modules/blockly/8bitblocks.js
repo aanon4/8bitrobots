@@ -40,11 +40,13 @@ document.addEventListener('DOMContentLoaded', function()
   window.MYBLOCKS = myBlocks;
   window.APP = {};
   Blockly.Field.prototype.maxDisplayLength = 100;
+  Blockly.JavaScript.INFINITE_LOOP_TRAP = `if (activity.terminated()) throw new Error("Terminated");\n`;
+  Blockly.JavaScript.addReservedWords('activity');
   // Override the default text_print.
   Blockly.JavaScript['text_print'] = function(block)
   {
     const msg = Blockly.JavaScript.valueToCode(block, 'TEXT', Blockly.JavaScript.ORDER_NONE) || "''";
-    return `App.print(${msg});\n`;
+    return `activity.print(${msg});\n`;
   };
   
 
@@ -77,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function()
       const code = Blockly.JavaScript.statementToCode(block, 'SETUP');
       if (code)
       {
-        return `App.registerSetup(async function()
+        return `App.registerSetup(async function(activity)
         {
           try
           {
@@ -85,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function()
           }
           catch (e)
           {
-            App.print(e);
+            activity.print(e);
           }
         });\n`;
       }
@@ -119,22 +121,21 @@ document.addEventListener('DOMContentLoaded', function()
     {
       Blockly.JavaScript._currentActivity = UUID();
       Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity] = {};
-      Blockly.JavaScript.INFINITE_LOOP_TRAP = `if (!App.live('${Blockly.JavaScript._currentActivity}')) throw new Error("Terminated");\n`;
       const code = Blockly.JavaScript.statementToCode(block, 'ACTIVITY');
       if (code)
       {
-        return `App.registerActivity('${Blockly.JavaScript._currentActivity}', async function()
+        return `App.registerActivity('${Blockly.JavaScript._currentActivity}', async function(activity)
         {
           try
           {
-            while (await App.sync('${Blockly.JavaScript._currentActivity}'))
+            while (await activity.sync())
             {
               ${code}
             }
           }
           catch (e)
           {
-            App.print(e);
+            activity.print(e);
           }
         });\n`;
       }
@@ -280,9 +281,9 @@ document.addEventListener('DOMContentLoaded', function()
           };
           Blockly.JavaScript[name] = function(block)
           {
-            const code = `App.registerConfiguration(function()
+            const code = `App.registerConfiguration(function(activity)
             {
-              return App.call('${name}', ${JSON.stringify(config)});
+              return activity.service('${name}')(${JSON.stringify(config)});
             });\n`;
 
             return code;
@@ -388,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function()
             }
           }
         }
-        const code = `await App.call('${action.name}', {${args.join(', ')}});\n`;
+        const code = `await activity.service('${action.name}')({${args.join(', ')}});\n`;
         return code;
       }
 
@@ -458,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function()
       Blockly.JavaScript[event.name] = function(block)
       {
         const property = block.getFieldValue('PROPERTY');
-        const code = `App.get('${Blockly.JavaScript._currentActivity}', '${event.name}', '${property}')`;
+        const code = `activity.get('${event.name}')['${property}']`;
         if (Blockly.JavaScript._currentActivity)
         {
           const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
@@ -519,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function()
     {
       const eventName = block.getFieldValue('EVENT_NAME');
       const limit = block.getFieldValue('LIMIT');
-      const code = `App.get('${Blockly.JavaScript._currentActivity}', '${eventName}', '__heartbeat') > ${limit}`;
+      const code = `activity.get('${eventName}').__heartbeat > ${limit}`;
       if (Blockly.JavaScript._currentActivity)
       {
         const topics = Blockly.JavaScript._topics[Blockly.JavaScript._currentActivity];
@@ -602,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function()
       const deadband = block.getFieldValue('DEADBAND');
       const min = block.getFieldValue('MIN');
       const max = block.getFieldValue('MAX');
-      const code = `App.part('constrain', '', { value: ${value}, deadband: ${deadband}, min: ${min}, max: ${max} })`;
+      const code = `activity.part('constrain', '')({ value: ${value}, deadband: ${deadband}, min: ${min}, max: ${max} })`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Constrain'] = { category: 'Part', enabled: true, blocks: [] };
@@ -629,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function()
     Blockly.JavaScript['Servo'] = function(block)
     {
       const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
-      const code = `App.part('Servo', '', { value: ${value} })`;
+      const code = `activity.part('Servo', '')({ value: ${value} })`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Servo'] = { category: 'Part', enabled: true, blocks: [] };
@@ -656,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function()
     Blockly.JavaScript['ContinuousServo'] = function(block)
     {
       const value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_NONE) || 0;
-      const code = `App.part('ContinuousServo', '', { value: ${value} })`;
+      const code = `activity.part('ContinuousServo', '')({ value: ${value} })`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['ContinuousServo'] = { category: 'Part', enabled: true, blocks: [] };
@@ -691,10 +692,10 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['Tank'] = function(block)
     {
-      const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
-      const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
+      const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || undefined;
+      const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || undefined;
       const output = block.getFieldValue('OUTPUT');
-      const code = `App.part('Tank', '', { x: ${x}, y: ${y}, output: '${output}' })`
+      const code = `activity.part('Tank', '')({ x: ${x}, y: ${y}, output: '${output}' })`
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Tank'] = { category: 'Part', enabled: true, blocks: [] };
@@ -732,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function()
       const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || 0;
       const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || 0;
       const output = block.getFieldValue('OUTPUT');
-      const code = `App.part('Car', '', { x: ${x}, y: ${y}, output: '${output}' })`
+      const code = `activity.part('Car', '')({ x: ${x}, y: ${y}, output: '${output}' })`
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     myBlocks['Car'] = { category: 'Part', enabled: true, blocks: [] };
