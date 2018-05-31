@@ -2,6 +2,10 @@
 <head>
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <style>
+    .part-create-button { fill: #A65CA6 }
+    .part-create-button:hover { fill: #8D5CA6 }
+  </style>
   <script src="js/8bit-slave.js"></script>
   <script src="js/8bit.js"></script>
   <script src="blockly/blockly_compressed.js"></script>
@@ -13,7 +17,7 @@
     window.TOOLBOX =
     [
       '<xml>',
-      '<category name="Program">', '', '</category>',
+      '<category name="Program" custom="Program">', '', '</category>',
       `<category name="General">
         <block type="controls_if" />
         <block type="controls_repeat_ext" />
@@ -26,10 +30,10 @@
       </category>`,
       '<category name="Variables" custom="VARIABLE" />',
       '<category name="Functions" custom="PROCEDURE" />',
-      '<category name="Config">', '', '</category>',
-      '<category name="Event">', '', '</category>',
-      '<category name="Action">', '', '</category>',
-      '<category name="Part">', '', '</category>',
+      '<category name="Config" custom="Config">', '', '</category>',
+      '<category name="Event" custom="Event">', '', '</category>',
+      '<category name="Action" custom="Action">', '', '</category>',
+      '<category name="Part" custom="Part">', '', '</category>',
       '</xml>'
     ];
   </script>

@@ -1,22 +1,44 @@
 function tank(name)
 {
+  const state =
+  {
+    x: 0,
+    y: 0,
+    left: 0,
+    right: 0,
+  };
+
   return function(args)
   {
-    let strafe = Math.min(Math.max(args.x, -1), 1);
-    let forward = Math.min(Math.max(args.y, -1), 1);;
-
-    // Make these ramp up for better slow speed control
-    forward = (forward < 0 ? -1 : 1) * (forward * forward);
-    strafe = (strafe < 0 ? -1 : 1) * (strafe * strafe);
-
-    // Assume left and right wheels rotate cw and ccw
-    // Note: do not reverse the strafe.
-    if (args.output === 'right')
+    // Set any properties we pass in
+    for (let prop in args)
     {
-      forward = -forward;
+      if (prop in state)
+      {
+        switch (prop)
+        {
+          case 'left':
+          case 'right':
+            break;
+          default:
+            state[prop] = args[prop];
+            break;
+        }
+      }
     }
 
-    return Math.min(Math.max(forward + strafe * 0.75, -1), 1);
+    let strafe = Math.min(Math.max(state.x, -1), 1);
+    // Make these ramp up for better slow speed control
+    strafe = 0.75 * (strafe < 0 ? -1 : 1) * (strafe * strafe);
+  
+    let forward = Math.min(Math.max(state.y, -1), 1);
+    // Make these ramp up for better slow speed control
+    forward = (forward < 0 ? -1 : 1) * (forward * forward);
+
+    state.right = Math.min(Math.max(forward - strafe, -1), 1);
+    state.left = Math.min(Math.max(forward + strafe, -1), 1);
+
+    return state;
   }
 }
 

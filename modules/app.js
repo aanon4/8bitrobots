@@ -119,7 +119,7 @@ app.prototype =
       terminated: () => { return !(activityId in this._activitiesPending); }
     };
     this._activitiesPending[activityId] = null;
-    this._activities.push(() => {
+    this._activities.push(async () => {
       await fn(activity);
       delete this._activitiesPending[activityId];
     });
