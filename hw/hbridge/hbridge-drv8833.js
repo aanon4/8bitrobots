@@ -151,7 +151,7 @@ hbridgeChannel.prototype =
 function hbridge(config)
 {
   this._name = config.name;
-  this._node = Node.init(this._name);
+  this._node = Node.init(`${this._name}/node`);
   this._enabled = 0;
   this._channels =
   [
@@ -171,8 +171,8 @@ function hbridge(config)
 
   this._config = new ConfigManager(this,
   {
-    name0: '',
-    name1: ''
+    channel0: '',
+    channel1: ''
   });
   this._config.enable();
 }
@@ -194,7 +194,7 @@ hbridge.prototype =
     {
       for (let i = 0; i < 2; i++)
       {
-        const name = this._config.get(`name${i}`);
+        const name = this._config.get(`channel${i}`);
         if (name && name.trim())
         {
           this._channels[i].setFriendlyName(name);
@@ -211,7 +211,7 @@ hbridge.prototype =
     {
       for (let i = 0; i < 2; i++)
       {
-        const name = this._config.get(`name${i}`);
+        const name = this._config.get(`channel${i}`);
         if (name && name.trim())
         {
           this._channels[i].disable();
@@ -225,9 +225,9 @@ hbridge.prototype =
   {
     for (let key in changes)
     {
-      if (key.substring(0, 4) === 'name')
+      if (key.substring(0, 7) === 'channel')
       {
-        const channel = this._channels[key.substring(4)];
+        const channel = this._channels[key.substring(7)];
         const name = changes[key].new;
         const old = changes[key].old;
         if (old && old.trim())

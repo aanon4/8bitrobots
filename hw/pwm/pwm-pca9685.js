@@ -276,8 +276,7 @@ function PWM(config)
     const api = exclude.indexOf(i) === -1;
     if (api)
     {
-      //cenabled[`channel${i}`] = false;
-      cenabled[`name${i}`] = '';
+      cenabled[`channel${i}`] = '';
     }
     this._channels.push(new pwmChannel(this, i, api));
   }
@@ -315,7 +314,7 @@ PWM.prototype =
       this._setCyclePeriod();
       for (let i = 0; i < 16; i++)
       {
-        const name = this._config.get(`name${i}`);
+        const name = this._config.get(`channel${i}`);
         if (name && name.trim())
         {
           this._channels[i].setFriendlyName(name);
@@ -332,7 +331,7 @@ PWM.prototype =
     {
       for (let i = 0; i < 16; i++)
       {
-        const name = this._config.get(`name${i}`);
+        const name = this._config.get(`channel${i}`);
         if (name && name.trim())
         {
           this._channels[i].disable();
@@ -347,9 +346,9 @@ PWM.prototype =
     this._setCyclePeriod();
     for (let key in changes)
     {
-      if (key.substring(0, 4) === 'name')
+      if (key.substring(0, 7) === 'channel')
       {
-        const channel = this._channels[key.substring(4)];
+        const channel = this._channels[key.substring(7)];
         const name = changes[key].new;
         const old = changes[key].old;
         if (old && old.trim())
