@@ -44,7 +44,7 @@ function incoming(request, response)
       switch (path.extname(page.to))
       {
         case '.html':
-          headers['Content-Type'] = 'text/html';
+          headers['Content-Type'] = 'text/html; charset=utf-8';
           break;
         case '.js':
           headers['Content-Type'] = 'application/x-javascript';

@@ -1,9 +1,10 @@
+<!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
-    .part-create-button { fill: #A65CA6 }
+    .part-create-button { fill: #a65ca6 }
     .part-create-button:hover { fill: #8D5CA6 }
   </style>
   <script src="js/8bit-slave.js"></script>
@@ -17,23 +18,34 @@
     window.TOOLBOX =
     [
       '<xml>',
-      '<category name="Program" custom="Program">', '', '</category>',
-      `<category name="General">
+      '<category name="Program" custom="Program" colour="190" />',
+      '<sep />',
+      `<category name="Logic" colour="210">
         <block type="controls_if" />
-        <block type="controls_repeat_ext" />
         <block type="logic_compare" />
         <block type="logic_operation" />
+      </category>
+      <category name="Loops" colour="120">
+        <block type="controls_repeat_ext" />
+      </category>
+      <category name="Math" colour="230">
         <block type="math_number" />
         <block type="math_arithmetic" />
+        <block type="math_single" />
+        <block type="math_trig" />
+      </category>
+      <category name="Text" colour="160" >
         <block type="text" />
         <block type="text_print" />
       </category>`,
-      '<category name="Variables" custom="VARIABLE" />',
-      '<category name="Functions" custom="PROCEDURE" />',
-      '<category name="Config" custom="Config">', '', '</category>',
-      '<category name="Event" custom="Event">', '', '</category>',
-      '<category name="Action" custom="Action">', '', '</category>',
-      '<category name="Part" custom="Part">', '', '</category>',
+      '<sep />',
+      '<category name="Variables" custom="VARIABLE" colour="330" />',
+      '<category name="Functions" custom="PROCEDURE" colour="290" />',
+      '<sep />',
+      '<category name="Configs" custom="Config" colour="240" />',
+      '<category name="Events" custom="Event" colour="55" />',
+      '<category name="Actions" custom="Action" colour="0" />',
+      '<category name="Parts" custom="Part" colour="300" />',
       '</xml>'
     ];
   </script>

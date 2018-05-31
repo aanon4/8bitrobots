@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function()
 
   const COLOR =
   {
-    PROGRAM: 120,
+    PROGRAM: 190,
     CONFIG: 240,
     ACTION: 0,
     EVENT: 55,
