@@ -1,8 +1,8 @@
 function motor(name)
 {
-  const node = Node.init(`/app/continuous-servo/${name}/node`);
+  const node = Node.init(`/app/motor/${name}/node`);
 
-  let set_pulse = null;
+  let set_duty = null;
   const state =
   {
     channel: null,
@@ -12,7 +12,7 @@ function motor(name)
     velocity: 0,
     time: 0,
     func: null,
-    pulse: null
+    duty: null
   };
 
   return function(args)
@@ -27,15 +27,15 @@ function motor(name)
           case 'channel':
             if (state.channel !== args.channel)
             {
-              if (set_pulse)
+              if (set_duty)
               {
                 node.unservice({ name: state.channel });
               }
               state.channel = args.channel;
-              set_pulse = node.service({ name: state.channel });
+              set_duty = node.service({ name: state.channel });
             }
             break;
-          case 'pulse':
+          case 'duty':
             break;
           default:
             state[prop] = args[prop];
@@ -47,14 +47,14 @@ function motor(name)
     let velocity = state.rev ? -state.velocity : state.velocity;
     velocity = Math.max((Math.min(velocity, state.max), velocity.min);
 
-    const npulse = 1.5 + velocity * 0.5;
-    if (npulse !== state.pulse)
+    const nduty = 1.5 + velocity * 0.5;
+    if (nduty !== state.duty)
     {
-      // Pulse has changed, set the new pulse output
-      state.pulse = npulse;
-      if (set_pulse)
+      // Duty has changed, set the new duty output
+      state.duty = nduty;
+      if (set_duty)
       {
-        set_pulse({ pulse: state.pulse, time: state.time, func: state.func });
+        set_duty({ duty: state.duty, time: state.time, func: state.func });
       }
     }
   }

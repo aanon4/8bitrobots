@@ -13,7 +13,7 @@ function car(name)
     // Set any properties we pass in
     for (let prop in args)
     {
-      if (prop in state)
+      if (args[prop] !== undefined && prop in state)
       {
         switch (prop)
         {

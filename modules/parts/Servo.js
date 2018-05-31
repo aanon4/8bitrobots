@@ -1,6 +1,9 @@
+const StateManager = reqire('modules/state-manager');
+
 function servo(name)
 {
   const node = Node.init(`/app/servo/${name}/node`);
+  const saved = new StateManager({ name: node._name });
 
   let set_pulse = null;
   const state =
@@ -10,7 +13,7 @@ function servo(name)
     trim: 0,
     min: 0,
     max: 180,
-    angle: null,
+    angle: saved.get('angle') || 90,
     time: 0,
     func: null,
     pulse: null
@@ -21,7 +24,7 @@ function servo(name)
     // Set any properties we pass in
     for (let prop in args)
     {
-      if (prop in state)
+      if (args[prop] !== undefined && prop in state)
       {
         switch (prop)
         {
@@ -34,6 +37,13 @@ function servo(name)
               }
               state.channel = args.channel;
               set_pulse = node.service({ name: state.channel });
+            }
+            break;
+          case 'angle':
+            if (state.angle !== args.angle)
+            {
+              state.angle = args.angle;
+              saved.set('angle', stage.angle);
             }
             break;
           case 'pulse':

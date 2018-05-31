@@ -567,6 +567,12 @@ document.addEventListener('DOMContentLoaded', function()
     }).map((key) => {
       return [ Blockly.Blocks[key].__friendlyName || key, key ];
     });
+    // HBRIDGE Channels
+    const hbridges = Object.keys(Blockly.Blocks).filter((key) => {
+      return key.indexOf('/set_duty') !== -1;
+    }).map((key) => {
+      return [ Blockly.Blocks[key].__friendlyName || key, key ];
+    });
 
     // SERVO
     const servoVariables = WORKSPACE.getVariablesOfType('Servo');
@@ -601,8 +607,17 @@ document.addEventListener('DOMContentLoaded', function()
                 options: channels
               }
             ],
-            message3: 'reverse %1',
+            message3: 'angle %1',
             args3:
+            [
+              {
+                type: 'field_number',
+                name: 'ANGLE',
+                value: 90
+              }
+            ],
+            message4: 'reverse %1',
+            args4:
             [
               {
                 type: 'field_checkbox',
@@ -610,8 +625,9 @@ document.addEventListener('DOMContentLoaded', function()
                 value: false
               }
             ],
-            message4: 'trim %1',
-            args4:
+            
+            message5: 'trim %1',
+            args5:
             [
               {
                 type: 'field_number',
@@ -619,8 +635,8 @@ document.addEventListener('DOMContentLoaded', function()
                 value: 0
               }
             ],
-            message5: 'min %1',
-            args5:
+            message6: 'min %1',
+            args6:
             [
               {
                 type: 'field_number',
@@ -628,8 +644,8 @@ document.addEventListener('DOMContentLoaded', function()
                 value: 0
               },
             ],
-            message6: 'max %1',
-            args6:
+            message7: 'max %1',
+            args7:
             [
               {
                 type: 'field_number',
@@ -644,13 +660,14 @@ document.addEventListener('DOMContentLoaded', function()
       {
         const name = block.getFieldValue('NAME');
         const channel = block.getFieldValue('CHANNEL');
+        const angle = block.getFieldValue('ANGLE');
         const rev = block.getFieldValue('REV');
         const trim = block.getFieldValue('TRIM');
         const min = block.getFieldValue('MIN');
         const max = block.getFieldValue('MAX');
         const code = `App.registerConfiguration(function(activity)
         {
-          return activity.part('Servo', '${name}')({ channel: '${channel}', rev: ${rev}, trim: ${trim}, min: ${min}, max: ${max} });
+          return activity.part('Servo', '${name}')({ channel: '${channel}', angle: ${angle}, rev: ${rev}, trim: ${trim}, min: ${min}, max: ${max} });
         });\n`;
 
         return code;
@@ -838,6 +855,136 @@ document.addEventListener('DOMContentLoaded', function()
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
     registerPart({ name: 'ContinuousServo' });
+
+    // MOTOR
+    const motorVariables = WORKSPACE.getVariablesOfType('Motor');
+    if (hbridges.length && motorVariables.length)
+    {
+      Blockly.Blocks['Motor_CONFIG'] =
+      {
+        __category: 'Config',
+        __tool: `<block type="Motor_CONFIG"><field variabletype="Motor" name="NAME">${motorVariables[0].name}</field></block>`,
+        init: function()
+        {
+          this.jsonInit(
+          {
+            colour: COLOR.PART.CONFIG,
+            message0: 'Configure Motor',
+            message1: 'name %1',
+            args1:
+            [
+              {
+                type: 'field_variable',
+                name: 'NAME',
+                defaultType: 'Motor',
+                variableTypes: [ 'Motor' ]
+              }
+            ],
+            message2: 'channel %1',
+            args2:
+            [
+              {
+                type: 'field_dropdown',
+                name: 'CHANNEL',
+                options: hbridges
+              }
+            ],
+            message3: 'reverse %1',
+            args3:
+            [
+              {
+                type: 'field_checkbox',
+                name: 'REV',
+                value: false
+              }
+            ],
+            message4: 'min %1',
+            args4:
+            [
+              {
+                type: 'field_number',
+                name: 'MIN',
+                value: -1
+              },
+            ],
+            message5: 'max %1',
+            args5:
+            [
+              {
+                type: 'field_number',
+                name: 'MAX',
+                value: 1
+              }
+            ]
+          });
+        }
+      };
+      Blockly.JavaScript['Motor_CONFIG'] = function(block)
+      {
+        const name = block.getFieldValue('NAME');
+        const channel = block.getFieldValue('CHANNEL');
+        const rev = block.getFieldValue('REV');
+        const min = block.getFieldValue('MIN');
+        const max = block.getFieldValue('MAX');
+        const code = `App.registerConfiguration(function(activity)
+        {
+          return activity.part('Motor', '${name}')({ channel: '${channel}', rev: ${rev}, min: ${min}, max: ${max} });
+        });\n`;
+
+        return code;
+      };
+    }
+    else if (Blockly.Blocks['Motor_CONFIG'])
+    {
+      delete Blockly.Blocks['Motor_CONFIG'];
+    }
+    Blockly.Blocks['Motor_SET'] =
+    {
+      __category: 'Part',
+      init: function()
+      {
+        this.jsonInit(
+        {
+          colour: COLOR.PART.SET,
+          message0: 'for motor %1 set velocity to %2 over %3 milliseconds with %4 transition',
+          args0:
+          [
+            {
+              type: 'field_variable',
+              name: 'NAME',
+              defaultType: 'Motor',
+              variableTypes: [ 'Motor' ]
+            },
+            {
+              type: 'input_value',
+              name: 'VELOCITY'
+            },
+            {
+              type: 'input_value',
+              name: 'TIME'
+            },
+            {
+              type: 'field_dropdown',
+              name: 'FUNC',
+              options: TransitionFunctions
+            }
+          ],
+          previousStatement: null,
+          nextStatement: null,
+          inputsInline: true,
+        });
+      }
+    };
+    Blockly.JavaScript['Motor_SET'] = function(block)
+    {
+      const name = block.getFieldValue('NAME');
+      const velocity = Blockly.JavaScript.valueToCode(block, 'VELOCITY', Blockly.JavaScript.ORDER_NONE) || undefined;
+      const time = Blockly.JavaScript.valueToCode(block, 'TIME', Blockly.JavaScript.ORDER_NONE) || 0;
+      const func = block.getFieldValue('FUNC');
+      const code = `activity.part('Motor', '${name}')({ velocity: ${velocity}, time: ${time}, func: '${func}' });`
+      return [ code, Blockly.JavaScript.ORDER_NONE ];
+    };
+    registerPart({ name: 'Motor' });
 
     // TANK
     Blockly.Blocks['Tank_SET'] =
