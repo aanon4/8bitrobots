@@ -4,11 +4,12 @@
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
-    html, body { width: 100%; height: 100%; margin: 0; }
+    html, body { width: 100%; height: 100%; margin: 0 }
     .part-create-button { fill: #a65ca6 }
     .part-create-button:hover { fill: #8D5CA6 }
-    #all { width: 100%; height: 100%; display: flex; flex-direction: column; }
-    #blocklyDiv { height: 480px; width: 100%; flex: 1;}
+    #all { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    #blocklyBox { height: 100px; width: 100%; flex: 1 }
+    #blockly { height: 100%; width: 100000px; }
     #tabs { width: 100%; height: 30px; background-color: #dddddd; }
     #deploy { float: left; width: 79px; margin: 4px 14px 0px 14px; }
     .tab { float: left; width: 90px; padding: 5px; background-color: white; color: lightgrey; border: 1px solid lightgrey; border-top-color: transparent; border-radius: 0px 0px 5px 5px; text-align: center }
@@ -85,16 +86,20 @@
 </head>
 <body>
   <div id="all">
-    <div id="blocklyDiv"></div>
+    <div id="blocklyBox">
+      <div id="blockly"></div>
+    </div>
     <div id="tabs">
       <button id="deploy" onclick="deploy()">Deploy</button>
       <div onclick="select(this)" class="tab selected">Tab 1</div>
       <div onclick="select(this)" class="tab">Tab 2</div>
       <div onclick="select(this)" class="tab">Tab 3</div>
+      <div onclick="select(this)" class="tab">Tab 4</div>
+      <div onclick="select(this)" class="tab">Tab 5</div>
     </div>
   </div>
   <script>
-    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join(), sounds: false, media: 'images/', disable: false, scrollbars: false });
+    window.WORKSPACE = Blockly.inject('blockly', { toolbox: TOOLBOX.join(), sounds: false, media: 'images/', disable: false, scrollbars: false });
     function deploy()
     {
       window.APP && window.APP.deployRobotWorkspace(window.WORKSPACE);
@@ -102,11 +107,16 @@
     function select(selected)
     {
       const firstTab = document.getElementById("tabs").firstElementChild;
-      for (let tab = firstTab; tab; tab = tab.nextElementSibling)
+      for (let tab = firstTab, count = -1; tab; tab = tab.nextElementSibling)
       {
         tab.classList.remove('selected');
+        if (tab == selected)
+        {
+          selected.classList.add('selected');
+          WORKSPACE.translate(-10000 * count, 0);
+        }
+        count++;
       }
-      selected.classList.add('selected');
     }
   </script>
 </body>
