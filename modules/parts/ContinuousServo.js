@@ -29,10 +29,10 @@ function motor(name)
             {
               if (set_pulse)
               {
-                node.unservice({ name: state.channel });
+                node.unproxy({ service: state.channel });
               }
               state.channel = args.channel;
-              set_pulse = node.service({ name: state.channel });
+              set_pulse = node.proxy({ service: state.channel });
             }
             break;
           case 'pulse':
@@ -45,7 +45,7 @@ function motor(name)
     }
 
     let velocity = state.rev ? -state.velocity : state.velocity;
-    velocity = Math.max((Math.min(velocity, state.max), velocity.min);
+    velocity = Math.max(Math.min(velocity, state.max), velocity.min);
 
     const npulse = 1.5 + velocity * 0.5;
     if (npulse !== state.pulse)
@@ -57,9 +57,9 @@ function motor(name)
         set_pulse({ pulse: state.pulse, time: state.time, func: state.func });
       }
     }
-  }
 
-  return state;
+    return state;
+  }
 }
 
 module.exports = motor;

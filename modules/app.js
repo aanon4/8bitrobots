@@ -82,7 +82,7 @@ app.prototype =
     this._activitiesPending = {};
     for (let id in pending)
     {
-      pending[id]();
+      pending[id] && pending[id]();
     }
   },
 
@@ -129,6 +129,7 @@ app.prototype =
   {
     const activity =
     {
+      part: (partName, instanceName) => { return this._getPart(partName, instanceName); },
       service: (serviceName) => { return this._getService(serviceName); }
     };
     this._configurations.push(() => {
@@ -158,7 +159,7 @@ app.prototype =
       const topic = this._topics[topicName];
       if (topic)
       {
-        const ainfo = topic.activities[activity];
+        const ainfo = topic.activities[activityId];
         if (ainfo)
         {
           ainfo.state.__heartbeat = (Date.now() - topic.heartbeat) / 1000;

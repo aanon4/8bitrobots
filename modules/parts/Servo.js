@@ -33,10 +33,10 @@ function servo(name)
             {
               if (set_pulse)
               {
-                node.unservice({ name: state.channel });
+                node.unproxy({ service: state.channel });
               }
               state.channel = args.channel;
-              set_pulse = node.service({ name: state.channel });
+              set_pulse = node.proxy({ service: state.channel });
             }
             break;
           case 'angle':

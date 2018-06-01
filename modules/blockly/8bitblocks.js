@@ -142,10 +142,11 @@ document.addEventListener('DOMContentLoaded', function()
         {
           try
           {
-            while (await activity.sync())
+            do
             {
               ${code}
             }
+            while (await activity.sync());            
           }
           catch (e)
           {
@@ -261,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function()
               {
                 case Blockly.Events.BLOCK_CREATE:
                 {
-                  const block = WORKSPACE.getBlockById(e.blockId);
+                  const block = e.getEventWorkspace_().getBlockById(e.blockId);
                   if (block && block.type === name)
                   {
                     for (let key in config)
@@ -284,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function()
                     CONFIG(config).then((newConfig) => {
                       changes = false;
                       Object.assign(config, newConfig);
-                      rebuildEventAndActionBlocks();
+                      rebuildEventAndActionBlocks(e.getEventWorkspace_());
                     });
                   }
                   break;
@@ -509,28 +510,23 @@ document.addEventListener('DOMContentLoaded', function()
   // --------------------------------------------------------------------------
   // Part blocks
   // --------------------------------------------------------------------------
-  function buildParts()
+  function buildPartBlocks(workspace)
   {
     const partTypes = [];
     
-    function registerPart(type)
+    function registerPart(type, workspace)
     {
       partTypes.push(type);
-      WORKSPACE.registerButtonCallback(`CALLBACK_${type.name}`, (button) => {
-        Blockly.Variables.createVariable(button.getTargetWorkspace(), (name) => {
-          if (name)
-          {
-            buildParts();
-          }
-        }, type.name);
+      workspace.registerButtonCallback(`CALLBACK_${type.name}`, (button) => {
+        Blockly.Variables.createVariable(button.getTargetWorkspace(), null, type.name);
       });
     }
 
-    WORKSPACE.registerToolboxCategoryCallback('Part', () => {
+    workspace.registerToolboxCategoryCallback('Part', (workspace) => {
       const xml = [];
       partTypes.forEach((type) => {
         xml.push(Blockly.Xml.textToDom(`<button web-class="${COLOR.PART.BUTTON_CSS_CLASS}" text="Create ${type.name}..." callbackKey="CALLBACK_${type.name}"></button>`));
-        const variables = WORKSPACE.getVariablesOfType(type.name);
+        const variables = workspace.getVariablesOfType(type.name);
         if (variables.length)
         {
           if (Blockly.Blocks[`${type.name}_SET`] && Blockly.Blocks[`${type.name}_GET`])
@@ -575,108 +571,110 @@ document.addEventListener('DOMContentLoaded', function()
     });
 
     // SERVO
-    const servoVariables = WORKSPACE.getVariablesOfType('Servo');
-    if (channels.length && servoVariables.length)
+    Blockly.Blocks['Servo_CONFIG'] =
     {
-      Blockly.Blocks['Servo_CONFIG'] =
-      {
-        __category: 'Config',
-        __tool: `<block type="Servo_CONFIG"><field variabletype="Servo" name="NAME">${servoVariables[0].name}</field></block>`,
-        init: function()
+      __category: 'Config',
+      __tool: (workspace) => {
+        const variables = workspace.getVariablesOfType('Servo');
+        if (channels.length && variables.length)
         {
-          this.jsonInit(
-          {
-            colour: COLOR.PART.CONFIG,
-            message0: 'Configure Servo',
-            message1: 'name %1',
-            args1:
-            [
-              {
-                type: 'field_variable',
-                name: 'NAME',
-                defaultType: 'Servo',
-                variableTypes: [ 'Servo' ]
-              }
-            ],
-            message2: 'channel %1',
-            args2:
-            [
-              {
-                type: 'field_dropdown',
-                name: 'CHANNEL',
-                options: channels
-              }
-            ],
-            message3: 'angle %1',
-            args3:
-            [
-              {
-                type: 'field_number',
-                name: 'ANGLE',
-                value: 90
-              }
-            ],
-            message4: 'reverse %1',
-            args4:
-            [
-              {
-                type: 'field_checkbox',
-                name: 'REV',
-                value: false
-              }
-            ],
-            
-            message5: 'trim %1',
-            args5:
-            [
-              {
-                type: 'field_number',
-                name: 'TRIM',
-                value: 0
-              }
-            ],
-            message6: 'min %1',
-            args6:
-            [
-              {
-                type: 'field_number',
-                name: 'MIN',
-                value: 0
-              },
-            ],
-            message7: 'max %1',
-            args7:
-            [
-              {
-                type: 'field_number',
-                name: 'MAX',
-                value: 180
-              }
-            ]
-          });
+          return `<block type="Servo_CONFIG"><field variabletype="Servo" name="NAME">${variables[0].name}</field></block>`;
         }
-      };
-      Blockly.JavaScript['Servo_CONFIG'] = function(block)
-      {
-        const name = block.getFieldValue('NAME');
-        const channel = block.getFieldValue('CHANNEL');
-        const angle = block.getFieldValue('ANGLE');
-        const rev = block.getFieldValue('REV');
-        const trim = block.getFieldValue('TRIM');
-        const min = block.getFieldValue('MIN');
-        const max = block.getFieldValue('MAX');
-        const code = `App.registerConfiguration(function(activity)
+        else
         {
-          return activity.part('Servo', '${name}')({ channel: '${channel}', angle: ${angle}, rev: ${rev}, trim: ${trim}, min: ${min}, max: ${max} });
-        });\n`;
-
-        return code;
-      };
-    }
-    else if (Blockly.Blocks['Servo_CONFIG'])
+          return null;
+        }
+      },
+      init: function()
+      {
+        this.jsonInit(
+        {
+          colour: COLOR.PART.CONFIG,
+          message0: 'Configure Servo',
+          message1: 'name %1',
+          args1:
+          [
+            {
+              type: 'field_variable',
+              name: 'NAME',
+              defaultType: 'Servo',
+              variableTypes: [ 'Servo' ]
+            }
+          ],
+          message2: 'channel %1',
+          args2:
+          [
+            {
+              type: 'field_dropdown',
+              name: 'CHANNEL',
+              options: channels
+            }
+          ],
+          message3: 'angle %1',
+          args3:
+          [
+            {
+              type: 'field_number',
+              name: 'ANGLE',
+              value: 90
+            }
+          ],
+          message4: 'reverse %1',
+          args4:
+          [
+            {
+              type: 'field_checkbox',
+              name: 'REV',
+              value: false
+            }
+          ],
+          
+          message5: 'trim %1',
+          args5:
+          [
+            {
+              type: 'field_number',
+              name: 'TRIM',
+              value: 0
+            }
+          ],
+          message6: 'min %1',
+          args6:
+          [
+            {
+              type: 'field_number',
+              name: 'MIN',
+              value: 0
+            },
+          ],
+          message7: 'max %1',
+          args7:
+          [
+            {
+              type: 'field_number',
+              name: 'MAX',
+              value: 180
+            }
+          ]
+        });
+      }
+    };
+    Blockly.JavaScript['Servo_CONFIG'] = function(block)
     {
-      delete Blockly.Blocks['Servo_CONFIG'];
-    }
+      const name = block.getField('NAME').getText();
+      const channel = block.getFieldValue('CHANNEL');
+      const angle = block.getFieldValue('ANGLE');
+      const rev = block.getFieldValue('REV');
+      const trim = block.getFieldValue('TRIM');
+      const min = block.getFieldValue('MIN');
+      const max = block.getFieldValue('MAX');
+      const code = `App.registerConfiguration(function(activity)
+      {
+        return activity.part('Servo', '${name}')({ channel: '${channel}', angle: ${angle}, rev: ${rev}, trim: ${trim}, min: ${min}, max: ${max} });
+      });\n`;
+
+      return code;
+    };
 
     Blockly.Blocks['Servo_SET'] =
     {
@@ -717,97 +715,99 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['Servo_SET'] = function(block)
     {
-      const name = block.getFieldValue('NAME');
+      const name = block.getField('NAME').getText();
       const angle = Blockly.JavaScript.valueToCode(block, 'ANGLE', Blockly.JavaScript.ORDER_NONE) || undefined;
       const time = Blockly.JavaScript.valueToCode(block, 'TIME', Blockly.JavaScript.ORDER_NONE) || 0;
       const func = block.getFieldValue('FUNC');
       const code = `activity.part('Servo', '${name}')({ angle: ${angle}, time: ${time}, func: '${func}' });`
-      return [ code, Blockly.JavaScript.ORDER_NONE ];
+      return code;
     };
-    registerPart({ name: 'Servo' });
+    registerPart({ name: 'Servo' }, workspace);
 
     // CONTINUOUS SERVO
-    const cservoVariables = WORKSPACE.getVariablesOfType('ContinuousServo');
-    if (channels.length && cservoVariables.length)
+    Blockly.Blocks['ContinuousServo_CONFIG'] =
     {
-      Blockly.Blocks['ContinuousServo_CONFIG'] =
-      {
-        __category: 'Config',
-        __tool: `<block type="ContinuousServo_CONFIG"><field variabletype="ContinuousServo" name="NAME">${cservoVariables[0].name}</field></block>`,
-        init: function()
+      __category: 'Config',
+      __tool: (workspace) => {
+        const variables = workspace.getVariablesOfType('ContinuousServo');
+        if (channels.length && variables.length)
         {
-          this.jsonInit(
-          {
-            colour: COLOR.PART.CONFIG,
-            message0: 'Configure Continuous Servo',
-            message1: 'name %1',
-            args1:
-            [
-              {
-                type: 'field_variable',
-                name: 'NAME',
-                defaultType: 'ContinuousServo',
-                variableTypes: [ 'ContinuousServo' ]
-              }
-            ],
-            message2: 'channel %1',
-            args2:
-            [
-              {
-                type: 'field_dropdown',
-                name: 'CHANNEL',
-                options: channels
-              }
-            ],
-            message3: 'reverse %1',
-            args3:
-            [
-              {
-                type: 'field_checkbox',
-                name: 'REV',
-                value: false
-              }
-            ],
-            message4: 'min %1',
-            args4:
-            [
-              {
-                type: 'field_number',
-                name: 'MIN',
-                value: -1
-              },
-            ],
-            message5: 'max %1',
-            args5:
-            [
-              {
-                type: 'field_number',
-                name: 'MAX',
-                value: 1
-              }
-            ]
-          });
+          return `<block type="ContinuousServo_CONFIG"><field variabletype="ContinuousServo" name="NAME">${variables[0].name}</field></block>`;
         }
-      };
-      Blockly.JavaScript['ContinuousServo_CONFIG'] = function(block)
-      {
-        const name = block.getFieldValue('NAME');
-        const channel = block.getFieldValue('CHANNEL');
-        const rev = block.getFieldValue('REV');
-        const min = block.getFieldValue('MIN');
-        const max = block.getFieldValue('MAX');
-        const code = `App.registerConfiguration(function(activity)
+        else
         {
-          return activity.part('ContinuousServo', '${name}')({ channel: '${channel}', rev: ${rev}, min: ${min}, max: ${max} });
-        });\n`;
-
-        return code;
-      };
-    }
-    else if (Blockly.Blocks['ContinuousServo_CONFIG'])
+          return null;
+        }
+      },
+      init: function()
+      {
+        this.jsonInit(
+        {
+          colour: COLOR.PART.CONFIG,
+          message0: 'Configure Continuous Servo',
+          message1: 'name %1',
+          args1:
+          [
+            {
+              type: 'field_variable',
+              name: 'NAME',
+              defaultType: 'ContinuousServo',
+              variableTypes: [ 'ContinuousServo' ]
+            }
+          ],
+          message2: 'channel %1',
+          args2:
+          [
+            {
+              type: 'field_dropdown',
+              name: 'CHANNEL',
+              options: channels
+            }
+          ],
+          message3: 'reverse %1',
+          args3:
+          [
+            {
+              type: 'field_checkbox',
+              name: 'REV',
+              value: false
+            }
+          ],
+          message4: 'min %1',
+          args4:
+          [
+            {
+              type: 'field_number',
+              name: 'MIN',
+              value: -1
+            },
+          ],
+          message5: 'max %1',
+          args5:
+          [
+            {
+              type: 'field_number',
+              name: 'MAX',
+              value: 1
+            }
+          ]
+        });
+      }
+    };
+    Blockly.JavaScript['ContinuousServo_CONFIG'] = function(block)
     {
-      delete Blockly.Blocks['ContinuousServo_CONFIG'];
-    }
+      const name = block.getField('NAME').getText();
+      const channel = block.getFieldValue('CHANNEL');
+      const rev = block.getFieldValue('REV') === 'TRUE';
+      const min = block.getFieldValue('MIN');
+      const max = block.getFieldValue('MAX');
+      const code = `App.registerConfiguration(function(activity)
+      {
+        return activity.part('ContinuousServo', '${name}')({ channel: '${channel}', rev: ${rev}, min: ${min}, max: ${max} });
+      });\n`;
+
+      return code;
+    };
     Blockly.Blocks['ContinuousServo_SET'] =
     {
       __category: 'Part',
@@ -847,97 +847,99 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['ContinuousServo_SET'] = function(block)
     {
-      const name = block.getFieldValue('NAME');
+      const name = block.getField('NAME').getText();
       const velocity = Blockly.JavaScript.valueToCode(block, 'VELOCITY', Blockly.JavaScript.ORDER_NONE) || undefined;
       const time = Blockly.JavaScript.valueToCode(block, 'TIME', Blockly.JavaScript.ORDER_NONE) || 0;
       const func = block.getFieldValue('FUNC');
       const code = `activity.part('ContinuousServo', '${name}')({ velocity: ${velocity}, time: ${time}, func: '${func}' });`
-      return [ code, Blockly.JavaScript.ORDER_NONE ];
+      return code;
     };
-    registerPart({ name: 'ContinuousServo' });
+    registerPart({ name: 'ContinuousServo' }, workspace);
 
     // MOTOR
-    const motorVariables = WORKSPACE.getVariablesOfType('Motor');
-    if (hbridges.length && motorVariables.length)
+    Blockly.Blocks['Motor_CONFIG'] =
     {
-      Blockly.Blocks['Motor_CONFIG'] =
-      {
-        __category: 'Config',
-        __tool: `<block type="Motor_CONFIG"><field variabletype="Motor" name="NAME">${motorVariables[0].name}</field></block>`,
-        init: function()
+      __category: 'Config',
+      __tool: (workspace) => {
+        const variables = workspace.getVariablesOfType('Motor');
+        if (hbridges.length && variables.length)
         {
-          this.jsonInit(
-          {
-            colour: COLOR.PART.CONFIG,
-            message0: 'Configure Motor',
-            message1: 'name %1',
-            args1:
-            [
-              {
-                type: 'field_variable',
-                name: 'NAME',
-                defaultType: 'Motor',
-                variableTypes: [ 'Motor' ]
-              }
-            ],
-            message2: 'channel %1',
-            args2:
-            [
-              {
-                type: 'field_dropdown',
-                name: 'CHANNEL',
-                options: hbridges
-              }
-            ],
-            message3: 'reverse %1',
-            args3:
-            [
-              {
-                type: 'field_checkbox',
-                name: 'REV',
-                value: false
-              }
-            ],
-            message4: 'min %1',
-            args4:
-            [
-              {
-                type: 'field_number',
-                name: 'MIN',
-                value: -1
-              },
-            ],
-            message5: 'max %1',
-            args5:
-            [
-              {
-                type: 'field_number',
-                name: 'MAX',
-                value: 1
-              }
-            ]
-          });
+          return `<block type="Motor_CONFIG"><field variabletype="Motor" name="NAME">${variables[0].name}</field></block>`;
         }
-      };
-      Blockly.JavaScript['Motor_CONFIG'] = function(block)
-      {
-        const name = block.getFieldValue('NAME');
-        const channel = block.getFieldValue('CHANNEL');
-        const rev = block.getFieldValue('REV');
-        const min = block.getFieldValue('MIN');
-        const max = block.getFieldValue('MAX');
-        const code = `App.registerConfiguration(function(activity)
+        else
         {
-          return activity.part('Motor', '${name}')({ channel: '${channel}', rev: ${rev}, min: ${min}, max: ${max} });
-        });\n`;
-
-        return code;
-      };
-    }
-    else if (Blockly.Blocks['Motor_CONFIG'])
+          return null;
+        }
+      },
+      init: function()
+      {
+        this.jsonInit(
+        {
+          colour: COLOR.PART.CONFIG,
+          message0: 'Configure Motor',
+          message1: 'name %1',
+          args1:
+          [
+            {
+              type: 'field_variable',
+              name: 'NAME',
+              defaultType: 'Motor',
+              variableTypes: [ 'Motor' ]
+            }
+          ],
+          message2: 'channel %1',
+          args2:
+          [
+            {
+              type: 'field_dropdown',
+              name: 'CHANNEL',
+              options: hbridges
+            }
+          ],
+          message3: 'reverse %1',
+          args3:
+          [
+            {
+              type: 'field_checkbox',
+              name: 'REV',
+              value: false
+            }
+          ],
+          message4: 'min %1',
+          args4:
+          [
+            {
+              type: 'field_number',
+              name: 'MIN',
+              value: -1
+            },
+          ],
+          message5: 'max %1',
+          args5:
+          [
+            {
+              type: 'field_number',
+              name: 'MAX',
+              value: 1
+            }
+          ]
+        });
+      }
+    };
+    Blockly.JavaScript['Motor_CONFIG'] = function(block)
     {
-      delete Blockly.Blocks['Motor_CONFIG'];
-    }
+      const name = block.getField('NAME').getText();
+      const channel = block.getFieldValue('CHANNEL');
+      const rev = block.getFieldValue('REV');
+      const min = block.getFieldValue('MIN');
+      const max = block.getFieldValue('MAX');
+      const code = `App.registerConfiguration(function(activity)
+      {
+        return activity.part('Motor', '${name}')({ channel: '${channel}', rev: ${rev}, min: ${min}, max: ${max} });
+      });\n`;
+
+      return code;
+    };
     Blockly.Blocks['Motor_SET'] =
     {
       __category: 'Part',
@@ -977,14 +979,14 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['Motor_SET'] = function(block)
     {
-      const name = block.getFieldValue('NAME');
+      const name = block.getField('NAME').getText();
       const velocity = Blockly.JavaScript.valueToCode(block, 'VELOCITY', Blockly.JavaScript.ORDER_NONE) || undefined;
       const time = Blockly.JavaScript.valueToCode(block, 'TIME', Blockly.JavaScript.ORDER_NONE) || 0;
       const func = block.getFieldValue('FUNC');
       const code = `activity.part('Motor', '${name}')({ velocity: ${velocity}, time: ${time}, func: '${func}' });`
-      return [ code, Blockly.JavaScript.ORDER_NONE ];
+      return code;
     };
-    registerPart({ name: 'Motor' });
+    registerPart({ name: 'Motor' }, workspace);
 
     // TANK
     Blockly.Blocks['Tank_SET'] =
@@ -1026,8 +1028,8 @@ document.addEventListener('DOMContentLoaded', function()
       {
         this.jsonInit(
         {
-          color: COLOR.PART.GET,
-          message0: `for tank set %1 get %2`,
+          colour: COLOR.PART.GET,
+          message0: `for tank %1 get %2`,
           args0:
           [
             {
@@ -1049,20 +1051,20 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['Tank_SET'] = function(block)
     {
-      const name = block.getFieldValue('NAME');
+      const name = block.getField('NAME').getText();
       const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || undefined;
       const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || undefined;
       const code = `activity.part('Tank', '${name}')({ x: ${x}, y: ${y} });`;
-      return [ code, Blockly.JavaScript.ORDER_NONE ];
+      return code;
     };
     Blockly.JavaScript['Tank_GET'] = function(block)
     {
-      const name = block.getFieldValue('NAME');
+      const name = block.getField('NAME').getText();
       const output = block.getFieldValue('OUTPUT');
       const code = `activity.part('Tank', '${name}')({}).${output}`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
-    registerPart({ name: 'Tank' });
+    registerPart({ name: 'Tank' }, workspace);
 
     // CAR
     Blockly.Blocks['Car_SET'] =
@@ -1127,46 +1129,53 @@ document.addEventListener('DOMContentLoaded', function()
     };
     Blockly.JavaScript['Car_SET'] = function(block)
     {
-      const name = block.getFieldValue('NAME');
+      const name = block.getField('NAME').getText();
       const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_NONE) || undefined;
       const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_NONE) || undefined;
       const code = `activity.part('Car', '${name}')({ x: ${x}, y: ${y} });`;
-      return [ code, Blockly.JavaScript.ORDER_NONE ];
+      return code;
     };
     Blockly.JavaScript['Car_GET'] = function(block)
     {
-      const name = block.getFieldValue('NAME');
+      const name = block.getField('NAME').getText();
       const output = block.getFieldValue('OUTPUT');
       const code = `activity.part('Car', '${name}')({}).${output}`;
       return [ code, Blockly.JavaScript.ORDER_NONE ];
     };
-    registerPart({ name: 'Car' });
+    registerPart({ name: 'Car' }, workspace);
   }
 
   // --------------------------------------------------------------------------
   // Toolbox
   // --------------------------------------------------------------------------
 
-  function registerToolboxCategory(category)
+  function registerToolboxCategory(category, workspace)
   {
-    WORKSPACE.registerToolboxCategoryCallback(category, () => {
+    workspace.registerToolboxCategoryCallback(category, (workspace) => {
       const xml = [];
       for (let name in Blockly.Blocks)
       {
         if (Blockly.Blocks[name].__category === category)
         {
-          xml.push(Blockly.Xml.textToDom(Blockly.Blocks[name].__tool || `<block type="${name}"></block>`));
-          xml.push(Blockly.Xml.textToDom('<sep gap="12"></sep>'));
+          if ('__tool' in Blockly.Blocks[name])
+          {
+            const tool = Blockly.Blocks[name].__tool(workspace);
+            if (tool)
+            {
+              xml.push(Blockly.Xml.textToDom(tool));
+              xml.push(Blockly.Xml.textToDom('<sep gap="12"></sep>'));
+            }
+          }
+          else
+          {
+            xml.push(Blockly.Xml.textToDom(`<block type="${name}"></block>`));
+            xml.push(Blockly.Xml.textToDom('<sep gap="12"></sep>'));
+          }
         }
       }
       return xml;
     });
   }
-  registerToolboxCategory('Program');
-  registerToolboxCategory('Config');
-  registerToolboxCategory('Action');
-  registerToolboxCategory('Event');
-
 
   // --------------------------------------------------------------------------
   // API to app container
@@ -1184,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function()
     workspace.getTopBlocks = function(ordered)
     {
       return _getTopBlocks.call(workspace, ordered).filter((block) => {
-        return block.type === 'setup' || block.type === 'activity' || block.type.endsWith('/config');
+        return block.__category === 'Program' || block.__category === 'Config';
       });
     }
     const code = Blockly.JavaScript.workspaceToCode(workspace);
@@ -1197,7 +1206,7 @@ document.addEventListener('DOMContentLoaded', function()
     }).join('');
     const jscode = code || ecode ? `${code};${ecode};App.run();` : '';
 
-    //console.log(jscode);
+    console.log(jscode);
   
     const CONFIG = NODE.proxy({ service: '/app/config' });
     CONFIG({ source: workspaceText, code: jscode }).then(() => {
@@ -1205,36 +1214,25 @@ document.addEventListener('DOMContentLoaded', function()
     });
   }
 
-  function workspaceLoad()
+  function workspaceLoad(workspace)
   {
     const CONFIG = NODE.proxy({ service: '/app/config' });
-    CONFIG({}).then((config) => {
+    return CONFIG({}).then((config) => {
       NODE.unproxy({ service: '/app/config' });
       if (config.source)
       {
-        WORKSPACE.clear();
-        Blockly.Xml.appendDomToWorkspace(Blockly.Xml.textToDom(config.source), WORKSPACE);
+        workspace.clear();
+        Blockly.Xml.appendDomToWorkspace(Blockly.Xml.textToDom(config.source), workspace);
       }
     });
   }
 
-  function workspaceRefresh()
+  function workspaceRefresh(workspace)
   {
-    const workspaceDom = Blockly.Xml.textToDom(Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(WORKSPACE)));
-    WORKSPACE.clear();
-    Blockly.Xml.appendDomToWorkspace(workspaceDom, WORKSPACE);
+    const dom = Blockly.Xml.textToDom(Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace)));
+    workspace.clear();
+    Blockly.Xml.appendDomToWorkspace(dom, workspace);
   }
-
-  WORKSPACE.addChangeListener((e) => {
-    switch (e.type)
-    {
-      case Blockly.Events.VAR_DELETE:
-        buildParts();
-        break;
-      default:
-        break;
-    }
-  });
 
   // --------------------------------------------------------------------------
   // Generate blocks
@@ -1242,7 +1240,7 @@ document.addEventListener('DOMContentLoaded', function()
 
   const LIST = NODE.proxy({ service: '/list' });
 
-  function rebuildEventAndActionBlocks()
+  function rebuildEventAndActionBlocks(workspace)
   {
     LIST({}).then((list) => {
       return Promise.all([
@@ -1250,28 +1248,31 @@ document.addEventListener('DOMContentLoaded', function()
         buildActionBlocks(sort(list.services.filter((service) => filter(service.name) && !service.name.endsWith('/config') && service.schema )))
       ]);
     }).then(() => {
-      buildParts();
       // Delete any blocks which no longer have any associated info.
-      WORKSPACE.getAllBlocks().forEach((block) => {
+      workspace.getAllBlocks().forEach((block) => {
         if (!Blockly.Blocks[block.type])
         {
           block.dispose(false);
         }
       });
-      workspaceRefresh();
+      workspaceRefresh(workspace);
     });
   }
 
   LIST({}).then((list) => {
     return Promise.all([
-      buildProgramBlocks(),
       buildConfigBlocks(sort(list.services.filter((service) => filter(service.name) && service.name.endsWith('/config') && service.schema ))),
       buildEventBlocks(sort(list.topics.filter((topic) => filter(topic.name) && topic.schema ))),
       buildActionBlocks(sort(list.services.filter((service) => filter(service.name) && !service.name.endsWith('/config') && service.schema ))),
     ]);
   }).then(() => {
-    buildParts();
-    workspaceLoad();
+    buildProgramBlocks(),
+    buildPartBlocks(WORKSPACE);
+    registerToolboxCategory('Program', WORKSPACE);
+    registerToolboxCategory('Config', WORKSPACE);
+    registerToolboxCategory('Action', WORKSPACE);
+    registerToolboxCategory('Event', WORKSPACE);
+    workspaceLoad(WORKSPACE);
   });
 
 });

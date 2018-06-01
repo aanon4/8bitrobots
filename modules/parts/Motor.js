@@ -29,10 +29,10 @@ function motor(name)
             {
               if (set_duty)
               {
-                node.unservice({ name: state.channel });
+                node.unproxy({ service: state.channel });
               }
               state.channel = args.channel;
-              set_duty = node.service({ name: state.channel });
+              set_duty = node.proxy({ service: state.channel });
             }
             break;
           case 'duty':
@@ -57,9 +57,9 @@ function motor(name)
         set_duty({ duty: state.duty, time: state.time, func: state.func });
       }
     }
-  }
 
-  return state;
+    return state;
+  }
 }
 
 module.exports = motor;
