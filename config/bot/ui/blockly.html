@@ -4,8 +4,15 @@
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
+    html, body { width: 100%; height: 100%; margin: 0; }
     .part-create-button { fill: #a65ca6 }
     .part-create-button:hover { fill: #8D5CA6 }
+    #all { width: 100%; height: 100%; display: flex; flex-direction: column; }
+    #blocklyDiv { height: 480px; width: 100%; flex: 1;}
+    #tabs { width: 100%; height: 30px; background-color: #dddddd; }
+    #deploy { float: left; width: 79px; margin: 4px 14px 0px 14px; }
+    .tab { float: left; width: 90px; padding: 5px; background-color: white; color: lightgrey; border: 1px solid lightgrey; border-top-color: transparent; border-radius: 0px 0px 5px 5px; text-align: center }
+    .tab.selected { background-color: white; color: black; border: 1px solid grey; border-top-color: transparent; }
   </style>
   <script src="js/8bit-slave.js"></script>
   <script src="js/8bit.js"></script>
@@ -75,18 +82,31 @@
     ];
   </script>
   <script src="blockly/8bitblocks.js"></script>
-  <style>
-    _html,_body { width: 100%; height: 100%; margin: 0; color: white; background-color: black; background-size: 100%, 100%; }
-  </style>
 </head>
 <body>
-  <div id="blocklyDiv" style="height: 480px; width: 100%;"></div>
-  <div><button onclick='deploy()'>Deploy</button></div>
+  <div id="all">
+    <div id="blocklyDiv"></div>
+    <div id="tabs">
+      <button id="deploy" onclick="deploy()">Deploy</button>
+      <div onclick="select(this)" class="tab selected">Tab 1</div>
+      <div onclick="select(this)" class="tab">Tab 2</div>
+      <div onclick="select(this)" class="tab">Tab 3</div>
+    </div>
+  </div>
   <script>
-    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join(), sounds: false, media: 'images/', disable: false });
+    window.WORKSPACE = Blockly.inject('blocklyDiv', { toolbox: TOOLBOX.join(), sounds: false, media: 'images/', disable: false, scrollbars: false });
     function deploy()
     {
       window.APP && window.APP.deployRobotWorkspace(window.WORKSPACE);
+    }
+    function select(selected)
+    {
+      const firstTab = document.getElementById("tabs").firstElementChild;
+      for (let tab = firstTab; tab; tab = tab.nextElementSibling)
+      {
+        tab.classList.remove('selected');
+      }
+      selected.classList.add('selected');
     }
   </script>
 </body>
